@@ -1,0 +1,23 @@
+# Perfil prod: la configuración sensible viene solo de variables de entorno, sin valores por defecto.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  flyway:
+    locations: classpath:db/migration
+    # La base local de docker-compose se comparte entre los perfiles dev y prod. Si dev corrió
+    # antes, el historial de Flyway contiene la migración repetible de seed (db/seed/dev), que este
+    # perfil no incluye a propósito. Sin esta opción Flyway rechaza arrancar por "migración aplicada
+    # no resuelta localmente". Se ignoran solo las migraciones ausentes, nunca las fallidas.
+    ignore-migration-patterns: '*:missing'
+
+springdoc:
+  api-docs:
+    enabled: ${EVM_SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${EVM_SWAGGER_ENABLED:false}
+
+logging:
+  level:
+    root: INFO

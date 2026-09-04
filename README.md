@@ -36,22 +36,61 @@ CLAUDE.md           Convenciones del proyecto para los agentes de IA
 
 ## Cómo correr el proyecto en local
 
-Pendiente de completar cuando exista el backend. Por ahora:
+Todos los scripts son relativos a la raíz del repositorio, aunque se invoquen desde otro directorio.
+
+### Desarrollo (perfil dev)
 
 ```bash
-docker compose up -d postgres
+scripts/run-dev.sh
 ```
 
-Levanta PostgreSQL en `localhost:5432` con base `evm`, usuario `evm` y contraseña `evm`, y ejecuta
-`db/init.sql` la primera vez (esquema y un proyecto de demostración con tres actividades).
+Levanta PostgreSQL en `localhost:5432` con base `evm`, usuario `evm` y contraseña `evm` (con
+`docker compose up -d postgres`), espera a que el contenedor esté saludable y arranca el backend con
+`./backend/mvnw spring-boot:run -Pdev`. Si la base ya existía por `db/init.sql`, Flyway toma ese esquema
+como punto de partida (`baseline-on-migrate`) y aplica la migración `V1` sin duplicar tablas ni datos.
+Con el backend arriba: Swagger UI en `http://localhost:8080/swagger-ui` y OpenAPI en
+`http://localhost:8080/api-docs`.
+
+### Verificación completa (perfil test)
+
+```bash
+scripts/run-tests.sh
+```
+
+Ejecuta `./backend/mvnw verify -Ptest`: Checkstyle en fase `validate`, tests unitarios, el test de
+arquitectura hexagonal con ArchUnit, el test de integración `ApplicationStartsIT` contra un PostgreSQL real
+de Testcontainers, y el umbral de cobertura de JaCoCo (80 % línea y rama) sobre `domain` y `application`.
+Requiere Docker. Al final imprime la ruta del informe HTML de JaCoCo.
+
+### Empaquetado de producción (perfil prod)
+
+```bash
+scripts/build-prod.sh
+```
+
+Genera `backend/target/evm-backend.jar` con `./backend/mvnw -Pprod -DskipTests clean package`, sin
+herramientas de desarrollo y sin ejecutar tests.
+
+### Arranque local del jar de producción
+
+```bash
+scripts/run-prod-local.sh
+```
+
+Levanta PostgreSQL local con docker-compose y arranca `evm-backend.jar` con `SPRING_PROFILES_ACTIVE=prod`
+y `DB_URL`/`DB_USER`/`DB_PASSWORD` apuntando a ese PostgreSQL (valores por defecto solo en este script).
+Swagger queda apagado salvo que se exporte `EVM_SWAGGER_ENABLED=true` antes de ejecutarlo.
 
 ## Perfiles Maven
 
-| Perfil | Uso | Comando |
-| --- | --- | --- |
-| `dev` | Desarrollo local con datos de demostración y Swagger | `scripts/run-dev.sh` |
-| `test` | Tests unitarios + integración (Testcontainers), cobertura y Checkstyle bloqueantes | `scripts/run-tests.sh` |
-| `prod` | Empaquetado sin herramientas de desarrollo, configuración por variables de entorno | `scripts/build-prod.sh` |
+| Perfil | Activación | Uso | Script |
+| --- | --- | --- | --- |
+| `dev` | Por defecto | Devtools, Postgres de docker-compose, seed de demostración, Swagger activo, solo tests unitarios (surefire) | `scripts/run-dev.sh` |
+| `test` | `-Ptest` | Testcontainers, ArchUnit, tests de integración (`*IT.java` con failsafe) y JaCoCo `check` bloqueante | `scripts/run-tests.sh` |
+| `prod` | `-Pprod` | Empaquetado sin herramientas de desarrollo, configuración por variables de entorno, Swagger apagado por defecto | `scripts/build-prod.sh` |
+
+Checkstyle corre en la fase `validate` y es bloqueante en los tres perfiles. El jar de producción se
+genera en `backend/target/evm-backend.jar`.
 
 ## Flujo de trabajo
 
