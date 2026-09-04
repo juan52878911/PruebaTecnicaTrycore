@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.trycore.evm.adapter.in.rest.dto.ProjectRequest;
 import com.trycore.evm.adapter.in.rest.dto.ProjectResponse;
@@ -66,7 +67,7 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> create(@Valid @RequestBody final ProjectRequest request) {
         final Project created = projectUseCases.create(request.name(), request.description());
         final ProjectResponse response = ProjectRestMapper.toResponse(created);
-        return ResponseEntity.created(URI.create("/api/v1/projects/" + created.id())).body(response);
+        return ResponseEntity.created(locationOf(created.id())).body(response);
     }
 
     @GetMapping("/{id}")
@@ -113,5 +114,10 @@ public class ProjectController {
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public void delete(@PathVariable final Long id) {
         projectUseCases.delete(id);
+    }
+
+    /** Deriva la ubicación del recurso creado de la petición en curso, sin repetir la ruta base. */
+    private static URI locationOf(final Long projectId) {
+        return ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(projectId).toUri();
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.trycore.evm.adapter.in.rest.dto.ActivityRequest;
 import com.trycore.evm.adapter.in.rest.dto.ActivityResponse;
@@ -80,8 +81,7 @@ public class ActivityController {
             @PathVariable final Long projectId, @Valid @RequestBody final ActivityRequest request) {
         final ActivityEvm created = activityUseCases.create(projectId, request.name(), toFigures(request));
         final ActivityResponse response = ActivityRestMapper.toResponse(created);
-        final URI location = URI.create("/api/v1/projects/" + projectId + "/activities/" + created.activity().id());
-        return ResponseEntity.created(location).body(response);
+        return ResponseEntity.created(locationOf(created.activity().id())).body(response);
     }
 
     @PutMapping("/{activityId}")
@@ -116,6 +116,11 @@ public class ActivityController {
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public void delete(@PathVariable final Long projectId, @PathVariable final Long activityId) {
         activityUseCases.delete(projectId, activityId);
+    }
+
+    /** Deriva la ubicación del recurso creado de la petición en curso, sin repetir la ruta base. */
+    private static URI locationOf(final Long activityId) {
+        return ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(activityId).toUri();
     }
 
     private static ActivityFigures toFigures(final ActivityRequest request) {
