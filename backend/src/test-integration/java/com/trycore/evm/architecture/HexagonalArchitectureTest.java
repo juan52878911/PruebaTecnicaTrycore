@@ -13,10 +13,10 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * Verifica que la arquitectura hexagonal se respete: el dominio no depende de la aplicación ni
  * de la infraestructura, y los adaptadores de entrada y de salida no dependen entre sí.
  *
- * <p>Nota: como los paquetes del dominio y de la aplicación están vacíos en este scaffold,
- * las reglas usan {@code allowEmptyShould(true)} para que no fallen por falta de clases que
- * evaluar. Este permiso debe retirarse en cuanto entren las primeras clases de dominio, para
- * que las reglas vuelvan a exigir que exista al menos una clase que las cumpla.
+ * <p>Nota: las reglas sobre la aplicación y los adaptadores usan {@code allowEmptyShould(true)}
+ * mientras esos paquetes sigan vacíos. Ese permiso debe retirarse en cuanto entren sus primeras
+ * clases, para que las reglas vuelvan a exigir que exista al menos una clase que las cumpla. Las
+ * reglas del dominio ya no lo tienen: el dominio tiene clases y debe cumplirlas.
  */
 class HexagonalArchitectureTest {
 
@@ -34,8 +34,7 @@ class HexagonalArchitectureTest {
     void domainShouldNotDependOnApplication() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(DOMAIN_PACKAGE)
-                .should().dependOnClassesThat().resideInAPackage(APPLICATION_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAPackage(APPLICATION_PACKAGE);
 
         rule.check(classes);
     }
@@ -44,8 +43,7 @@ class HexagonalArchitectureTest {
     void domainShouldNotDependOnAdapters() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(DOMAIN_PACKAGE)
-                .should().dependOnClassesThat().resideInAnyPackage(ADAPTER_IN_PACKAGE, ADAPTER_OUT_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAnyPackage(ADAPTER_IN_PACKAGE, ADAPTER_OUT_PACKAGE);
 
         rule.check(classes);
     }
@@ -54,8 +52,7 @@ class HexagonalArchitectureTest {
     void domainShouldNotDependOnConfig() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(DOMAIN_PACKAGE)
-                .should().dependOnClassesThat().resideInAPackage(CONFIG_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAPackage(CONFIG_PACKAGE);
 
         rule.check(classes);
     }
@@ -67,8 +64,7 @@ class HexagonalArchitectureTest {
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "org.springframework..",
                         "jakarta.persistence..",
-                        "com.fasterxml..")
-                .allowEmptyShould(true);
+                        "com.fasterxml..");
 
         rule.check(classes);
     }
