@@ -4,7 +4,15 @@ import java.math.BigDecimal;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/** Indicadores de Valor Ganado de una actividad o de un proyecto consolidado, en las respuestas del API. */
+/**
+ * Indicadores de Valor Ganado de una actividad o de un proyecto consolidado, en las respuestas del API.
+ *
+ * <p>Un indicador nulo significa que no se puede calcular, nunca que valga cero. Cuando el índice
+ * nulo es el CPI o el SPI, su interpretación lo acompaña con estado {@code NOT_APPLICABLE} y el
+ * motivo. El EAC y el VAC son el único caso en que un valor nulo no lleva estado propio: se derivan
+ * del CPI y quedan indefinidos tanto si el CPI no existe (AC = 0) como si vale cero (avance real 0
+ * con costo incurrido), y en ese segundo caso el estado de costo describe el CPI, que sí existe.
+ */
 public record EvmIndicatorsResponse(
 
         @Schema(description = "Valor planificado (PV = porcentaje planificado x BAC)", example = "50000.00")
@@ -33,12 +41,13 @@ public record EvmIndicatorsResponse(
         BigDecimal schedulePerformanceIndex,
 
         @Schema(
-                description = "Estimación a la conclusión (EAC = BAC / CPI); nulo cuando el CPI es nulo",
+                description = "Estimación a la conclusión (EAC = BAC / CPI); nulo cuando el CPI es nulo o "
+                        + "vale cero, es decir cuando no hay costo real o no hay avance real que valorar",
                 example = "150000.00")
         BigDecimal estimateAtCompletion,
 
         @Schema(
-                description = "Variación a la conclusión (VAC = BAC - EAC); nulo cuando el EAC es nulo",
+                description = "Variación a la conclusión (VAC = BAC - EAC); nulo siempre que el EAC lo sea",
                 example = "-50000.00")
         BigDecimal varianceAtCompletion,
 

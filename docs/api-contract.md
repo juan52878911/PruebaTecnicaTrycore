@@ -86,6 +86,12 @@ Cuando `actualCost` es 0, `costPerformanceIndex`, `estimateAtCompletion` y `vari
 y `costStatus` es `NOT_APPLICABLE` con el motivo. Cuando `plannedValue` es 0, `schedulePerformanceIndex` es
 `null` y `scheduleStatus` es `NOT_APPLICABLE`.
 
+Hay un tercer caso, en el que el índice sí existe pero la estimación no: con avance real 0 y costo incurrido,
+`costPerformanceIndex` vale `0.0000` (desempeño real y desfavorable, `OVER_BUDGET`), mientras que
+`estimateAtCompletion` y `varianceAtCompletion` son `null` porque dividir el presupuesto entre cero no da un
+número. Es el único caso en que un valor nulo no viene acompañado de un estado propio que lo explique: el
+estado describe el índice, que en ese caso sí está definido.
+
 ### ProjectEvmSummary (`GET /projects/{id}/evm`)
 
 ```json
@@ -126,6 +132,9 @@ Un proyecto sin actividades devuelve 200 con sumas en 0, índices `null` y estad
   "errors": [ { "field": "plannedProgressPercent", "message": "debe estar entre 0 y 100" } ]
 }
 ```
+
+La lista `errors` solo aparece en los errores de validación de campos. En OpenAPI este cuerpo se documenta con
+el esquema `ValidationProblem`; los demás errores usan `ProblemDetail` sin esa lista.
 
 | Código | Cuándo |
 | --- | --- |
