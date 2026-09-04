@@ -7,7 +7,7 @@
 # porque en ese bucle ningún comando devuelve error.
 set -euo pipefail
 
-CONTAINER_NAME="evm-postgres"
+CONTAINER_NAME="${EVM_POSTGRES_CONTAINER:-evm-postgres}"
 MAX_ATTEMPTS=60
 SECONDS_BETWEEN_ATTEMPTS=2
 

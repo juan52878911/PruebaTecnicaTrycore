@@ -555,6 +555,62 @@ precisión con la que decide trabajar, y las columnas dimensionadas para respeta
 exceso en vez de redondearlo, porque truncar en silencio es exactamente lo que hacía que el API confirmara
 cifras que no había guardado.
 
+## 7b. Validación de la orquestación: qué entregó cada agente
+
+El plan exigía comprobar, al cerrar el trabajo, que cada agente entregó lo que se le pidió, con evidencia de
+ejecución y no de lectura. Esta es la tabla.
+
+| Agente y modelo | Qué se le pidió | Qué entregó | Cómo se comprobó | Qué hubo que corregirle |
+| --- | --- | --- | --- | --- |
+| opencode, MiniMax M2.7 | Cinco ficheros de plantilla: ignorados de git, editor, compose, script de base y plantilla de PR | Los cinco | Contenedor levantado, datos consultados, restricción de porcentaje probada con un valor de 150, script reejecutado para comprobar que no duplica | Faltaban tildes pese a pedirlas y la regla de variables de entorno excluía el fichero de ejemplo |
+| Subagente Sonnet, andamiaje del backend | Proyecto Maven con tres perfiles, Flyway, OpenAPI, Checkstyle, cobertura, ArchUnit y scripts | Todo, en seis commits | Verificación completa ejecutada, jar de producción arrancado con y sin la variable de Swagger, perfil de desarrollo con sus datos | Checkstyle solo bloqueaba en pruebas; comentarios sin tildes; y el fallo del perfil de producción descrito en la sección 3 |
+| Subagente Sonnet, esqueleto del frontend | Proyecto Angular con linter, formateador y proxy, sin lógica | Lo pedido, en tres commits | Instalación, linter, compilación y pruebas ejecutadas de nuevo por quien revisó | Se detuvo dos veces esperando tareas que había lanzado en segundo plano; hubo que reanudarlo |
+| Subagente Sonnet, aplicación y API | Puertos, servicios, persistencia, controladores, errores, OpenAPI y pruebas de contrato | Todo, en cinco commits | Verificación completa y pruebas por HTTP contra los datos de demostración | El controlador llamaba al calculador de dominio; se movió al servicio de aplicación |
+| Agentes auditores, Haiku y Sonnet | Auditoría adversarial de señales y de pérdidas silenciosas | Nada: ambos murieron por el límite de gasto de la cuenta | El fallo se vio en la notificación de la tarea | Se ejecutaron a mano las pruebas que tenían encargadas, y ahí apareció el fallo más grave del proyecto |
+| Ocho agentes Sonnet, revisión de código | Un ángulo de revisión cada uno sobre la rama de integración | 27 candidatos | Cada candidato verificado antes de aceptarlo | Uno era falso positivo y se descartó; dos se rechazaron con motivo escrito |
+| Subagente Opus 5, pruebas de integración | Compartir un solo contenedor entre las cuatro clases de prueba | Clase base compartida | Verificación completa reejecutada y contenedores contados en el registro del build: uno en vez de cuatro | Nada. Además rechazó con razón una instrucción equivocada mía, comprobándolo en el código de la librería |
+| Agente verificador Opus 5, independiente | Contrastar el enunciado contra la entrega, sin conocer la implementación | Informe de cumplimiento | Es la comprobación final; sus hallazgos se atendieron antes de la publicación | Ver la sección siguiente |
+
+Conclusión del ejercicio de delegación: **ninguna entrega de un agente se integró tal cual.** Todas requirieron
+al menos una corrección, y en dos casos la corrección fue un fallo real, no una cuestión de estilo. El patrón
+que más se repitió fue el de dar por verificado algo comprobado en condiciones favorables.
+
+## 7c. Veredicto del verificador independiente
+
+Al cerrar el trabajo se lanzó un agente Opus 5 sin ningún conocimiento de la implementación, con el enunciado
+de Trycore y el repositorio, y con la instrucción de no fiarse del README ni de los comentarios ni de los
+mensajes de commit, sino solo de lo que pudiera ejecutar. Su informe fue el más duro de todo el proceso y
+resultó ser el más útil.
+
+Lo que confirmó ejecutando: calculó a mano treinta y dos indicadores con dos juegos de datos inventados por él
+y todos coincidieron; comprobó los casos borde; midió la cobertura sobre la capa de negocio por su cuenta;
+comprobó que el linter es bloqueante inyectando una violación a propósito y revirtiéndola; y verificó que
+borrar un proyecto no deja actividades huérfanas consultando la base directamente.
+
+Lo que encontró, y que se corrigió a raíz de su informe:
+
+| Hallazgo | Corrección |
+| --- | --- |
+| El 400 documentado en OpenAPI declaraba `ProblemDetail` a secas, sin la lista `errors` que la respuesta sí trae | Esquema propio publicado en la especificación |
+| El informe de cobertura solo medía los tests unitarios y mostraba los adaptadores casi a cero | Informe agregado que suma ambas ejecuciones: de 90,0 % a 97,8 % total |
+| El nombre fijo del contenedor impedía levantar dos copias del repositorio, y le rompió el script de arranque | Nombre sobrescribible por variable de entorno |
+| La regla de números mágicos ignoraba las declaraciones de campo | Regla endurecida |
+| El caso de avance real cero deja el EAC indefinido sin ningún estado que lo explique | Documentado en el contrato y en la especificación |
+| El README decía 90 tests sin desglose | Desglose comprobable: 67 unitarios y 23 de integración |
+
+Lo que señaló y no es corregible por Claude, porque son decisiones o trabajo de Juan:
+
+- **El frontend no existe.** Es una decisión explícita de Juan, tomada al aprobar el plan: backend primero y
+  verificado, frontend después. El verificador no la conocía y la marcó como incumplimiento, que es lo que es
+  mientras no se construya. Queda pendiente.
+- **Cuatro de los seis puntos de este documento están sin redactar** (las secciones 2, 3, 5 y 6). Son
+  precisamente las que exigen juicio personal y las que Juan debe escribir. El verificador tiene razón en que,
+  tal como está, el documento no cumple: entregarlo con notas editoriales visibles y listas de candidatos sin
+  elegir no es lo que pide el enunciado.
+
+Su veredicto literal fue que el backend cumple con holgura y resiste el escrutinio, pero que la entrega en
+conjunto no cumple todavía, y que lo más débil es justamente el entregable de mayor peso.
+
 ## 8. Registro cronológico de prompts de Juan
 
 Cada entrada es el texto exacto enviado a Claude Code, con fecha y hora local (Bogotá, UTC-5).
@@ -1370,4 +1426,85 @@ Usé el patrón de contenedor singleton documentado por Testcontainers: campo `s
 
 ```text
 Continua la siguiente oleada, corrige los errores que salieron en el camino y no estan en la rama principal
+```
+
+### 2026-09-04 13:36 -05 - Claude Code
+
+```text
+continua con la oleada 5 y la release
+```
+
+### 2026-09-04 13:47 -05 - Claude Code
+
+```text
+<task-notification>
+<task-id>a38ce2472b6c6b02d</task-id>
+<tool-use-id>toolu_01J4kKpmc7B2Hz9Z8yX9E8aR</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-juanbedoya-Documents-GitHub-PruebaTecnicaTrycore/ef7d43e4-410f-46ac-aa2b-4b22f2583cf2/tasks/a38ce2472b6c6b02d.output</output-file>
+<status>completed</status>
+<summary>Agent "Independent delivery verification" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>He terminado la evaluación. Todo lo que sigue está ejecutado en `/.claude/worktrees/verificacion`; el árbol quedó limpio (`git status --porcelain` vacío) y los datos de prueba que creé fueron borrados de la base.
+
+## Tabla de requisitos
+
+| Requisito del enunciado | Estado | Evidencia |
+| --- | --- | --- |
+| Arranque siguiendo solo el README | Cumplido con reserva | `scripts/run-dev.sh` falló en mi máquina: docker compose intenta crear `evm-postgres` y ya existía uno con ese nombre de otro proyecto compose (`container_name` fijo). Saltando ese paso, `./backend/mvnw spring-boot:run -Pdev` arrancó en 2,2 s y `GET /api/v1/projects` devolvió 200. En un clon limpio no ocurriría. |
+| API REST crear/editar/eliminar proyectos | Cumplido | POST 201, PUT 200, DELETE 204, GET tras borrar 404 (RFC 7807). |
+| Crear/editar/eliminar actividades | Cumplido | POST 201 con indicadores, PUT 200 recalculando (CPI 2.5000, SPI 2.4000, EAC 20000.00 tras cambiar avance a 60 %), DELETE 204. |
+| Borrar proyecto con actividades | Cumplido | DELETE proyecto 4 (2 actividades) → 204; `select * from activities` en PostgreSQL: cero huérfanas (cascada en FK). |
+| Campos exigidos por actividad | Cumplido | Nombre, BAC, % planificado, % real, AC en `ActivityRequest`/`ActivityResponse`. |
+| Los 8 indicadores por actividad | Cumplido | Juego A (3 actividades inventadas). A1 BAC 200000/50 %/40 %/AC 90000: mi cálculo PV 100000, EV 80000, CV -10000, SV -20000, CPI 0,8889, SPI 0,8, EAC 225000, VAC -25000 = exactamente lo devuelto. Igual en A2 y A3. |
+| Los 8 indicadores consolidados | Cumplido | Juego A consolidado a mano: BAC 330000, PV 120500, EV 103000, AC 110000, CV -7000, SV -17500, CPI 0,9364, SPI 0,8548, EAC 352427,18, VAC -22427,18 = idéntico al API. Consolida sobre sumas, no promedia índices. |
+| Interpretación de CPI y SPI | Cumplido | `costStatus`/`scheduleStatus` con OVER_BUDGET, UNDER_BUDGET, ON_BUDGET, AHEAD/BEHIND/ON_SCHEDULE y NOT_APPLICABLE, con mensaje, por actividad y consolidado. |
+| Caso borde AC = 0 | Cumplido | CPI `null`, EAC y VAC `null`, estado NOT_APPLICABLE con motivo; SPI sí se calcula (0,75). Correcto: no devuelve 0. |
+| Caso borde avance real 0 | Cumplido | CPI 0,0000, SPI 0,0000, CV -25000, SV -40000, EAC/VAC `null`. |
+| Caso borde proyecto sin actividades | Cumplido | 200 con todo a 0.00, ambos índices `null` y NOT_APPLICABLE, `activities: []`. |
+| Cobertura ≥ 80 % en capa de negocio | Cumplido | `scripts/run-tests.sh` → BUILD SUCCESS. Recalculado por mí desde `jacoco.csv`: LINE en `domain`+`application` = 175/177 = **98,87 %**; instrucciones 98,43 %, ramas 94,83 %. Umbral del pom: 0.80 LINE y BRANCH sobre esos dos paquetes. |
+| Número y tipo de tests | Cumplido | 69 en fase unitaria (incluye 10 de ArchUnit) + 23 de integración con Testcontainers = **92**. |
+| Un test de integración por endpoint | Cumplido | Los 10 endpoints tienen al menos un IT contra PostgreSQL real, con aserciones sobre el cuerpo (no solo el status) y valores derivados a mano en comentarios. |
+| Linter configurado y versionado | Cumplido | `backend/checkstyle.xml` (44 módulos: MagicNumber, UnusedImports, LineLength, TodoComment...) y `frontend/eslint.config.js` + `.prettierrc`. `npm run lint`: "All files pass linting". |
+| Linter activo y bloqueante | Cumplido | Verificado inyectando una línea de 189 caracteres en `EvmCalculator.java`: BUILD FAILURE en los tres perfiles (por defecto, `-Ptest`, `-Pprod`). Revertido con `git checkout --`. |
+| Cero code smells | Cumplido | 0 violaciones de Checkstyle. Sin bloques comentados, sin TODO/FIXME, sin `System.out`, sin lógica de negocio en controladores (solo traducen a casos de uso), constantes con nombre. |
+| OpenAPI en /api-docs o /swagger-ui | Cumplido | `/api-docs` 200 (OpenAPI 3.1.0), `/swagger-ui` 302 → index. Las 10 operaciones tienen summary, description, request body donde aplica y códigos 200/201/204/400/404. |
+| Gitflow: main, develop, feature/* por PR | Cumplido parcialmente | 7 ramas feature, 7 PR (`gh pr list --state all`) todas MERGED con commit de merge. 39 commits sin merge, todos imperativos y descriptivos; ningún `fix`/`wip`/`cambios`. |
+| Gitflow: rama release/* antes de main | **Incumplido** | `git branch -a`: no existe ninguna `release/*`. `git tag -l`: vacío. `main` sigue en `6d0bc6d`, anterior a todo el backend. |
+| **Frontend: dashboard** | **Incumplido** | `frontend/src/app/app.html` es `&lt;h1&gt;Sistema de Valor Ganado&lt;/h1&gt;&lt;p&gt;Frontend en construcción&lt;/p&gt;`; `app.routes.ts` vacío; sin cliente HTTP, sin tabla, sin consolidados, sin indicación visual, sin gráfica PV/EV/AC. |
+| README con instrucciones | Cumplido | Comandos, perfiles, esquema, contrato y ejemplos. Verifiqué el ejemplo del proyecto de demostración: EAC 451147.54 y VAC -21147.54 coinciden con mi cálculo a mano. |
+| Script de inicialización de BD | Cumplido | `db/init.sql` ejecutado sobre una base nueva: crea las tablas, carga 1 proyecto y 3 actividades, es idempotente, y `\d activities` es idéntico al esquema que genera Flyway. |
+| AI_PROCESS: herramientas y por qué | Cumplido | Sección 1, con tabla y el detalle honesto del cambio de modelo por límite de gasto. |
+| AI_PROCESS: prompts verbatim en orden | Cumplido con reserva | Sección 8, alimentada por el hook `.claude/hooks/log-prompt.sh`. El hook descarta los que empiezan por `/`, así que "todos" no es literal. |
+| AI_PROCESS: cómo aprendiste EVM | **Incumplido (borrador)** | Sección 2 encabezada por "Juan: esta sección la tienes que escribir tú". El material está, la redacción en primera persona no. |
+| AI_PROCESS: dos decisiones sin seguir a la IA | **Incumplido (borrador)** | Sección 3 ofrece **cinco candidatos** y dice "elige dos de estos cinco y escríbelos con tus palabras". No hay dos decisiones elegidas. |
+| AI_PROCESS: cómo verificaste los cálculos | Cumplido | Sección 4, redactada, con los cuatro niveles de verificación y el hallazgo del truncamiento de decimales. |
+| AI_PROCESS: decisión de arquitectura propia | **Incumplido (borrador)** | Sección 5 ofrece **cuatro candidatos** con la nota "esta la escribes tú". |
+| AI_PROCESS: reflexión honesta | **Incumplido (borrador)** | Sección 6 es "Material de apoyo, cosas que efectivamente salieron mal", no una reflexión escrita. |
+| Video | No evaluable | No puedo grabar ni ver un video. |
+
+## Incumplimientos y dudas, por gravedad
+
+1. **El frontend no existe.** El enunciado dedica una sección entera a él y pide cuatro cosas concretas: tabla de actividades con indicadores, consolidados del proyecto, indicación visual de CPI/SPI y gráfica comparando PV, EV y AC. No hay ninguna. Es la mitad de "una aplicación fullstack". El README lo declara abiertamente, pero declararlo no lo cumple.
+2. **Cuatro de los seis puntos del AI_PROCESS.md están sin redactar** (secciones 2, 3, 5 y 6). El documento se entrega con notas editoriales visibles dirigidas a Juan y con listas de candidatos sin elegir donde el enunciado pide una elección. Y el enunciado dice literalmente que el mayor peso de la evaluación está en el video y en el documento de proceso. Falta concretamente: elegir y redactar dos decisiones de las cinco de la sección 3, elegir y redactar una de las cuatro de la sección 5, escribir la reflexión de la sección 6 y pasar la sección 2 a primera persona.
+3. **Gitflow incompleto.** No hay rama `release/*`, no hay tag, y `main` no contiene nada del sistema. El enunciado pide "al menos una rama release/* antes del merge final a main"; ese merge final no se ha hecho.
+4. **Duda: el 400 documentado en OpenAPI no coincide con el que devuelve el API.** El schema declarado es `ProblemDetail` a secas; la respuesta real añade un array `errors` con campo y motivo. `ValidationErrorResponse` existe como DTO pero no aparece en `components.schemas`. El enunciado pide que la documentación incluya los códigos de error y sus esquemas.
+5. **Duda: JaCoCo no mide los tests de integración.** El `report` se ejecuta en fase `test` y el agente solo instrumenta surefire, así que el informe da 0 % en toda la capa `adapter` y un total de 51,44 % que no refleja lo que realmente se prueba. No afecta al requisito (el 80 % es sobre negocio y se cumple con los unitarios solos), pero el informe engaña a quien lo abra.
+6. **Menor: el README dice "90 tests"; son 92.**
+7. **Menor: `docker-compose.yml` fija `container_name: evm-postgres`,** lo que hace chocar el arranque con cualquier otro checkout del mismo repo. Fue lo que rompió `run-dev.sh` en mi verificación.
+8. **Menor: `MagicNumber` está configurado con `ignoreFieldDeclaration=true`.** Un número mágico en la declaración de un campo no se detecta; lo comprobé inyectando `private int unused = 42;` y el build pasó. En la práctica el código usa constantes con nombre, pero el linter no lo garantiza.
+9. **Menor: inconsistencia de contrato con EV = 0.** Con avance real 0 y AC &gt; 0, el API devuelve CPI 0.0000 y EAC/VAC `null`, sin ningún estado que explique por qué el EAC no existe. En el resto de casos, EAC `null` va acompañado de NOT_APPLICABLE.
+
+## Lo que no pude comprobar y por qué
+
+- **El video.** No es evaluable por mí.
+- **`scripts/run-dev.sh` de principio a fin,** por el conflicto de nombre de contenedor descrito. Verifiqué a mano todo lo que el script hace después de ese punto.
+- **`npm start` (ng serve).** Ejecuté `npm ci`, `npm run lint` y `npm run build` (bundle generado sin errores), pero no levanté el servidor de desarrollo ni probé el proxy a `/api`; con el frontend vacío no habría añadido información.
+- **Que el registro de prompts sea completo.** Puedo confirmar que el hook existe y hace append verbatim, no que no se haya editado o borrado ninguna entrada después.
+- **Que los valores esperados de los tests se derivaran a mano y no de la salida del código.** Los comentarios con el cálculo están ahí y los valores que verifiqué son correctos, pero eso es una afirmación sobre el proceso, no sobre el artefacto.
+
+## Veredicto
+
+El backend cumple el enunciado con holgura y resiste el escrutinio (los 32 indicadores que calculé a mano coinciden al céntimo, los casos borde están bien resueltos y el 98,87 % de cobertura sobre negocio es real), pero la entrega **no cumple el enunciado en conjunto**: falta por completo el frontend que se pide, y el documento de proceso, que es el entregable de mayor peso, llega a medio redactar con cuatro de sus seis puntos como borrador con notas visibles al autor.</result>
+<usage><subagent_tokens>166976</subagent_tokens><tool_uses>55</tool_uses><duration_ms>630942</duration_ms></usage>
+</task-notification>
 ```

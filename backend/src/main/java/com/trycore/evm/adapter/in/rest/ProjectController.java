@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.trycore.evm.adapter.in.rest.dto.ProjectRequest;
 import com.trycore.evm.adapter.in.rest.dto.ProjectResponse;
+import com.trycore.evm.adapter.in.rest.dto.ValidationProblemResponse;
 import com.trycore.evm.adapter.in.rest.mapper.ProjectRestMapper;
 import com.trycore.evm.application.port.in.ProjectUseCases;
 import com.trycore.evm.domain.model.Project;
@@ -63,7 +64,7 @@ public class ProjectController {
     @ApiResponse(
             responseCode = "400",
             description = "La petición contiene campos inválidos",
-            content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            content = @Content(schema = @Schema(implementation = ValidationProblemResponse.class)))
     public ResponseEntity<ProjectResponse> create(@Valid @RequestBody final ProjectRequest request) {
         final Project created = projectUseCases.create(request.name(), request.description());
         final ProjectResponse response = ProjectRestMapper.toResponse(created);
@@ -93,7 +94,7 @@ public class ProjectController {
     @ApiResponse(
             responseCode = "400",
             description = "La petición contiene campos inválidos",
-            content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            content = @Content(schema = @Schema(implementation = ValidationProblemResponse.class)))
     @ApiResponse(
             responseCode = "404",
             description = "No existe un proyecto con ese identificador",

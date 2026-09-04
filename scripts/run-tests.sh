@@ -8,5 +8,7 @@ cd "${REPO_ROOT}"
 
 "${REPO_ROOT}/backend/mvnw" -f "${REPO_ROOT}/backend/pom.xml" verify -Ptest
 
-JACOCO_REPORT="${REPO_ROOT}/backend/target/site/jacoco/index.html"
-echo "==> Informe de cobertura JaCoCo: ${JACOCO_REPORT}"
+# El informe agregado suma la cobertura de los tests unitarios y la de los de integración. El de
+# target/site/jacoco solo tiene los unitarios y da una imagen incompleta de los adaptadores.
+JACOCO_REPORT="${REPO_ROOT}/backend/target/site/jacoco-merged/index.html"
+echo "==> Informe de cobertura JaCoCo (unitarios + integración): ${JACOCO_REPORT}"

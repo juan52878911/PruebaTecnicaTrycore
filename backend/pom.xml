@@ -276,6 +276,53 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.plugin.version}</version>
                         <executions>
+                            <!-- El agente de failsafe escribe en un fichero aparte para que la
+                                 cobertura de los tests de integración no se pierda: sin esto el
+                                 informe muestra 0 % en los adaptadores y no refleja lo que se
+                                 prueba de verdad. -->
+                            <execution>
+                                <id>jacoco-prepare-agent-integration</id>
+                                <goals>
+                                    <goal>prepare-agent-integration</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jacoco-report-integration</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>report-integration</goal>
+                                </goals>
+                            </execution>
+                            <!-- Informe agregado con las dos ejecuciones, el que hay que abrir. -->
+                            <execution>
+                                <id>jacoco-merge</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>merge</goal>
+                                </goals>
+                                <configuration>
+                                    <fileSets>
+                                        <fileSet>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>jacoco*.exec</include>
+                                            </includes>
+                                        </fileSet>
+                                    </fileSets>
+                                    <destFile>${project.build.directory}/jacoco-merged.exec</destFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>jacoco-report-merged</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+                                    <outputDirectory>${project.build.directory}/site/jacoco-merged</outputDirectory>
+                                </configuration>
+                            </execution>
                             <execution>
                                 <id>jacoco-check</id>
                                 <phase>verify</phase>

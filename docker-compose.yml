@@ -1,7 +1,9 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: evm-postgres
+    # El nombre se puede sobrescribir con EVM_POSTGRES_CONTAINER: un nombre fijo impide levantar
+    # dos copias del repositorio a la vez, y eso rompió una verificación independiente.
+    container_name: ${EVM_POSTGRES_CONTAINER:-evm-postgres}
     ports:
       - "5432:5432"
     environment:

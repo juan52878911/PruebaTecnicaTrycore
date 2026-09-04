@@ -70,7 +70,8 @@ scripts/run-tests.sh
 
 Ejecuta `./backend/mvnw verify -Ptest`: Checkstyle, los tests unitarios, el test de arquitectura hexagonal con
 ArchUnit, los tests de contrato de cada endpoint contra un PostgreSQL real levantado con Testcontainers, y el
-umbral de cobertura de JaCoCo. Requiere Docker. Al final imprime la ruta del informe de cobertura.
+umbral de cobertura de JaCoCo. Requiere Docker. Al final imprime la ruta del informe de cobertura agregado,
+que suma la cobertura de los tests unitarios y la de los de integración.
 
 ### Empaquetado y arranque de producción
 
@@ -193,8 +194,8 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-90 tests. Los valores esperados de cada cálculo EVM están derivados a mano de la fórmula y escritos
-literalmente en el test, nunca copiados de la salida del código.
+90 tests: 67 unitarios y 23 de integración. Los valores esperados de cada cálculo EVM están derivados a mano
+de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |
 | --- | --- | --- |

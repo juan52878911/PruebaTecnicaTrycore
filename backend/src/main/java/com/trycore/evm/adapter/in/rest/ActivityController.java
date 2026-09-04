@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.trycore.evm.adapter.in.rest.dto.ActivityRequest;
 import com.trycore.evm.adapter.in.rest.dto.ActivityResponse;
+import com.trycore.evm.adapter.in.rest.dto.ValidationProblemResponse;
 import com.trycore.evm.adapter.in.rest.mapper.ActivityRestMapper;
 import com.trycore.evm.application.port.in.ActivityUseCases;
 import com.trycore.evm.domain.model.ActivityEvm;
@@ -72,7 +73,7 @@ public class ActivityController {
     @ApiResponse(
             responseCode = "400",
             description = "La petición contiene campos inválidos",
-            content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            content = @Content(schema = @Schema(implementation = ValidationProblemResponse.class)))
     @ApiResponse(
             responseCode = "404",
             description = "No existe un proyecto con ese identificador",
@@ -93,7 +94,7 @@ public class ActivityController {
     @ApiResponse(
             responseCode = "400",
             description = "La petición contiene campos inválidos",
-            content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+            content = @Content(schema = @Schema(implementation = ValidationProblemResponse.class)))
     @ApiResponse(
             responseCode = "404",
             description = "No existe la actividad en ese proyecto",
