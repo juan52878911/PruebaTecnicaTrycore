@@ -6,25 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.trycore.evm.adapter.in.rest.dto.ActivityRequest;
 import com.trycore.evm.adapter.in.rest.dto.ActivityResponse;
-import com.trycore.evm.adapter.in.rest.dto.ProjectRequest;
-import com.trycore.evm.adapter.in.rest.dto.ProjectResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,36 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pruebas de contrato de {@link ActivityController} contra un PostgreSQL real de Testcontainers.
  * Cada prueba crea sus propios datos vía API: el perfil test no carga el seed de demostración.
  */
-@Testcontainers
-@ActiveProfiles("test")
-@AutoConfigureTestRestTemplate
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ActivityControllerIT {
+class ActivityControllerIT extends AbstractRestIntegrationTest {
 
-    private static final String POSTGRES_IMAGE = "postgres:16-alpine";
-    private static final String PROJECTS_PATH = "/api/v1/projects";
+    private static final String PROJECT_NAME = "Proyecto para actividades";
+    private static final String PROJECT_DESCRIPTION = "Descripción";
     private static final Long MISSING_ID = 999_999L;
-    private static final ParameterizedTypeReference<Map<String, Object>> PROBLEM_TYPE =
-            new ParameterizedTypeReference<Map<String, Object>>() {
-            };
     private static final ParameterizedTypeReference<List<ActivityResponse>> ACTIVITY_LIST_TYPE =
             new ParameterizedTypeReference<List<ActivityResponse>>() {
             };
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(POSTGRES_IMAGE);
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    private Long createProject() {
-        final ProjectRequest request = new ProjectRequest("Proyecto para actividades", "Descripción");
-        final ProjectResponse created =
-                restTemplate.postForEntity(PROJECTS_PATH, request, ProjectResponse.class).getBody();
-        assertThat(created).isNotNull();
-        return created.id();
-    }
 
     private static String activitiesPath(final Long projectId) {
         return PROJECTS_PATH + "/" + projectId + "/activities";
@@ -75,7 +42,7 @@ class ActivityControllerIT {
 
     @Test
     void createReturns201WithLocationAndCalculatedIndicators() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         final ActivityRequest request =
                 activityRequest("Diseño de arquitectura", "100000", "50", "40", "60000");
 
@@ -96,7 +63,7 @@ class ActivityControllerIT {
 
     @Test
     void updateThenListReflectsChanges() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         final ActivityResponse created = restTemplate.postForEntity(
                 activitiesPath(projectId),
                 activityRequest("Actividad original", "100000", "50", "40", "60000"),
@@ -123,7 +90,7 @@ class ActivityControllerIT {
 
     @Test
     void deleteReturns204AndActivityDisappearsFromList() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         final ActivityResponse created = restTemplate.postForEntity(
                 activitiesPath(projectId),
                 activityRequest("Actividad a eliminar", "100000", "50", "40", "60000"),
@@ -142,7 +109,7 @@ class ActivityControllerIT {
 
     @Test
     void deleteMissingActivityReturns404WithProblemDetail() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
 
         final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 activitiesPath(projectId) + "/" + MISSING_ID, HttpMethod.DELETE, null, PROBLEM_TYPE);
@@ -162,7 +129,7 @@ class ActivityControllerIT {
 
     @Test
     void createWithProgressOver100Returns400WithFieldError() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         final ActivityRequest invalidRequest =
                 activityRequest("Actividad inválida", "100000", "150", "40", "60000");
 
@@ -178,8 +145,74 @@ class ActivityControllerIT {
     }
 
     @Test
+    void createWithMoreDecimalsThanStorableReturns400WithFieldError() {
+        // La columna guarda dos decimales: aceptar 33.333 haría que la respuesta confirmara una
+        // cifra distinta de la almacenada y que los indicadores no correspondieran a los datos.
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
+        final ActivityRequest invalidRequest =
+                activityRequest("Actividad demasiado precisa", "1000", "33.333", "10", "10.005");
+
+        final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                activitiesPath(projectId), HttpMethod.POST, new HttpEntity<>(invalidRequest), PROBLEM_TYPE);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        final Map<String, Object> problem = response.getBody();
+        assertThat(problem).isNotNull();
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> errors = (List<Map<String, Object>>) problem.get("errors");
+        assertThat(errors).anyMatch(error -> "plannedProgressPercent".equals(error.get("field")));
+        assertThat(errors).anyMatch(error -> "actualCost".equals(error.get("field")));
+    }
+
+    @Test
+    void createWithAmountLargerThanStorableReturns400InsteadOfServerError() {
+        // Sin la restricción de dígitos, este valor llegaba a PostgreSQL, desbordaba la columna y
+        // la respuesta era un 500 con la sentencia SQL en el cuerpo.
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
+        final ActivityRequest invalidRequest =
+                activityRequest("Actividad desbordada", "999999999999999999", "50", "0", "0");
+
+        final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                activitiesPath(projectId), HttpMethod.POST, new HttpEntity<>(invalidRequest), PROBLEM_TYPE);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        final Map<String, Object> problem = response.getBody();
+        assertThat(problem).isNotNull();
+        assertThat(problem).doesNotContainKey("trace");
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> errors = (List<Map<String, Object>>) problem.get("errors");
+        assertThat(errors).anyMatch(error -> "budgetAtCompletion".equals(error.get("field")));
+    }
+
+    @Test
+    void storedActivityMatchesTheOneReturnedOnCreation() {
+        // El cuerpo del 201 y el de la lectura posterior deben coincidir campo por campo: es la
+        // garantía de que nada se redondeó en silencio entre la respuesta y la base de datos.
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
+        final ActivityRequest request = activityRequest("Actividad exacta", "1000.55", "33.33", "10.01", "10.01");
+
+        final ResponseEntity<ActivityResponse> created =
+                restTemplate.postForEntity(activitiesPath(projectId), request, ActivityResponse.class);
+        final ResponseEntity<ActivityResponse[]> listed =
+                restTemplate.getForEntity(activitiesPath(projectId), ActivityResponse[].class);
+
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        final ActivityResponse createdBody = created.getBody();
+        final ActivityResponse[] listedBody = listed.getBody();
+        assertThat(createdBody).isNotNull();
+        assertThat(listedBody).isNotNull().hasSize(1);
+        assertThat(listedBody[0].budgetAtCompletion()).isEqualByComparingTo(createdBody.budgetAtCompletion());
+        assertThat(listedBody[0].plannedProgressPercent())
+                .isEqualByComparingTo(createdBody.plannedProgressPercent());
+        assertThat(listedBody[0].actualProgressPercent()).isEqualByComparingTo(createdBody.actualProgressPercent());
+        assertThat(listedBody[0].actualCost()).isEqualByComparingTo(createdBody.actualCost());
+        assertThat(listedBody[0].indicators().plannedValue())
+                .isEqualByComparingTo(createdBody.indicators().plannedValue());
+    }
+
+    @Test
     void createWithZeroActualCostReturnsNullCpiAndNotApplicableStatus() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         final ActivityRequest request = activityRequest("Actividad sin costo", "80000", "25", "0", "0");
 
         final ResponseEntity<ActivityResponse> response =

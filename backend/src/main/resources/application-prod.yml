@@ -9,8 +9,10 @@ spring:
     # La base local de docker-compose se comparte entre los perfiles dev y prod. Si dev corrió
     # antes, el historial de Flyway contiene la migración repetible de seed (db/seed/dev), que este
     # perfil no incluye a propósito. Sin esta opción Flyway rechaza arrancar por "migración aplicada
-    # no resuelta localmente". Se ignoran solo las migraciones ausentes, nunca las fallidas.
-    ignore-migration-patterns: '*:missing'
+    # no resuelta localmente". El patrón se limita a las repetibles: una migración VERSIONADA que
+    # falte sí debe seguir rompiendo el arranque, porque significa que la base tiene aplicado algo
+    # que este build no conoce.
+    ignore-migration-patterns: 'repeatable:missing'
 
 springdoc:
   api-docs:

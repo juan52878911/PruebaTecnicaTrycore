@@ -3,22 +3,11 @@ package com.trycore.evm.adapter.in.rest;
 import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.trycore.evm.adapter.in.rest.dto.ActivityRequest;
 import com.trycore.evm.adapter.in.rest.dto.ProjectEvmSummaryResponse;
-import com.trycore.evm.adapter.in.rest.dto.ProjectRequest;
-import com.trycore.evm.adapter.in.rest.dto.ProjectResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,31 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * valores esperados de las cifras consolidadas están calculados a mano a partir de la fórmula, con
  * las mismas cifras de actividad que usa el seed de demostración del perfil dev.
  */
-@Testcontainers
-@ActiveProfiles("test")
-@AutoConfigureTestRestTemplate
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ProjectEvmControllerIT {
+class ProjectEvmControllerIT extends AbstractRestIntegrationTest {
 
-    private static final String POSTGRES_IMAGE = "postgres:16-alpine";
-    private static final String PROJECTS_PATH = "/api/v1/projects";
+    private static final String PROJECT_NAME = "Plataforma de pagos";
+    private static final String PROJECT_DESCRIPTION = "Descripción";
     private static final Long MISSING_PROJECT_ID = 999_999L;
     private static final int SEED_ACTIVITY_COUNT = 3;
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(POSTGRES_IMAGE);
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    private Long createProject() {
-        final ProjectRequest request = new ProjectRequest("Plataforma de pagos", "Descripción");
-        final ProjectResponse created =
-                restTemplate.postForEntity(PROJECTS_PATH, request, ProjectResponse.class).getBody();
-        assertThat(created).isNotNull();
-        return created.id();
-    }
 
     private void createActivity(
             final Long projectId,
@@ -70,7 +40,7 @@ class ProjectEvmControllerIT {
 
     @Test
     void evmOfProjectWithoutActivitiesReturns200WithNullIndicators() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
 
         final ResponseEntity<ProjectEvmSummaryResponse> response = restTemplate.getForEntity(
                 PROJECTS_PATH + "/" + projectId + "/evm", ProjectEvmSummaryResponse.class);
@@ -88,7 +58,7 @@ class ProjectEvmControllerIT {
 
     @Test
     void evmOfProjectWithSeedActivitiesMatchesHandComputedConsolidation() {
-        final Long projectId = createProject();
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         createActivity(projectId, "Diseño de arquitectura", "100000", "50", "40", "60000");
         createActivity(projectId, "Desarrollo del API", "250000", "40", "45", "100000");
         createActivity(projectId, "Pruebas de integración", "80000", "25", "0", "0");

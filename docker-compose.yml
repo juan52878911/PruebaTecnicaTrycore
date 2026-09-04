@@ -9,8 +9,9 @@ services:
       POSTGRES_USER: evm
       POSTGRES_PASSWORD: evm
     volumes:
+      # No se monta db/init.sql a propósito: el esquema lo gobierna Flyway desde el backend, que
+      # es su única fuente. El script queda como entregable para inicializar la base a mano.
       - evm-postgres-data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U evm -d evm"]
       interval: 5s

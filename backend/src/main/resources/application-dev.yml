@@ -6,6 +6,12 @@ spring:
     password: evm
   flyway:
     locations: classpath:db/migration,classpath:db/seed/dev
+    # Solo en dev: alguien puede haber creado la base a mano con db/init.sql, que deja el esquema
+    # sin tabla de historial. Con esto Flyway lo toma como punto de partida en lugar de fallar por
+    # "esquema no vacío". En prod NO se activa a propósito: allí un esquema preexistente y
+    # desconocido debe romper el arranque en vez de aceptarse en silencio.
+    baseline-on-migrate: true
+    baseline-version: '0'
   jpa:
     show-sql: true
     properties:

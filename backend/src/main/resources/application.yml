@@ -2,6 +2,11 @@
 # El perfil activo se fija por filtrado de recursos de Maven según el perfil de build usado.
 server:
   port: 8080
+  error:
+    # Las trazas nunca viajan en la respuesta: devtools las activa por su cuenta en dev y eso
+    # filtraría sentencias SQL y nombres de tabla al cliente.
+    include-stacktrace: never
+    include-message: never
 
 spring:
   profiles:
@@ -10,12 +15,6 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
-  flyway:
-    # baseline-on-migrate en true porque la base de docker-compose puede llegar con el esquema
-    # ya creado por db/init.sql (sin tabla de historial de Flyway); con esto Flyway toma ese
-    # esquema existente como punto de partida en lugar de fallar por "esquema no vacío".
-    baseline-on-migrate: true
-    baseline-version: '0'
   # Jackson serializa los tipos java.time como cadenas ISO-8601 por defecto (no como timestamps
   # numéricos), así que no hace falta forzar esta opción.
 

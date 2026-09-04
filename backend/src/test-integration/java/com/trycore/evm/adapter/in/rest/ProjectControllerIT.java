@@ -5,21 +5,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.trycore.evm.adapter.in.rest.dto.ProjectRequest;
 import com.trycore.evm.adapter.in.rest.dto.ProjectResponse;
@@ -30,38 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pruebas de contrato de {@link ProjectController} contra un PostgreSQL real de Testcontainers.
  * Cada prueba crea sus propios datos vía API: el perfil test no carga el seed de demostración.
  */
-@Testcontainers
-@ActiveProfiles("test")
-@AutoConfigureTestRestTemplate
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ProjectControllerIT {
+class ProjectControllerIT extends AbstractRestIntegrationTest {
 
-    private static final String POSTGRES_IMAGE = "postgres:16-alpine";
-    private static final String PROJECTS_PATH = "/api/v1/projects";
-    private static final ParameterizedTypeReference<Map<String, Object>> PROBLEM_TYPE =
-            new ParameterizedTypeReference<Map<String, Object>>() {
-            };
     private static final ParameterizedTypeReference<List<ProjectResponse>> PROJECT_LIST_TYPE =
             new ParameterizedTypeReference<List<ProjectResponse>>() {
             };
 
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(POSTGRES_IMAGE);
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
     private static ProjectRequest newProjectRequest(final String name, final String description) {
         return new ProjectRequest(name, description);
-    }
-
-    private ProjectResponse createProject(final String name, final String description) {
-        final ProjectResponse created = restTemplate
-                .postForEntity(PROJECTS_PATH, newProjectRequest(name, description), ProjectResponse.class)
-                .getBody();
-        assertThat(created).isNotNull();
-        return created;
     }
 
     @Test
@@ -90,11 +57,11 @@ class ProjectControllerIT {
 
     @Test
     void updateThenGetReflectsChanges() {
-        final ProjectResponse created = createProject("Proyecto original", "Descripción original");
+        final Long projectId = createProject("Proyecto original", "Descripción original");
 
         final ProjectRequest updateRequest = newProjectRequest("Proyecto actualizado", "Descripción actualizada");
         final ResponseEntity<ProjectResponse> updateResponse = restTemplate.exchange(
-                PROJECTS_PATH + "/" + created.id(),
+                PROJECTS_PATH + "/" + projectId,
                 HttpMethod.PUT,
                 new HttpEntity<>(updateRequest),
                 ProjectResponse.class);
@@ -105,28 +72,28 @@ class ProjectControllerIT {
         assertThat(updateResponse.getBody().description()).isEqualTo("Descripción actualizada");
 
         final ResponseEntity<ProjectResponse> getResponse =
-                restTemplate.getForEntity(PROJECTS_PATH + "/" + created.id(), ProjectResponse.class);
+                restTemplate.getForEntity(PROJECTS_PATH + "/" + projectId, ProjectResponse.class);
         assertThat(getResponse.getBody()).isNotNull();
         assertThat(getResponse.getBody().name()).isEqualTo("Proyecto actualizado");
     }
 
     @Test
     void deleteReturns204ThenGetReturns404WithProblemDetail() {
-        final ProjectResponse created = createProject("Proyecto a eliminar", null);
+        final Long projectId = createProject("Proyecto a eliminar", null);
 
         final ResponseEntity<Void> deleteResponse = restTemplate.exchange(
-                PROJECTS_PATH + "/" + created.id(), HttpMethod.DELETE, null, Void.class);
+                PROJECTS_PATH + "/" + projectId, HttpMethod.DELETE, null, Void.class);
         assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         final ResponseEntity<Map<String, Object>> getResponse = restTemplate.exchange(
-                PROJECTS_PATH + "/" + created.id(), HttpMethod.GET, null, PROBLEM_TYPE);
+                PROJECTS_PATH + "/" + projectId, HttpMethod.GET, null, PROBLEM_TYPE);
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(getResponse.getHeaders().getContentType())
                 .isEqualTo(MediaType.valueOf("application/problem+json"));
         final Map<String, Object> problem = getResponse.getBody();
         assertThat(problem).isNotNull();
         assertThat(problem.get("status")).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(problem.get("detail")).asString().contains(String.valueOf(created.id()));
+        assertThat(problem.get("detail")).asString().contains(String.valueOf(projectId));
     }
 
     @Test
