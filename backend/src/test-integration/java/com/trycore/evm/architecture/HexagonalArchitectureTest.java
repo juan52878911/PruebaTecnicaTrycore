@@ -11,20 +11,22 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
  * Verifica que la arquitectura hexagonal se respete: el dominio no depende de la aplicación ni
- * de la infraestructura, y los adaptadores de entrada y de salida no dependen entre sí.
+ * de la infraestructura, los adaptadores de entrada y de salida no dependen entre sí, y los
+ * servicios de aplicación no llevan anotaciones de Spring.
  *
- * <p>Nota: las reglas sobre la aplicación y los adaptadores usan {@code allowEmptyShould(true)}
- * mientras esos paquetes sigan vacíos. Ese permiso debe retirarse en cuanto entren sus primeras
- * clases, para que las reglas vuelvan a exigir que exista al menos una clase que las cumpla. Las
- * reglas del dominio ya no lo tienen: el dominio tiene clases y debe cumplirlas.
+ * <p>Todos los paquetes (dominio, aplicación y adaptadores) tienen ya sus primeras clases, así
+ * que ninguna regla necesita {@code allowEmptyShould(true)}: todas exigen que exista al menos una
+ * clase que las cumpla.
  */
 class HexagonalArchitectureTest {
 
     private static final String DOMAIN_PACKAGE = "com.trycore.evm.domain..";
     private static final String APPLICATION_PACKAGE = "com.trycore.evm.application..";
+    private static final String APPLICATION_SERVICE_PACKAGE = "com.trycore.evm.application.service..";
     private static final String ADAPTER_IN_PACKAGE = "com.trycore.evm.adapter.in..";
     private static final String ADAPTER_OUT_PACKAGE = "com.trycore.evm.adapter.out..";
     private static final String CONFIG_PACKAGE = "com.trycore.evm.config..";
+    private static final String SPRING_SERVICE_ANNOTATION = "org.springframework.stereotype.Service";
 
     private final JavaClasses classes = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
@@ -73,8 +75,7 @@ class HexagonalArchitectureTest {
     void applicationShouldNotDependOnAdapters() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(APPLICATION_PACKAGE)
-                .should().dependOnClassesThat().resideInAnyPackage(ADAPTER_IN_PACKAGE, ADAPTER_OUT_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAnyPackage(ADAPTER_IN_PACKAGE, ADAPTER_OUT_PACKAGE);
 
         rule.check(classes);
     }
@@ -83,8 +84,7 @@ class HexagonalArchitectureTest {
     void applicationShouldNotDependOnConfig() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(APPLICATION_PACKAGE)
-                .should().dependOnClassesThat().resideInAPackage(CONFIG_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAPackage(CONFIG_PACKAGE);
 
         rule.check(classes);
     }
@@ -96,8 +96,16 @@ class HexagonalArchitectureTest {
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "org.springframework..",
                         "jakarta.persistence..",
-                        "com.fasterxml..")
-                .allowEmptyShould(true);
+                        "com.fasterxml..");
+
+        rule.check(classes);
+    }
+
+    @Test
+    void applicationServicesShouldNotBeAnnotatedWithSpringService() {
+        final ArchRule rule = noClasses()
+                .that().resideInAPackage(APPLICATION_SERVICE_PACKAGE)
+                .should().beAnnotatedWith(SPRING_SERVICE_ANNOTATION);
 
         rule.check(classes);
     }
@@ -106,8 +114,7 @@ class HexagonalArchitectureTest {
     void adapterInShouldNotDependOnAdapterOut() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(ADAPTER_IN_PACKAGE)
-                .should().dependOnClassesThat().resideInAPackage(ADAPTER_OUT_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAPackage(ADAPTER_OUT_PACKAGE);
 
         rule.check(classes);
     }
@@ -116,8 +123,7 @@ class HexagonalArchitectureTest {
     void adapterOutShouldNotDependOnAdapterIn() {
         final ArchRule rule = noClasses()
                 .that().resideInAPackage(ADAPTER_OUT_PACKAGE)
-                .should().dependOnClassesThat().resideInAPackage(ADAPTER_IN_PACKAGE)
-                .allowEmptyShould(true);
+                .should().dependOnClassesThat().resideInAPackage(ADAPTER_IN_PACKAGE);
 
         rule.check(classes);
     }

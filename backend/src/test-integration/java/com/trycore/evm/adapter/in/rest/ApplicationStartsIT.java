@@ -1,5 +1,7 @@
 package com.trycore.evm.adapter.in.rest;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,5 +80,20 @@ class ApplicationStartsIT {
 
         assertThat(response.getStatusCode().is3xxRedirection() || response.getStatusCode().is2xxSuccessful())
                 .isTrue();
+    }
+
+    @Test
+    void apiDocsDescribesTheTenContractOperations() throws Exception {
+        final int expectedOperationCount = 10;
+        final String body = restTemplate.getForEntity("/api-docs", String.class).getBody();
+
+        final JsonNode paths = new ObjectMapper().readTree(body).path("paths");
+        int operationCount = 0;
+        final Iterator<Map.Entry<String, JsonNode>> pathEntries = paths.fields();
+        while (pathEntries.hasNext()) {
+            operationCount += pathEntries.next().getValue().size();
+        }
+
+        assertThat(operationCount).isEqualTo(expectedOperationCount);
     }
 }
