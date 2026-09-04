@@ -32,7 +32,8 @@ class ProjectEvmControllerIT extends AbstractRestIntegrationTest {
             final String actual,
             final String cost) {
         final ActivityRequest request = new ActivityRequest(
-                name, new BigDecimal(budget), new BigDecimal(planned), new BigDecimal(actual), new BigDecimal(cost));
+                name, new BigDecimal(budget), new BigDecimal(planned), new BigDecimal(actual), new BigDecimal(cost),
+                null, null, null, null);
         final ResponseEntity<Void> response = restTemplate.postForEntity(
                 PROJECTS_PATH + "/" + projectId + "/activities", request, Void.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);

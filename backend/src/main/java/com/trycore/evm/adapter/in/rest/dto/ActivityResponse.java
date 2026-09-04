@@ -1,6 +1,7 @@
 package com.trycore.evm.adapter.in.rest.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -27,6 +28,18 @@ public record ActivityResponse(
 
         @Schema(description = "Costo real incurrido (AC)", example = "60000.00")
         BigDecimal actualCost,
+
+        @Schema(description = "Fecha de inicio prevista", example = "2026-09-01")
+        LocalDate plannedStartDate,
+
+        @Schema(description = "Fecha de fin prevista", example = "2026-09-30")
+        LocalDate plannedEndDate,
+
+        @Schema(description = "Fecha de inicio real", example = "2026-09-03")
+        LocalDate actualStartDate,
+
+        @Schema(description = "Fecha de fin real", example = "2026-09-28")
+        LocalDate actualEndDate,
 
         @Schema(description = "Indicadores de Valor Ganado calculados a partir de las cifras de la actividad")
         EvmIndicatorsResponse indicators) {

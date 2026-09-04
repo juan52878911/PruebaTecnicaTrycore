@@ -105,6 +105,113 @@ estado describe el índice, que en ese caso sí está definido.
 
 Un proyecto sin actividades devuelve 200 con sumas en 0, índices `null` y estados `NOT_APPLICABLE`.
 
+### Medición (corte del histórico)
+
+Una medición congela las cifras del proyecto en una fecha. No se envían cifras al crearla: se toman de las
+actividades tal como están en ese momento.
+
+```json
+{
+  "id": 1,
+  "projectId": 1,
+  "cutoffDate": "2026-08-31",
+  "notes": "Cierre de la semana 1",
+  "totals": {
+    "budgetAtCompletion": 430000.00,
+    "plannedValue": 170000.00,
+    "earnedValue": 152500.00,
+    "actualCost": 160000.00
+  },
+  "activities": [
+    {
+      "activityId": 10,
+      "activityName": "Diseño de arquitectura",
+      "totals": {
+        "budgetAtCompletion": 100000.00,
+        "plannedValue": 50000.00,
+        "earnedValue": 40000.00,
+        "actualCost": 60000.00
+      }
+    }
+  ],
+  "createdAt": "2026-08-31T21:00:00Z"
+}
+```
+
+Request de creación (`MeasurementRequest`):
+
+| Campo | Tipo | Reglas |
+| --- | --- | --- |
+| `cutoffDate` | date | obligatorio, no puede ser futura |
+| `notes` | string | opcional, hasta 500 caracteres |
+
+Una medición no se actualiza: para rectificarla se borra y se vuelve a tomar. Dos cortes del mismo proyecto en
+la misma fecha son un conflicto (409), no un error de validación. El corte guarda el nombre que tenía cada
+actividad, de modo que sigue siendo legible aunque después se renombre o se elimine.
+
+Un corte devuelve cifras, no indicadores: los índices no se almacenan. Quien los necesita pide la serie
+temporal, que los calcula al leer con el mismo servicio que usa el análisis en vivo.
+
+### ProjectTimeline (`GET /projects/{id}/timeline`)
+
+Serie lista para graficar: un punto por corte, ordenados por fecha de la más antigua a la más reciente.
+
+```json
+{
+  "project": { "id": 1, "name": "Plataforma de pagos", "description": "..." },
+  "points": [
+    {
+      "cutoffDate": "2026-08-24",
+      "notes": "Cierre de la semana 1",
+      "totals": {
+        "budgetAtCompletion": 100000.00,
+        "plannedValue": 50000.00,
+        "earnedValue": 40000.00,
+        "actualCost": 60000.00
+      },
+      "indicators": {
+        "plannedValue": 50000.00,
+        "earnedValue": 40000.00,
+        "actualCost": 60000.00,
+        "costVariance": -20000.00,
+        "scheduleVariance": -10000.00,
+        "costPerformanceIndex": 0.6667,
+        "schedulePerformanceIndex": 0.8000,
+        "estimateAtCompletion": 150000.00,
+        "varianceAtCompletion": -50000.00,
+        "costStatus": { "status": "OVER_BUDGET", "message": "Sobre presupuesto: se gasta más de lo que se avanza" },
+        "scheduleStatus": { "status": "BEHIND_SCHEDULE", "message": "Atrasado respecto al cronograma" }
+      }
+    },
+    {
+      "cutoffDate": "2026-08-31",
+      "notes": "Cierre de la semana 2",
+      "totals": {
+        "budgetAtCompletion": 100000.00,
+        "plannedValue": 80000.00,
+        "earnedValue": 70000.00,
+        "actualCost": 80000.00
+      },
+      "indicators": {
+        "plannedValue": 80000.00,
+        "earnedValue": 70000.00,
+        "actualCost": 80000.00,
+        "costVariance": -10000.00,
+        "scheduleVariance": -10000.00,
+        "costPerformanceIndex": 0.8750,
+        "schedulePerformanceIndex": 0.8750,
+        "estimateAtCompletion": 114285.71,
+        "varianceAtCompletion": -14285.71,
+        "costStatus": { "status": "OVER_BUDGET", "message": "Sobre presupuesto: se gasta más de lo que se avanza" },
+        "scheduleStatus": { "status": "BEHIND_SCHEDULE", "message": "Atrasado respecto al cronograma" }
+      }
+    }
+  ]
+}
+```
+
+Un proyecto sin cortes devuelve 200 con `points` vacío.
+
 ## Endpoints
 
 | Método | Ruta | Éxito | Errores |
@@ -119,6 +226,11 @@ Un proyecto sin actividades devuelve 200 con sumas en 0, índices `null` y estad
 | POST | `/projects/{id}/activities` | 201 Actividad, cabecera `Location` | 400, 404 |
 | PUT | `/projects/{id}/activities/{activityId}` | 200 Actividad | 400, 404 |
 | DELETE | `/projects/{id}/activities/{activityId}` | 204 | 404 |
+| GET | `/projects/{id}/measurements` | 200 lista de Medición | 404 |
+| POST | `/projects/{id}/measurements` | 201 Medición, cabecera `Location` | 400, 404, 409 |
+| GET | `/projects/{id}/measurements/{measurementId}` | 200 Medición | 404 |
+| DELETE | `/projects/{id}/measurements/{measurementId}` | 204 | 404 |
+| GET | `/projects/{id}/timeline` | 200 ProjectTimeline | 404 |
 
 ## Errores (RFC 7807)
 
@@ -138,6 +250,7 @@ el esquema `ValidationProblem`; los demás errores usan `ProblemDetail` sin esa 
 
 | Código | Cuándo |
 | --- | --- |
-| 400 | Validación de campos o JSON malformado |
-| 404 | Proyecto o actividad inexistente, o actividad que no pertenece al proyecto |
+| 400 | Validación de campos, JSON malformado o fecha de corte futura |
+| 404 | Proyecto, actividad o medición inexistente, o que no pertenece al proyecto |
+| 409 | El proyecto ya tiene un corte en esa fecha |
 | 500 | Error no controlado (no debería ocurrir; se registra en log) |
