@@ -15,12 +15,6 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
-  flyway:
-    # baseline-on-migrate en true porque la base de docker-compose puede llegar con el esquema
-    # ya creado por db/init.sql (sin tabla de historial de Flyway); con esto Flyway toma ese
-    # esquema existente como punto de partida en lugar de fallar por "esquema no vacío".
-    baseline-on-migrate: true
-    baseline-version: '0'
   # Jackson serializa los tipos java.time como cadenas ISO-8601 por defecto (no como timestamps
   # numéricos), así que no hace falta forzar esta opción.
 

@@ -20,7 +20,7 @@ Estado: en construcción. El backend se desarrolla primero; el frontend queda co
 ```
 backend/            API REST Spring Boot (hexagonal: domain, application, adapter, config)
 frontend/           Esqueleto Angular
-db/init.sql         Script de inicialización de la base local (esquema + datos de demostración)
+db/init.sql         Script de inicialización de la base a mano (esquema + datos de demostración)
 docker-compose.yml  PostgreSQL 16 local
 docs/               Contrato del API y notas de diseño
 scripts/            Scripts locales por perfil (dev, test, prod)
@@ -45,9 +45,10 @@ scripts/run-dev.sh
 ```
 
 Levanta PostgreSQL en `localhost:5432` con base `evm`, usuario `evm` y contraseña `evm` (con
-`docker compose up -d postgres`), espera a que el contenedor esté saludable y arranca el backend con
-`./backend/mvnw spring-boot:run -Pdev`. Si la base ya existía por `db/init.sql`, Flyway toma ese esquema
-como punto de partida (`baseline-on-migrate`) y aplica la migración `V1` sin duplicar tablas ni datos.
+`docker compose up -d postgres`), espera a que el contenedor esté saludable, con un plazo máximo, y
+arranca el backend con
+`./backend/mvnw spring-boot:run -Pdev`. El esquema lo crea Flyway al arrancar, y el perfil `dev` carga
+además los datos de demostración: un proyecto con tres actividades.
 Con el backend arriba: Swagger UI en `http://localhost:8080/swagger-ui` y OpenAPI en
 `http://localhost:8080/api-docs`.
 
@@ -58,8 +59,8 @@ scripts/run-tests.sh
 ```
 
 Ejecuta `./backend/mvnw verify -Ptest`: Checkstyle en fase `validate`, tests unitarios, el test de
-arquitectura hexagonal con ArchUnit, el test de integración `ApplicationStartsIT` contra un PostgreSQL real
-de Testcontainers, y el umbral de cobertura de JaCoCo (80 % línea y rama) sobre `domain` y `application`.
+arquitectura hexagonal con ArchUnit, los tests de integración de contrato de cada endpoint
+contra un PostgreSQL real de Testcontainers, y el umbral de cobertura de JaCoCo (80 % línea y rama) sobre `domain` y `application`.
 Requiere Docker. Al final imprime la ruta del informe HTML de JaCoCo.
 
 ### Empaquetado de producción (perfil prod)
@@ -91,6 +92,16 @@ Swagger queda apagado salvo que se exporte `EVM_SWAGGER_ENABLED=true` antes de e
 
 Checkstyle corre en la fase `validate` y es bloqueante en los tres perfiles. El jar de producción se
 genera en `backend/target/evm-backend.jar`.
+
+## Esquema de la base de datos
+
+La única fuente del esquema es Flyway: `backend/src/main/resources/db/migration`. El contenedor de
+`docker-compose` arranca vacío y la aplicación crea las tablas al iniciarse. Los datos de demostración son
+una migración repetible que solo carga el perfil `dev`.
+
+`db/init.sql` es el script de inicialización que pide el enunciado: crea el mismo esquema y los mismos datos
+para quien prefiera preparar la base a mano, por ejemplo con `psql -U evm -d evm -f db/init.sql`. No lo monta
+`docker-compose` a propósito, para que no existan dos caminos que puedan divergir en silencio.
 
 ## Flujo de trabajo
 
