@@ -15,7 +15,10 @@ import com.trycore.evm.adapter.in.rest.dto.ValidationErrorResponse;
 import com.trycore.evm.domain.exception.ActivityNotFoundException;
 import com.trycore.evm.domain.exception.InvalidActivityException;
 import com.trycore.evm.domain.exception.InvalidIndicatorException;
+import com.trycore.evm.domain.exception.InvalidMeasurementException;
 import com.trycore.evm.domain.exception.InvalidProjectException;
+import com.trycore.evm.domain.exception.MeasurementAlreadyExistsException;
+import com.trycore.evm.domain.exception.MeasurementNotFoundException;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
 
 /**
@@ -59,14 +62,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             InvalidProjectException.class,
             InvalidActivityException.class,
-            InvalidIndicatorException.class})
+            InvalidIndicatorException.class,
+            InvalidMeasurementException.class})
     public ProblemDetail handleInvalidDomainState(final RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
-    @ExceptionHandler({ProjectNotFoundException.class, ActivityNotFoundException.class})
+    @ExceptionHandler({
+            ProjectNotFoundException.class,
+            ActivityNotFoundException.class,
+            MeasurementNotFoundException.class})
     public ProblemDetail handleNotFound(final RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    /**
+     * Un corte repetido no es un dato mal formado sino un conflicto con lo ya registrado: el
+     * proyecto ya tiene una medición en esa fecha y la forma de rectificarla es borrarla.
+     */
+    @ExceptionHandler(MeasurementAlreadyExistsException.class)
+    public ProblemDetail handleConflict(final MeasurementAlreadyExistsException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     private static List<ValidationErrorResponse> fieldErrors(final MethodArgumentNotValidException exception) {
