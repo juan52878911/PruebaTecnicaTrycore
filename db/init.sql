@@ -1,6 +1,15 @@
--- Este script inicializa la base de datos local para docker-compose.
--- El esquema real de la aplicación lo gestiona Flyway desde el backend.
--- Este script solo sirve para tener datos iniciales de demostración en el entorno local.
+-- Script de inicialización de la base de datos, entregable pedido por Trycore.
+--
+-- Sirve para crear el esquema y los datos de demostración a mano, sin arrancar el backend: por
+-- ejemplo con `psql -U evm -d evm -f db/init.sql` sobre una base recién creada.
+--
+-- NO lo monta docker-compose. En el flujo normal la única fuente del esquema es Flyway
+-- (backend/src/main/resources/db/migration), y los datos de demostración los carga la migración
+-- repetible del perfil dev (backend/src/main/resources/db/seed/dev). Tener dos caminos ejecutándose
+-- sobre la misma base hacía que el esquema pudiera diverger en silencio si solo se actualizaba uno,
+-- y obligaba a relajar la validación de Flyway para que conviviesen.
+--
+-- Si se usa este script, su contenido debe seguir coincidiendo con la migración V1.
 
 -- Tabla de proyectos
 CREATE TABLE IF NOT EXISTS projects (

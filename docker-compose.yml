@@ -1,7 +1,9 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: evm-postgres
+    # El nombre se puede sobrescribir con EVM_POSTGRES_CONTAINER: un nombre fijo impide levantar
+    # dos copias del repositorio a la vez, y eso rompió una verificación independiente.
+    container_name: ${EVM_POSTGRES_CONTAINER:-evm-postgres}
     ports:
       - "5432:5432"
     environment:
@@ -9,8 +11,9 @@ services:
       POSTGRES_USER: evm
       POSTGRES_PASSWORD: evm
     volumes:
+      # No se monta db/init.sql a propósito: el esquema lo gobierna Flyway desde el backend, que
+      # es su única fuente. El script queda como entregable para inicializar la base a mano.
       - evm-postgres-data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U evm -d evm"]
       interval: 5s

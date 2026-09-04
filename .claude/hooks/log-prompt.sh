@@ -8,7 +8,10 @@ set -euo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 LOG_FILE="$PROJECT_DIR/AI_PROCESS.md"
-TOOL_NAME="Claude Code (Claude Fable 5.1)"
+# La herramienta se nombra sin el modelo: a lo largo del proyecto se usaron varios (Fable 5.1 y
+# después Opus 5) y una etiqueta fija en el hook acabaría mintiendo. Qué modelo estuvo activo en
+# cada tramo se explica en la sección 1 de AI_PROCESS.md.
+TOOL_NAME="Claude Code"
 
 PROMPT="$(jq -r '.prompt // empty')"
 if [ -z "$PROMPT" ]; then
