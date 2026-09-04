@@ -1,6 +1,7 @@
 package com.trycore.evm.adapter.in.rest.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -77,5 +78,17 @@ public record ActivityRequest(
                 integer = ActivityFigures.MONEY_MAX_INTEGER_DIGITS,
                 fraction = ActivityFigures.MONEY_SCALE,
                 message = "El costo real admite hasta 17 dígitos enteros y 2 decimales")
-        BigDecimal actualCost) {
+        BigDecimal actualCost,
+
+        @Schema(description = "Fecha de inicio prevista", example = "2026-09-01")
+        LocalDate plannedStartDate,
+
+        @Schema(description = "Fecha de fin prevista", example = "2026-09-30")
+        LocalDate plannedEndDate,
+
+        @Schema(description = "Fecha de inicio real", example = "2026-09-03")
+        LocalDate actualStartDate,
+
+        @Schema(description = "Fecha de fin real", example = "2026-09-28")
+        LocalDate actualEndDate) {
 }

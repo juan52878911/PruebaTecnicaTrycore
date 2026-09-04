@@ -37,7 +37,8 @@ class ActivityControllerIT extends AbstractRestIntegrationTest {
     private static ActivityRequest activityRequest(
             final String name, final String budget, final String planned, final String actual, final String cost) {
         return new ActivityRequest(
-                name, new BigDecimal(budget), new BigDecimal(planned), new BigDecimal(actual), new BigDecimal(cost));
+                name, new BigDecimal(budget), new BigDecimal(planned), new BigDecimal(actual), new BigDecimal(cost),
+                null, null, null, null);
     }
 
     @Test

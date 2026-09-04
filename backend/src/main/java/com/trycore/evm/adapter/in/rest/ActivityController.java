@@ -26,6 +26,7 @@ import com.trycore.evm.adapter.in.rest.mapper.ActivityRestMapper;
 import com.trycore.evm.application.port.in.ActivityUseCases;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -80,7 +81,8 @@ public class ActivityController {
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<ActivityResponse> create(
             @PathVariable final Long projectId, @Valid @RequestBody final ActivityRequest request) {
-        final ActivityEvm created = activityUseCases.create(projectId, request.name(), toFigures(request));
+        final ActivityEvm created =
+                activityUseCases.create(projectId, request.name(), toFigures(request), toSchedule(request));
         final ActivityResponse response = ActivityRestMapper.toResponse(created);
         return ResponseEntity.created(locationOf(created.activity().id())).body(response);
     }
@@ -103,7 +105,8 @@ public class ActivityController {
             @PathVariable final Long projectId,
             @PathVariable final Long activityId,
             @Valid @RequestBody final ActivityRequest request) {
-        final ActivityEvm updated = activityUseCases.update(projectId, activityId, request.name(), toFigures(request));
+        final ActivityEvm updated = activityUseCases.update(
+                projectId, activityId, request.name(), toFigures(request), toSchedule(request));
         return ActivityRestMapper.toResponse(updated);
     }
 
@@ -122,6 +125,14 @@ public class ActivityController {
     /** Deriva la ubicación del recurso creado de la petición en curso, sin repetir la ruta base. */
     private static URI locationOf(final Long activityId) {
         return ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(activityId).toUri();
+    }
+
+    private static ActivitySchedule toSchedule(final ActivityRequest request) {
+        return new ActivitySchedule(
+                request.plannedStartDate(),
+                request.plannedEndDate(),
+                request.actualStartDate(),
+                request.actualEndDate());
     }
 
     private static ActivityFigures toFigures(final ActivityRequest request) {

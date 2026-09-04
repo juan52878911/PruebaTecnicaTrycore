@@ -11,6 +11,7 @@ import com.trycore.evm.domain.exception.InvalidActivityException;
  * @param projectId identificador del proyecto al que pertenece
  * @param name      nombre no vacío de hasta {@link #NAME_MAX_LENGTH} caracteres
  * @param figures   cifras de presupuesto, avance y costo
+ * @param schedule  fechas previstas y reales; nunca nulo, puede estar vacío
  * @param createdAt fecha de creación, nula antes de guardar
  * @param updatedAt fecha de última modificación, nula antes de guardar
  */
@@ -19,6 +20,7 @@ public record Activity(
         Long projectId,
         String name,
         ActivityFigures figures,
+        ActivitySchedule schedule,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -38,15 +40,22 @@ public record Activity(
         if (figures == null) {
             throw new InvalidActivityException("Las cifras de la actividad son obligatorias");
         }
+        // Un calendario vacío evita propagar nulos a los adaptadores y a las respuestas del API.
+        schedule = schedule == null ? ActivitySchedule.empty() : schedule;
     }
 
-    /** Actividad nueva, todavía sin identificador ni fechas. */
-    public static Activity create(final Long projectId, final String name, final ActivityFigures figures) {
-        return new Activity(null, projectId, name, figures, null, null);
+    /** Actividad nueva, todavía sin identificador ni fechas de auditoría. */
+    public static Activity create(
+            final Long projectId,
+            final String name,
+            final ActivityFigures figures,
+            final ActivitySchedule schedule) {
+        return new Activity(null, projectId, name, figures, schedule, null, null);
     }
 
-    /** Copia de la actividad con nuevo nombre y cifras, conservando identidad, proyecto y fechas. */
-    public Activity update(final String newName, final ActivityFigures newFigures) {
-        return new Activity(id, projectId, newName, newFigures, createdAt, updatedAt);
+    /** Copia con nuevo nombre, cifras y calendario, conservando identidad, proyecto y auditoría. */
+    public Activity update(
+            final String newName, final ActivityFigures newFigures, final ActivitySchedule newSchedule) {
+        return new Activity(id, projectId, newName, newFigures, newSchedule, createdAt, updatedAt);
     }
 }

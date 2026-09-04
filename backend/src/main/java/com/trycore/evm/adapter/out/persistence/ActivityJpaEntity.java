@@ -2,6 +2,7 @@ package com.trycore.evm.adapter.out.persistence;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,6 +44,18 @@ public class ActivityJpaEntity {
 
     @Column(name = "actual_cost", nullable = false)
     private BigDecimal actualCost;
+
+    @Column(name = "planned_start_date")
+    private LocalDate plannedStartDate;
+
+    @Column(name = "planned_end_date")
+    private LocalDate plannedEndDate;
+
+    @Column(name = "actual_start_date")
+    private LocalDate actualStartDate;
+
+    @Column(name = "actual_end_date")
+    private LocalDate actualEndDate;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -116,6 +129,38 @@ public class ActivityJpaEntity {
 
     public void setActualCost(final BigDecimal actualCost) {
         this.actualCost = actualCost;
+    }
+
+    public LocalDate getPlannedStartDate() {
+        return plannedStartDate;
+    }
+
+    public void setPlannedStartDate(final LocalDate plannedStartDate) {
+        this.plannedStartDate = plannedStartDate;
+    }
+
+    public LocalDate getPlannedEndDate() {
+        return plannedEndDate;
+    }
+
+    public void setPlannedEndDate(final LocalDate plannedEndDate) {
+        this.plannedEndDate = plannedEndDate;
+    }
+
+    public LocalDate getActualStartDate() {
+        return actualStartDate;
+    }
+
+    public void setActualStartDate(final LocalDate actualStartDate) {
+        this.actualStartDate = actualStartDate;
+    }
+
+    public LocalDate getActualEndDate() {
+        return actualEndDate;
+    }
+
+    public void setActualEndDate(final LocalDate actualEndDate) {
+        this.actualEndDate = actualEndDate;
     }
 
     public Instant getCreatedAt() {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
 
 /**
  * Casos de uso disponibles sobre actividades de un proyecto. Puerto de entrada de la aplicación:
@@ -14,10 +15,11 @@ import com.trycore.evm.domain.model.ActivityFigures;
 public interface ActivityUseCases {
 
     /** Crea una actividad nueva dentro de un proyecto existente. */
-    ActivityEvm create(Long projectId, String name, ActivityFigures figures);
+    ActivityEvm create(Long projectId, String name, ActivityFigures figures, ActivitySchedule schedule);
 
     /** Actualiza el nombre y las cifras de una actividad existente del proyecto. */
-    ActivityEvm update(Long projectId, Long activityId, String name, ActivityFigures figures);
+    ActivityEvm update(
+            Long projectId, Long activityId, String name, ActivityFigures figures, ActivitySchedule schedule);
 
     /** Elimina una actividad del proyecto. */
     void delete(Long projectId, Long activityId);

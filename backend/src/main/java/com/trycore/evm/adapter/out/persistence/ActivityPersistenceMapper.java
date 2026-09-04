@@ -2,6 +2,7 @@ package com.trycore.evm.adapter.out.persistence;
 
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
 
 /** Traducción explícita entre {@link Activity} y {@link ActivityJpaEntity}, sin librerías de mapeo. */
 final class ActivityPersistenceMapper {
@@ -14,12 +15,15 @@ final class ActivityPersistenceMapper {
         final ActivityFigures figures = new ActivityFigures(
                 entity.getBudgetAtCompletion(), entity.getPlannedProgressPercent(),
                 entity.getActualProgressPercent(), entity.getActualCost());
+        final ActivitySchedule schedule = new ActivitySchedule(
+                entity.getPlannedStartDate(), entity.getPlannedEndDate(),
+                entity.getActualStartDate(), entity.getActualEndDate());
         return new Activity(
-                entity.getId(), entity.getProjectId(), entity.getName(), figures, entity.getCreatedAt(),
-                entity.getUpdatedAt());
+                entity.getId(), entity.getProjectId(), entity.getName(), figures, schedule,
+                entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
-    /** Copia el proyecto, nombre y cifras de la actividad de dominio a la entidad, para crear o actualizar. */
+    /** Copia proyecto, nombre, cifras y fechas de la actividad de dominio a la entidad, para crear o actualizar. */
     static void copyForSave(final Activity activity, final ActivityJpaEntity entity) {
         entity.setProjectId(activity.projectId());
         entity.setName(activity.name());
@@ -28,5 +32,10 @@ final class ActivityPersistenceMapper {
         entity.setPlannedProgressPercent(figures.plannedProgressPercent());
         entity.setActualProgressPercent(figures.actualProgressPercent());
         entity.setActualCost(figures.actualCost());
+        final ActivitySchedule schedule = activity.schedule();
+        entity.setPlannedStartDate(schedule.plannedStart());
+        entity.setPlannedEndDate(schedule.plannedEnd());
+        entity.setActualStartDate(schedule.actualStart());
+        entity.setActualEndDate(schedule.actualEnd());
     }
 }
