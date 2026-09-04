@@ -3,8 +3,8 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-El backend está completo y verificado. El frontend es por ahora un esqueleto de Angular: la fase de dashboard
-se aborda después.
+Versión 1.0.0. El backend está completo y verificado. El frontend es por ahora un esqueleto de Angular: la
+fase de dashboard se aborda después, y así se declara en el documento de proceso.
 
 ## El problema en una frase
 

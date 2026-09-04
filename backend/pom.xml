@@ -12,7 +12,7 @@
 
     <groupId>com.trycore</groupId>
     <artifactId>evm-backend</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>evm-backend</name>
     <description>Backend del sistema de Valor Ganado (EVM) para la prueba técnica de Trycore</description>
