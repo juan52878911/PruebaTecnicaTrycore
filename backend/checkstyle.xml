@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+    Configuracion de Checkstyle para evm-backend, adaptada de Google Java Style a las
+    convenciones del proyecto: indentacion de 4 espacios, lineas de hasta 120 caracteres y
+    javadoc no obligatorio. Activa deteccion de imports sin usar, numeros magicos (ignorando
+    -1, 0, 1, 2 y las anotaciones) y convenciones de nombres.
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!-- Imports -->
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+        <module name="ImportOrder">
+            <property name="groups" value="java,javax,jakarta,org,com"/>
+            <property name="ordered" value="true"/>
+            <property name="separated" value="true"/>
+            <property name="option" value="bottom"/>
+            <property name="sortStaticImportsAlphabetically" value="true"/>
+        </module>
+        <module name="AvoidStarImport"/>
+
+        <!-- Numeros y cadenas magicas: toda constante numerica fuera de -1, 0, 1, 2 debe -->
+        <!-- tener nombre; las anotaciones (por ejemplo indices de columnas en JPA) se ignoran. -->
+        <module name="MagicNumber">
+            <property name="ignoreNumbers" value="-1, 0, 1, 2"/>
+            <property name="ignoreAnnotation" value="true"/>
+            <property name="ignoreFieldDeclaration" value="true"/>
+        </module>
+
+        <!-- Nombres -->
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+        <module name="TypeName"/>
+        <module name="MethodName"/>
+        <module name="LocalVariableName"/>
+        <module name="LocalFinalVariableName"/>
+        <module name="MemberName"/>
+        <module name="ParameterName"/>
+        <module name="StaticVariableName"/>
+        <module name="ConstantName"/>
+        <module name="ClassTypeParameterName">
+            <property name="format" value="(^[A-Z][0-9]?)$"/>
+        </module>
+        <module name="MethodTypeParameterName">
+            <property name="format" value="(^[A-Z][0-9]?)$"/>
+        </module>
+
+        <!-- Bloques y estructura -->
+        <module name="EmptyBlock">
+            <property name="option" value="TEXT"/>
+        </module>
+        <module name="NeedBraces"/>
+        <module name="LeftCurly"/>
+        <module name="RightCurly"/>
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="OneStatementPerLine"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="FallThrough"/>
+
+        <!-- Nada de codigo comentado ni de TODO/FIXME olvidados -->
+        <module name="TodoComment">
+            <property name="format" value="(TODO)|(FIXME)"/>
+        </module>
+
+        <!-- Espacios en blanco -->
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="OperatorWrap"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
+
+        <!-- Indentacion de 4 espacios, sin tabs -->
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+            <property name="braceAdjustment" value="0"/>
+            <property name="caseIndent" value="4"/>
+            <property name="throwsIndent" value="4"/>
+            <property name="arrayInitIndent" value="4"/>
+            <property name="lineWrappingIndentation" value="8"/>
+        </module>
+
+        <!-- Modificadores en el orden convencional de Java -->
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
+
+        <!-- Javadoc no obligatorio: solo se valida el formato del que exista -->
+        <module name="JavadocStyle">
+            <property name="checkFirstSentence" value="false"/>
+        </module>
+
+        <!-- Complejidad y buenas practicas -->
+        <module name="InterfaceIsType"/>
+    </module>
+</module>

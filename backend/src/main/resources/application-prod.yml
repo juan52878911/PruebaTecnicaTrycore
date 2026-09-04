@@ -1,0 +1,18 @@
+# Perfil prod: la configuracion sensible viene solo de variables de entorno, sin valores por defecto.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  flyway:
+    locations: classpath:db/migration
+
+springdoc:
+  api-docs:
+    enabled: ${EVM_SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${EVM_SWAGGER_ENABLED:false}
+
+logging:
+  level:
+    root: INFO

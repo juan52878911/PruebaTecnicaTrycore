@@ -1,0 +1,11 @@
+# Perfil test: sin datasource fijo. Testcontainers inyecta la conexion en tiempo de ejecucion
+# mediante @ServiceConnection o DynamicPropertySource segun el test.
+spring:
+  flyway:
+    locations: classpath:db/migration
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
