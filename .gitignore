@@ -15,6 +15,10 @@ dist/
 .idea/
 *.iml
 .vscode/
+# Metadatos que generan los importadores de Eclipse y algunos plugins de VS Code
+.classpath
+.project
+.settings/
 
 # macOS
 .DS_Store
