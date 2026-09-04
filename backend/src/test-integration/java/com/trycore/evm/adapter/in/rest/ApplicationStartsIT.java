@@ -6,18 +6,10 @@ import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,20 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * PostgreSQL real de Testcontainers, comprueba que Flyway aplicó la migración V1 y que la
  * documentación OpenAPI queda expuesta.
  */
-@Testcontainers
-@ActiveProfiles("test")
-@AutoConfigureTestRestTemplate
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ApplicationStartsIT {
-
-    private static final String POSTGRES_IMAGE = "postgres:16-alpine";
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(POSTGRES_IMAGE);
-
-    @Autowired
-    private TestRestTemplate restTemplate;
+class ApplicationStartsIT extends AbstractRestIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
