@@ -1,6 +1,6 @@
 package com.trycore.evm.domain.model;
 
-import java.util.Objects;
+import com.trycore.evm.domain.exception.InvalidIndicatorException;
 
 /**
  * Estado de un índice (CPI o SPI) junto con un mensaje legible para el líder de proyecto.
@@ -11,8 +11,12 @@ import java.util.Objects;
 public record IndexInterpretation(PerformanceStatus status, String message) {
 
     public IndexInterpretation {
-        Objects.requireNonNull(status, "El estado de la interpretación es obligatorio");
-        Objects.requireNonNull(message, "El mensaje de la interpretación es obligatorio");
+        if (status == null) {
+            throw new InvalidIndicatorException("El estado de la interpretación es obligatorio");
+        }
+        if (message == null) {
+            throw new InvalidIndicatorException("El mensaje de la interpretación es obligatorio");
+        }
     }
 
     /** Interpretación cuyo mensaje es la descripción estándar del estado. */

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.trycore.evm.adapter.in.rest.dto.ValidationErrorResponse;
 import com.trycore.evm.domain.exception.ActivityNotFoundException;
 import com.trycore.evm.domain.exception.InvalidActivityException;
+import com.trycore.evm.domain.exception.InvalidIndicatorException;
 import com.trycore.evm.domain.exception.InvalidProjectException;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
 
@@ -55,7 +56,10 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, INTEGRITY_ERROR_DETAIL);
     }
 
-    @ExceptionHandler({InvalidProjectException.class, InvalidActivityException.class})
+    @ExceptionHandler({
+            InvalidProjectException.class,
+            InvalidActivityException.class,
+            InvalidIndicatorException.class})
     public ProblemDetail handleInvalidDomainState(final RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }

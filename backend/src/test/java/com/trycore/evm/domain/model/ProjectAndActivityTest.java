@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.trycore.evm.domain.exception.InvalidActivityException;
+import com.trycore.evm.domain.exception.InvalidIndicatorException;
 import com.trycore.evm.domain.exception.InvalidProjectException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -130,11 +131,13 @@ class ProjectAndActivityTest {
 
         @Test
         void rejectsMissingProjectOrFigures() {
+            // Toda invariante del dominio viaja como DomainException: el manejador REST la traduce
+            // a un 400 con formato RFC 7807, cosa que no puede hacer con una NullPointerException.
             assertThatThrownBy(() -> Activity.create(null, "Diseño", FIGURES))
-                    .isInstanceOf(NullPointerException.class)
+                    .isInstanceOf(InvalidActivityException.class)
                     .hasMessageContaining("proyecto");
             assertThatThrownBy(() -> Activity.create(PROJECT_ID, "Diseño", null))
-                    .isInstanceOf(NullPointerException.class)
+                    .isInstanceOf(InvalidActivityException.class)
                     .hasMessageContaining("cifras");
         }
     }
@@ -160,9 +163,10 @@ class ProjectAndActivityTest {
 
         @Test
         void rejectsNullStatusOrMessage() {
-            assertThatThrownBy(() -> new IndexInterpretation(null, "m")).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> new IndexInterpretation(null, "m"))
+                    .isInstanceOf(InvalidIndicatorException.class);
             assertThatThrownBy(() -> new IndexInterpretation(PerformanceStatus.ON_BUDGET, null))
-                    .isInstanceOf(NullPointerException.class);
+                    .isInstanceOf(InvalidIndicatorException.class);
         }
     }
 }
