@@ -24,6 +24,9 @@
         <springdoc.version>3.1.0</springdoc.version>
         <archunit.version>1.5.0</archunit.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
+        <!-- Directorios de test que revisa Checkstyle. El perfil test añade el de integración. -->
+        <checkstyle.testSourceDirectory>${project.basedir}/src/test/java</checkstyle.testSourceDirectory>
+        <checkstyle.integrationTestSourceDirectory>${project.basedir}/src/test/java</checkstyle.integrationTestSourceDirectory>
         <checkstyle.skip>false</checkstyle.skip>
         <jacoco.plugin.version>0.8.13</jacoco.plugin.version>
         <jacoco.line.minimum>0.80</jacoco.line.minimum>
@@ -113,6 +116,12 @@
                     <violationSeverity>error</violationSeverity>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <skip>${checkstyle.skip}</skip>
+                    <!-- Se listan explícitamente porque Checkstyle corre en validate, antes de que
+                         build-helper añada el source root de integración en generate-test-sources. -->
+                    <testSourceDirectories>
+                        <testSourceDirectory>${checkstyle.testSourceDirectory}</testSourceDirectory>
+                        <testSourceDirectory>${checkstyle.integrationTestSourceDirectory}</testSourceDirectory>
+                    </testSourceDirectories>
                 </configuration>
                 <executions>
                     <execution>
@@ -175,6 +184,7 @@
             <id>test</id>
             <properties>
                 <spring.profiles.active>test</spring.profiles.active>
+                <checkstyle.integrationTestSourceDirectory>${project.basedir}/src/test-integration/java</checkstyle.integrationTestSourceDirectory>
             </properties>
             <dependencies>
                 <!-- spring-boot-testcontainers aporta la anotación @ServiceConnection que exige -->
@@ -199,7 +209,7 @@
                     <artifactId>spring-boot-restclient</artifactId>
                     <scope>test</scope>
                 </dependency>
-                <!-- Testcontainers 2.x (la version que gestiona el BOM de Spring Boot 4.1.1) renombró -->
+                <!-- Testcontainers 2.x (la versión que gestiona el BOM de Spring Boot 4.1.1) renombró -->
                 <!-- estos artefactos de "postgresql"/"junit-jupiter" a "testcontainers-postgresql" y -->
                 <!-- "testcontainers-junit-jupiter"; los nombres antiguos ya no se publican en esa serie. -->
                 <dependency>
@@ -221,35 +231,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <!-- En este perfil, Checkstyle también revisa src/test-integration/java: el -->
-                    <!-- valor por defecto de testSourceDirectories no lo vería a tiempo porque -->
-                    <!-- Checkstyle corre en la fase validate, antes de que build-helper agregue -->
-                    <!-- ese source root en generate-test-sources. -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <version>${checkstyle.plugin.version}</version>
-                        <configuration>
-                            <configLocation>checkstyle.xml</configLocation>
-                            <consoleOutput>true</consoleOutput>
-                            <failOnViolation>true</failOnViolation>
-                            <violationSeverity>error</violationSeverity>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                            <testSourceDirectories>
-                                <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
-                                <testSourceDirectory>${project.basedir}/src/test-integration/java</testSourceDirectory>
-                            </testSourceDirectories>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>checkstyle-check</id>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <!-- HexagonalArchitectureTest y ApplicationStartsIT usan ArchUnit y Testcontainers, -->
                     <!-- dependencias exclusivas de este perfil, por lo que viven en un source root -->
                     <!-- aparte (src/test-integration/java) que solo se agrega a la compilación aquí; -->

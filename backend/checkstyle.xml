@@ -4,9 +4,9 @@
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-    Configuracion de Checkstyle para evm-backend, adaptada de Google Java Style a las
-    convenciones del proyecto: indentacion de 4 espacios, lineas de hasta 120 caracteres y
-    javadoc no obligatorio. Activa deteccion de imports sin usar, numeros magicos (ignorando
+    Configuración de Checkstyle para evm-backend, adaptada de Google Java Style a las
+    convenciones del proyecto: indentación de 4 espacios, líneas de hasta 120 caracteres y
+    javadoc no obligatorio. Activa detección de imports sin usar, números mágicos (ignorando
     -1, 0, 1, 2 y las anotaciones) y convenciones de nombres.
 -->
 <module name="Checker">
@@ -37,7 +37,7 @@
         </module>
         <module name="AvoidStarImport"/>
 
-        <!-- Numeros y cadenas magicas: toda constante numerica fuera de -1, 0, 1, 2 debe -->
+        <!-- Números y cadenas mágicas: toda constante numerica fuera de -1, 0, 1, 2 debe -->
         <!-- tener nombre; las anotaciones (por ejemplo indices de columnas en JPA) se ignoran. -->
         <module name="MagicNumber">
             <property name="ignoreNumbers" value="-1, 0, 1, 2"/>
@@ -79,7 +79,7 @@
         <module name="MultipleVariableDeclarations"/>
         <module name="FallThrough"/>
 
-        <!-- Nada de codigo comentado ni de TODO/FIXME olvidados -->
+        <!-- Nada de código comentado ni de TODO/FIXME olvidados -->
         <module name="TodoComment">
             <property name="format" value="(TODO)|(FIXME)"/>
         </module>
