@@ -3,17 +3,24 @@ package com.trycore.evm.domain.service;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivityMeasurement;
 import com.trycore.evm.domain.model.EvmIndicators;
+import com.trycore.evm.domain.model.EvmTotals;
 import com.trycore.evm.domain.model.IndexInterpretation;
+import com.trycore.evm.domain.model.MeasurementPoint;
 import com.trycore.evm.domain.model.PerformanceStatus;
 import com.trycore.evm.domain.model.Project;
 import com.trycore.evm.domain.model.ProjectEvmSummary;
+import com.trycore.evm.domain.model.ProjectMeasurement;
+import com.trycore.evm.domain.model.ProjectTimeline;
 
 /**
  * Cálculo de los indicadores de Valor Ganado (EVM), por actividad y consolidado por proyecto.
@@ -51,6 +58,17 @@ public final class EvmCalculator {
         return calculate(figures.budgetAtCompletion(), plannedValue, earnedValue, figures.actualCost());
     }
 
+    /**
+     * Indicadores derivados de unas cifras ya conocidas, sin pasar por porcentajes.
+     *
+     * <p>Es la puerta de entrada para el histórico: una medición guarda solo las cifras y sus
+     * indicadores se calculan aquí al leerla, con las mismas reglas que el análisis en vivo.
+     */
+    public EvmIndicators calculate(final EvmTotals totals) {
+        return calculate(
+                totals.budgetAtCompletion(), totals.plannedValue(), totals.earnedValue(), totals.actualCost());
+    }
+
     /** Indicadores de cada actividad y consolidado del proyecto sobre las sumas. */
     public ProjectEvmSummary consolidate(final Project project, final List<Activity> activities) {
         final List<ActivityEvm> perActivity = activities.stream()
@@ -63,6 +81,62 @@ public final class EvmCalculator {
         final EvmIndicators consolidated =
                 calculate(totalBudget, totalPlannedValue, totalEarnedValue, totalActualCost);
         return new ProjectEvmSummary(project, money(totalBudget), consolidated, perActivity);
+    }
+
+    /**
+     * Congela el estado actual del proyecto en una fecha de corte.
+     *
+     * <p>Guarda las cifras, no los índices, y el nombre de cada actividad además de su
+     * identificador: la medición es un registro histórico y debe seguir siendo legible aunque la
+     * actividad se renombre o desaparezca después.
+     */
+    public ProjectMeasurement capture(
+            final Project project,
+            final List<Activity> activities,
+            final LocalDate cutoffDate,
+            final String notes) {
+        final ProjectEvmSummary summary = consolidate(project, activities);
+        final List<ActivityMeasurement> lines = summary.activities().stream()
+                .map(item -> new ActivityMeasurement(
+                        item.activity().id(),
+                        item.activity().name(),
+                        new EvmTotals(
+                                item.activity().figures().budgetAtCompletion(),
+                                item.indicators().plannedValue(),
+                                item.indicators().earnedValue(),
+                                item.indicators().actualCost())))
+                .toList();
+        return new ProjectMeasurement(
+                null,
+                project.id(),
+                cutoffDate,
+                notes,
+                new EvmTotals(
+                        summary.budgetAtCompletion(),
+                        summary.indicators().plannedValue(),
+                        summary.indicators().earnedValue(),
+                        summary.indicators().actualCost()),
+                lines,
+                null);
+    }
+
+    /**
+     * Serie temporal del proyecto, ordenada por fecha de corte de la más antigua a la más reciente.
+     *
+     * <p>Cada punto llega con sus indicadores ya calculados para que el cliente que dibuja la
+     * gráfica no tenga que reimplementar ninguna fórmula. Dos cortes con la misma fecha no pueden
+     * existir, así que el orden es estable.
+     */
+    public ProjectTimeline buildTimeline(final Project project, final List<ProjectMeasurement> measurements) {
+        final List<MeasurementPoint> points = measurements.stream()
+                .sorted(Comparator.comparing(ProjectMeasurement::cutoffDate))
+                .map(measurement -> new MeasurementPoint(
+                        measurement.cutoffDate(),
+                        measurement.notes(),
+                        measurement.totals(),
+                        calculate(measurement.totals())))
+                .toList();
+        return new ProjectTimeline(project, points);
     }
 
     private EvmIndicators calculate(
