@@ -129,6 +129,9 @@ especificación OpenAPI.
 | GET | `/projects/{id}/evm` | 200, análisis consolidado con cada actividad |
 | GET, POST | `/projects/{id}/activities` | 200, 201 |
 | PUT, DELETE | `/projects/{id}/activities/{activityId}` | 200, 204 |
+| GET, POST | `/projects/{id}/measurements` | 200, 201 |
+| GET, DELETE | `/projects/{id}/measurements/{measurementId}` | 200, 204 |
+| GET | `/projects/{id}/timeline` | 200, serie temporal lista para graficar |
 
 Ejemplo con el proyecto de demostración:
 
@@ -155,6 +158,34 @@ curl -s http://localhost:8080/api/v1/projects/1/evm
 }
 ```
 
+## Histórico y series temporales
+
+Un **corte** (`measurement`) es la fotografía de un proyecto en una fecha: las cuatro cifras base (BAC, PV, EV
+y AC) del proyecto y de cada una de sus actividades, con el nombre que cada actividad tenía entonces. No se
+envían cifras al crearlo, se toman de las actividades tal como están en ese momento, y la fecha no puede ser
+futura: un corte documenta lo que ya ocurrió, no una previsión.
+
+**Los índices no se guardan.** Un corte almacena solo cifras; el CPI, el SPI, el EAC y sus interpretaciones se
+calculan al leer, con el mismo `EvmCalculator` que usa el análisis en vivo. Así el histórico no puede
+desincronizarse del cálculo vigente: si mañana se corrige una fórmula, las mediciones ya tomadas se leen con la
+fórmula corregida en lugar de arrastrar un número obsoleto que nadie podría reproducir.
+
+Un corte es inmutable: no hay operación de actualización. Para rectificarlo se borra y se vuelve a tomar. Dos
+cortes del mismo proyecto en la misma fecha se rechazan con 409, porque romperían el orden de la gráfica. Las
+líneas por actividad no tienen clave foránea hacia `activities` a propósito: la actividad puede eliminarse
+después y el registro histórico debe sobrevivir.
+
+Uso típico: se registra un corte al cierre de cada semana y se pide `GET /projects/{id}/timeline`, que devuelve
+un punto por corte, ordenado cronológicamente y con los indicadores ya calculados e interpretados. Es la
+respuesta que consume directamente una gráfica de líneas, sin que el cliente reimplemente ninguna fórmula.
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/projects/1/measurements \
+  -H 'Content-Type: application/json' \
+  -d '{"cutoffDate":"2026-08-31","notes":"Cierre de la semana 1"}'
+curl -s http://localhost:8080/api/v1/projects/1/timeline
+```
+
 ## Decisiones de cálculo
 
 - Todo se calcula con `BigDecimal`. Los importes tienen escala 2, los índices escala 4, redondeo `HALF_UP`.
@@ -176,7 +207,8 @@ Hexagonal, con las reglas de dependencia verificadas por un test de ArchUnit que
 ```
 com.trycore.evm
   domain/        modelo y cálculo EVM. Sin Spring, sin JPA, sin Jackson.
-    model/       Project, Activity, ActivityFigures, EvmIndicators, ProjectEvmSummary
+    model/       Project, Activity, ActivityFigures, EvmIndicators, ProjectEvmSummary,
+                 ProjectMeasurement, MeasurementPoint, ProjectTimeline
     service/     EvmCalculator
     exception/   excepciones de negocio
   application/   casos de uso. Tampoco depende de ningún framework.
@@ -194,7 +226,7 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-90 tests: 67 unitarios y 23 de integración. Los valores esperados de cada cálculo EVM están derivados a mano
+129 tests: 95 unitarios y 34 de integración. Los valores esperados de cada cálculo EVM están derivados a mano
 de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |
@@ -203,8 +235,9 @@ de la fórmula y escritos literalmente en el test, nunca copiados de la salida d
 | Arquitectura | `backend/src/test-integration/java` | Reglas de dependencia entre capas con ArchUnit |
 | Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real |
 
-Casos borde cubiertos: AC = 0, PV = 0, avance real 0, BAC = 0, proyecto sin actividades, porcentajes fuera de
-rango, precisión mayor que la almacenable e importes que no caben en la columna.
+Casos borde cubiertos: AC = 0, PV = 0, avance real 0, BAC = 0, proyecto sin actividades, proyecto sin cortes,
+fecha de corte futura o repetida, porcentajes fuera de rango, precisión mayor que la almacenable e importes que
+no caben en la columna.
 
 ## Documento de proceso
 
