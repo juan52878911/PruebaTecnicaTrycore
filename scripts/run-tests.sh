@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Ejecuta la verificacion completa del backend en el perfil test: Checkstyle, tests unitarios,
-# ArchUnit, tests de integracion con Testcontainers y el umbral de cobertura de JaCoCo.
+# Ejecuta la verificación completa del backend en el perfil test: Checkstyle, tests unitarios,
+# ArchUnit, tests de integración con Testcontainers y el umbral de cobertura de JaCoCo.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

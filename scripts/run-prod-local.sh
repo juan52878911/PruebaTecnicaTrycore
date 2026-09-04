@@ -8,21 +8,16 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPO_ROOT}"
 
+# shellcheck source=lib/wait-for-postgres.sh
+source "${REPO_ROOT}/scripts/lib/wait-for-postgres.sh"
+
 JAR_PATH="${REPO_ROOT}/backend/target/evm-backend.jar"
 if [ ! -f "${JAR_PATH}" ]; then
     echo "==> No se encontró ${JAR_PATH}. Ejecuta primero scripts/build-prod.sh."
     exit 1
 fi
 
-echo "==> Levantando PostgreSQL local con docker-compose..."
-docker compose up -d postgres
-
-echo "==> Esperando a que PostgreSQL esté saludable..."
-until [ "$(docker inspect -f '{{.State.Health.Status}}' evm-postgres 2>/dev/null)" = "healthy" ]; do
-    sleep 2
-    echo "    esperando..."
-done
-echo "==> PostgreSQL listo."
+wait_for_postgres "${REPO_ROOT}"
 
 export SPRING_PROFILES_ACTIVE=prod
 export DB_URL="${DB_URL:-jdbc:postgresql://localhost:5432/evm}"
