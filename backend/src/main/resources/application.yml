@@ -1,5 +1,5 @@
-# Configuracion comun a los tres perfiles (dev, test, prod).
-# El perfil activo se fija por filtrado de recursos de Maven segun el perfil de build usado.
+# Configuración común a los tres perfiles (dev, test, prod).
+# El perfil activo se fija por filtrado de recursos de Maven según el perfil de build usado.
 server:
   port: 8080
 
@@ -13,11 +13,11 @@ spring:
   flyway:
     # baseline-on-migrate en true porque la base de docker-compose puede llegar con el esquema
     # ya creado por db/init.sql (sin tabla de historial de Flyway); con esto Flyway toma ese
-    # esquema existente como punto de partida en lugar de fallar por "esquema no vacio".
+    # esquema existente como punto de partida en lugar de fallar por "esquema no vacío".
     baseline-on-migrate: true
     baseline-version: '0'
   # Jackson serializa los tipos java.time como cadenas ISO-8601 por defecto (no como timestamps
-  # numericos), asi que no hace falta forzar esta opcion.
+  # numéricos), así que no hace falta forzar esta opción.
 
 springdoc:
   api-docs:

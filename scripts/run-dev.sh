@@ -8,7 +8,7 @@ cd "${REPO_ROOT}"
 echo "==> Levantando PostgreSQL local con docker-compose..."
 docker compose up -d postgres
 
-echo "==> Esperando a que PostgreSQL este saludable..."
+echo "==> Esperando a que PostgreSQL esté saludable..."
 until [ "$(docker inspect -f '{{.State.Health.Status}}' evm-postgres 2>/dev/null)" = "healthy" ]; do
     sleep 2
     echo "    esperando..."

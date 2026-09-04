@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Levanta PostgreSQL local con docker-compose y arranca el jar de produccion apuntando a el.
+# Levanta PostgreSQL local con docker-compose y arranca el jar de producción apuntando a él.
 # Los valores por defecto de DB_URL, DB_USER y DB_PASSWORD solo existen en este script, para
 # reproducir en local el mismo Postgres de docker-compose; en un entorno real esas variables
 # las define el sistema de despliegue, nunca este script.
@@ -10,14 +10,14 @@ cd "${REPO_ROOT}"
 
 JAR_PATH="${REPO_ROOT}/backend/target/evm-backend.jar"
 if [ ! -f "${JAR_PATH}" ]; then
-    echo "==> No se encontro ${JAR_PATH}. Ejecuta primero scripts/build-prod.sh."
+    echo "==> No se encontró ${JAR_PATH}. Ejecuta primero scripts/build-prod.sh."
     exit 1
 fi
 
 echo "==> Levantando PostgreSQL local con docker-compose..."
 docker compose up -d postgres
 
-echo "==> Esperando a que PostgreSQL este saludable..."
+echo "==> Esperando a que PostgreSQL esté saludable..."
 until [ "$(docker inspect -f '{{.State.Health.Status}}' evm-postgres 2>/dev/null)" = "healthy" ]; do
     sleep 2
     echo "    esperando..."
@@ -29,5 +29,5 @@ export DB_URL="${DB_URL:-jdbc:postgresql://localhost:5432/evm}"
 export DB_USER="${DB_USER:-evm}"
 export DB_PASSWORD="${DB_PASSWORD:-evm}"
 
-echo "==> Arrancando el jar de produccion..."
+echo "==> Arrancando el jar de producción..."
 java -jar "${JAR_PATH}"

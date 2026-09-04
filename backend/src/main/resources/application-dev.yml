@@ -1,4 +1,4 @@
-# Perfil dev: apunta al PostgreSQL local levantado con docker-compose en la raiz del repo.
+# Perfil dev: apunta al PostgreSQL local levantado con docker-compose en la raíz del repo.
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/evm
