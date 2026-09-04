@@ -3,7 +3,6 @@ package com.trycore.evm.adapter.in.rest.mapper;
 import com.trycore.evm.adapter.in.rest.dto.ActivityResponse;
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityEvm;
-import com.trycore.evm.domain.model.EvmIndicators;
 
 /** Traducción explícita de la actividad de dominio a su representación REST, sin librerías de mapeo. */
 public final class ActivityRestMapper {
@@ -12,7 +11,8 @@ public final class ActivityRestMapper {
         // Utilidad estática, no instanciable.
     }
 
-    public static ActivityResponse toResponse(final Activity activity, final EvmIndicators indicators) {
+    public static ActivityResponse toResponse(final ActivityEvm activityEvm) {
+        final Activity activity = activityEvm.activity();
         return new ActivityResponse(
                 activity.id(),
                 activity.projectId(),
@@ -21,10 +21,6 @@ public final class ActivityRestMapper {
                 activity.figures().plannedProgressPercent(),
                 activity.figures().actualProgressPercent(),
                 activity.figures().actualCost(),
-                EvmIndicatorsRestMapper.toResponse(indicators));
-    }
-
-    public static ActivityResponse toResponse(final ActivityEvm activityEvm) {
-        return toResponse(activityEvm.activity(), activityEvm.indicators());
+                EvmIndicatorsRestMapper.toResponse(activityEvm.indicators()));
     }
 }

@@ -30,8 +30,10 @@ public class BeanConfiguration {
 
     @Bean
     public ActivityService activityService(
-            final ActivityRepositoryPort activityRepositoryPort, final ProjectRepositoryPort projectRepositoryPort) {
-        return new ActivityService(activityRepositoryPort, projectRepositoryPort);
+            final ActivityRepositoryPort activityRepositoryPort,
+            final ProjectRepositoryPort projectRepositoryPort,
+            final EvmCalculator evmCalculator) {
+        return new ActivityService(activityRepositoryPort, projectRepositoryPort, evmCalculator);
     }
 
     @Bean

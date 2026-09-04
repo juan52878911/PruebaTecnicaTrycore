@@ -8,7 +8,9 @@ import com.trycore.evm.application.port.out.ProjectRepositoryPort;
 import com.trycore.evm.domain.exception.ActivityNotFoundException;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
 import com.trycore.evm.domain.model.Activity;
+import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.service.EvmCalculator;
 
 /**
  * Implementación de los casos de uso de actividades. Clase plana sin anotaciones de framework: el
@@ -18,24 +20,28 @@ public final class ActivityService implements ActivityUseCases {
 
     private final ActivityRepositoryPort activityRepository;
     private final ProjectRepositoryPort projectRepository;
+    private final EvmCalculator evmCalculator;
 
     public ActivityService(
-            final ActivityRepositoryPort activityRepository, final ProjectRepositoryPort projectRepository) {
+            final ActivityRepositoryPort activityRepository,
+            final ProjectRepositoryPort projectRepository,
+            final EvmCalculator evmCalculator) {
         this.activityRepository = activityRepository;
         this.projectRepository = projectRepository;
+        this.evmCalculator = evmCalculator;
     }
 
     @Override
-    public Activity create(final Long projectId, final String name, final ActivityFigures figures) {
+    public ActivityEvm create(final Long projectId, final String name, final ActivityFigures figures) {
         requireProjectExists(projectId);
-        return activityRepository.save(Activity.create(projectId, name, figures));
+        return withIndicators(activityRepository.save(Activity.create(projectId, name, figures)));
     }
 
     @Override
-    public Activity update(
+    public ActivityEvm update(
             final Long projectId, final Long activityId, final String name, final ActivityFigures figures) {
         final Activity existing = findActivity(projectId, activityId);
-        return activityRepository.save(existing.update(name, figures));
+        return withIndicators(activityRepository.save(existing.update(name, figures)));
     }
 
     @Override
@@ -45,9 +51,13 @@ public final class ActivityService implements ActivityUseCases {
     }
 
     @Override
-    public List<Activity> listByProject(final Long projectId) {
+    public List<ActivityEvm> listByProject(final Long projectId) {
         requireProjectExists(projectId);
-        return activityRepository.findAllByProjectId(projectId);
+        return activityRepository.findAllByProjectId(projectId).stream().map(this::withIndicators).toList();
+    }
+
+    private ActivityEvm withIndicators(final Activity activity) {
+        return new ActivityEvm(activity, evmCalculator.calculate(activity.figures()));
     }
 
     private void requireProjectExists(final Long projectId) {

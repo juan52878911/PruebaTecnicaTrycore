@@ -17,7 +17,9 @@ import com.trycore.evm.application.port.out.ProjectRepositoryPort;
 import com.trycore.evm.domain.exception.ActivityNotFoundException;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
 import com.trycore.evm.domain.model.Activity;
+import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.service.EvmCalculator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,7 +28,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Pruebas de {@link ActivityService} con dobles de los puertos de salida, sin infraestructura real. */
+/**
+ * Pruebas de {@link ActivityService} con dobles de los puertos de salida, sin infraestructura real.
+ * El {@link EvmCalculator} es el real: es puro y sus resultados ya están verificados en su propio test.
+ */
 @ExtendWith(MockitoExtension.class)
 class ActivityServiceTest {
 
@@ -47,7 +52,7 @@ class ActivityServiceTest {
 
     @BeforeEach
     void setUp() {
-        activityService = new ActivityService(activityRepository, projectRepository);
+        activityService = new ActivityService(activityRepository, projectRepository, new EvmCalculator());
     }
 
     private static ActivityFigures figures() {
@@ -66,9 +71,11 @@ class ActivityServiceTest {
         final Activity saved = existingActivity(NAME);
         when(activityRepository.save(any(Activity.class))).thenReturn(saved);
 
-        final Activity result = activityService.create(PROJECT_ID, NAME, figures());
+        final ActivityEvm result = activityService.create(PROJECT_ID, NAME, figures());
 
-        assertThat(result).isEqualTo(saved);
+        assertThat(result.activity()).isEqualTo(saved);
+        // PV = 0,50 x 100.000 = 50.000: los indicadores llegan calculados desde el caso de uso
+        assertThat(result.indicators().plannedValue()).isEqualByComparingTo("50000.00");
     }
 
     @Test
@@ -89,9 +96,10 @@ class ActivityServiceTest {
         when(activityRepository.findByIdAndProjectId(ACTIVITY_ID, PROJECT_ID)).thenReturn(Optional.of(existing));
         when(activityRepository.save(any(Activity.class))).thenReturn(updated);
 
-        final Activity result = activityService.update(PROJECT_ID, ACTIVITY_ID, NEW_NAME, figures());
+        final ActivityEvm result = activityService.update(PROJECT_ID, ACTIVITY_ID, NEW_NAME, figures());
 
-        assertThat(result).isEqualTo(updated);
+        assertThat(result.activity()).isEqualTo(updated);
+        assertThat(result.indicators().costPerformanceIndex()).isEqualByComparingTo("0.6667");
     }
 
     @Test
@@ -132,9 +140,11 @@ class ActivityServiceTest {
         final Activity activity = existingActivity(NAME);
         when(activityRepository.findAllByProjectId(PROJECT_ID)).thenReturn(List.of(activity));
 
-        final List<Activity> result = activityService.listByProject(PROJECT_ID);
+        final List<ActivityEvm> result = activityService.listByProject(PROJECT_ID);
 
-        assertThat(result).containsExactly(activity);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).activity()).isEqualTo(activity);
+        assertThat(result.get(0).indicators().earnedValue()).isEqualByComparingTo("40000.00");
     }
 
     @Test

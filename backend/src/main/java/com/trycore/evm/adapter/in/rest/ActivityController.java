@@ -22,9 +22,8 @@ import com.trycore.evm.adapter.in.rest.dto.ActivityRequest;
 import com.trycore.evm.adapter.in.rest.dto.ActivityResponse;
 import com.trycore.evm.adapter.in.rest.mapper.ActivityRestMapper;
 import com.trycore.evm.application.port.in.ActivityUseCases;
-import com.trycore.evm.domain.model.Activity;
+import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
-import com.trycore.evm.domain.service.EvmCalculator;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -40,11 +39,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class ActivityController {
 
     private final ActivityUseCases activityUseCases;
-    private final EvmCalculator evmCalculator;
 
-    public ActivityController(final ActivityUseCases activityUseCases, final EvmCalculator evmCalculator) {
+    public ActivityController(final ActivityUseCases activityUseCases) {
         this.activityUseCases = activityUseCases;
-        this.evmCalculator = evmCalculator;
     }
 
     @GetMapping
@@ -60,7 +57,7 @@ public class ActivityController {
             description = "No existe un proyecto con ese identificador",
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public List<ActivityResponse> list(@PathVariable final Long projectId) {
-        return activityUseCases.listByProject(projectId).stream().map(this::toResponse).toList();
+        return activityUseCases.listByProject(projectId).stream().map(ActivityRestMapper::toResponse).toList();
     }
 
     @PostMapping
@@ -81,9 +78,9 @@ public class ActivityController {
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<ActivityResponse> create(
             @PathVariable final Long projectId, @Valid @RequestBody final ActivityRequest request) {
-        final Activity created = activityUseCases.create(projectId, request.name(), toFigures(request));
-        final ActivityResponse response = toResponse(created);
-        final URI location = URI.create("/api/v1/projects/" + projectId + "/activities/" + created.id());
+        final ActivityEvm created = activityUseCases.create(projectId, request.name(), toFigures(request));
+        final ActivityResponse response = ActivityRestMapper.toResponse(created);
+        final URI location = URI.create("/api/v1/projects/" + projectId + "/activities/" + created.activity().id());
         return ResponseEntity.created(location).body(response);
     }
 
@@ -105,8 +102,8 @@ public class ActivityController {
             @PathVariable final Long projectId,
             @PathVariable final Long activityId,
             @Valid @RequestBody final ActivityRequest request) {
-        final Activity updated = activityUseCases.update(projectId, activityId, request.name(), toFigures(request));
-        return toResponse(updated);
+        final ActivityEvm updated = activityUseCases.update(projectId, activityId, request.name(), toFigures(request));
+        return ActivityRestMapper.toResponse(updated);
     }
 
     @DeleteMapping("/{activityId}")
@@ -129,7 +126,4 @@ public class ActivityController {
                 request.actualCost());
     }
 
-    private ActivityResponse toResponse(final Activity activity) {
-        return ActivityRestMapper.toResponse(activity, evmCalculator.calculate(activity.figures()));
-    }
 }
