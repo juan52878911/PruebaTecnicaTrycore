@@ -86,11 +86,11 @@ Swagger queda apagado salvo que se exporte `EVM_SWAGGER_ENABLED=true` antes de e
 | Perfil | Activación | Uso | Script |
 | --- | --- | --- | --- |
 | `dev` | Por defecto | Devtools, Postgres de docker-compose, seed de demostración, Swagger activo, solo tests unitarios (surefire) | `scripts/run-dev.sh` |
-| `test` | `-Ptest` | Testcontainers, ArchUnit, tests de integración (`*IT.java` con failsafe), JaCoCo `check` y Checkstyle bloqueantes | `scripts/run-tests.sh` |
+| `test` | `-Ptest` | Testcontainers, ArchUnit, tests de integración (`*IT.java` con failsafe) y JaCoCo `check` bloqueante | `scripts/run-tests.sh` |
 | `prod` | `-Pprod` | Empaquetado sin herramientas de desarrollo, configuración por variables de entorno, Swagger apagado por defecto | `scripts/build-prod.sh` |
 
-Checkstyle corre en la fase `validate` en los tres perfiles; solo en `test` una violación hace fallar el
-build (`failOnViolation`). El jar de producción se genera en `backend/target/evm-backend.jar`.
+Checkstyle corre en la fase `validate` y es bloqueante en los tres perfiles. El jar de producción se
+genera en `backend/target/evm-backend.jar`.
 
 ## Flujo de trabajo
 

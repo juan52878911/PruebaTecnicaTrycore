@@ -15,7 +15,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>evm-backend</name>
-    <description>Backend del sistema de Valor Ganado (EVM) para la prueba tecnica de Trycore</description>
+    <description>Backend del sistema de Valor Ganado (EVM) para la prueba técnica de Trycore</description>
 
     <properties>
         <java.version>21</java.version>
@@ -24,7 +24,6 @@
         <springdoc.version>3.1.0</springdoc.version>
         <archunit.version>1.5.0</archunit.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-        <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
         <checkstyle.skip>false</checkstyle.skip>
         <jacoco.plugin.version>0.8.13</jacoco.plugin.version>
         <jacoco.line.minimum>0.80</jacoco.line.minimum>
@@ -58,8 +57,8 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
-        <!-- En Spring Boot 4 la autoconfiguracion de Flyway se separo del propio flyway-core a -->
-        <!-- este modulo aparte (antes normalmente llegaba a traves de spring-boot-starter-flyway); -->
+        <!-- En Spring Boot 4 la autoconfiguración de Flyway se separó del propio flyway-core a -->
+        <!-- este módulo aparte (antes normalmente llegaba a través de spring-boot-starter-flyway); -->
         <!-- sin el, Flyway nunca se ejecuta al arrancar aunque flyway-core este en el classpath. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -101,8 +100,8 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <!-- Checkstyle corre en la fase validate en los tres perfiles; solo el perfil test lo -->
-            <!-- vuelve bloqueante mediante failOnViolation, definido como propiedad de perfil. -->
+            <!-- Checkstyle corre en la fase validate y es bloqueante en los tres perfiles: un linter -->
+            <!-- que solo avisa termina ignorado, y el proyecto exige cero code smells. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -110,7 +109,7 @@
                 <configuration>
                     <configLocation>checkstyle.xml</configLocation>
                     <consoleOutput>true</consoleOutput>
-                    <failOnViolation>${checkstyle.failOnViolation}</failOnViolation>
+                    <failOnViolation>true</failOnViolation>
                     <violationSeverity>error</violationSeverity>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <skip>${checkstyle.skip}</skip>
@@ -125,7 +124,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- JaCoCo instrumenta el codigo en los tres perfiles; solo el perfil test agrega la -->
+            <!-- JaCoCo instrumenta el código en los tres perfiles; solo el perfil test agrega la -->
             <!-- meta check con el umbral de cobertura sobre domain y application. -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -159,7 +158,6 @@
             </activation>
             <properties>
                 <spring.profiles.active>dev</spring.profiles.active>
-                <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
             </properties>
             <dependencies>
                 <dependency>
@@ -171,38 +169,37 @@
             </dependencies>
         </profile>
 
-        <!-- Perfil test: Testcontainers, ArchUnit, failsafe para *IT, JaCoCo check y Checkstyle -->
-        <!-- bloqueantes. Se activa explicitamente con -Ptest. -->
+        <!-- Perfil test: Testcontainers, ArchUnit, failsafe para *IT y JaCoCo check bloqueante. -->
+        <!-- Se activa explícitamente con -Ptest. -->
         <profile>
             <id>test</id>
             <properties>
                 <spring.profiles.active>test</spring.profiles.active>
-                <checkstyle.failOnViolation>true</checkstyle.failOnViolation>
             </properties>
             <dependencies>
-                <!-- spring-boot-testcontainers aporta la anotacion @ServiceConnection que exige -->
+                <!-- spring-boot-testcontainers aporta la anotación @ServiceConnection que exige -->
                 <!-- ApplicationStartsIT; no esta en la lista original de dependencias del perfil -->
-                <!-- pero es imprescindible para que esa anotacion exista en el classpath. -->
+                <!-- pero es imprescindible para que esa anotación exista en el classpath. -->
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-testcontainers</artifactId>
                     <scope>test</scope>
                 </dependency>
-                <!-- En Spring Boot 4 TestRestTemplate se movio a este modulo aparte (antes venia -->
-                <!-- incluido en spring-boot-starter-test); tambien es imprescindible para ApplicationStartsIT. -->
+                <!-- En Spring Boot 4 TestRestTemplate se movió a este módulo aparte (antes venía -->
+                <!-- incluido en spring-boot-starter-test); también es imprescindible para ApplicationStartsIT. -->
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-resttestclient</artifactId>
                     <scope>test</scope>
                 </dependency>
-                <!-- spring-boot-resttestclient necesita RestTemplateBuilder en tiempo de ejecucion, -->
-                <!-- que este modulo aporta; el starter web no lo trae porque es del lado cliente. -->
+                <!-- spring-boot-resttestclient necesita RestTemplateBuilder en tiempo de ejecución, -->
+                <!-- que este módulo aporta; el starter web no lo trae porque es del lado cliente. -->
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-restclient</artifactId>
                     <scope>test</scope>
                 </dependency>
-                <!-- Testcontainers 2.x (la version que gestiona el BOM de Spring Boot 4.1.1) renombro -->
+                <!-- Testcontainers 2.x (la version que gestiona el BOM de Spring Boot 4.1.1) renombró -->
                 <!-- estos artefactos de "postgresql"/"junit-jupiter" a "testcontainers-postgresql" y -->
                 <!-- "testcontainers-junit-jupiter"; los nombres antiguos ya no se publican en esa serie. -->
                 <dependency>
@@ -224,8 +221,8 @@
             </dependencies>
             <build>
                 <plugins>
-                    <!-- En este perfil, Checkstyle tambien revisa src/test-integration/java: el -->
-                    <!-- valor por defecto de testSourceDirectories no lo veria a tiempo porque -->
+                    <!-- En este perfil, Checkstyle también revisa src/test-integration/java: el -->
+                    <!-- valor por defecto de testSourceDirectories no lo vería a tiempo porque -->
                     <!-- Checkstyle corre en la fase validate, antes de que build-helper agregue -->
                     <!-- ese source root en generate-test-sources. -->
                     <plugin>
@@ -235,7 +232,7 @@
                         <configuration>
                             <configLocation>checkstyle.xml</configLocation>
                             <consoleOutput>true</consoleOutput>
-                            <failOnViolation>${checkstyle.failOnViolation}</failOnViolation>
+                            <failOnViolation>true</failOnViolation>
                             <violationSeverity>error</violationSeverity>
                             <includeTestSourceDirectory>true</includeTestSourceDirectory>
                             <testSourceDirectories>
@@ -255,8 +252,8 @@
                     </plugin>
                     <!-- HexagonalArchitectureTest y ApplicationStartsIT usan ArchUnit y Testcontainers, -->
                     <!-- dependencias exclusivas de este perfil, por lo que viven en un source root -->
-                    <!-- aparte (src/test-integration/java) que solo se agrega a la compilacion aqui; -->
-                    <!-- asi ./mvnw test con el perfil dev no intenta compilarlas sin esas dependencias. -->
+                    <!-- aparte (src/test-integration/java) que solo se agrega a la compilación aquí; -->
+                    <!-- así ./mvnw test con el perfil dev no intenta compilarlas sin esas dependencias. -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>build-helper-maven-plugin</artifactId>
@@ -334,12 +331,11 @@
             </build>
         </profile>
 
-        <!-- Perfil prod: sin devtools ni seed, configuracion por variables de entorno. -->
+        <!-- Perfil prod: sin devtools ni seed, configuración por variables de entorno. -->
         <profile>
             <id>prod</id>
             <properties>
                 <spring.profiles.active>prod</spring.profiles.active>
-                <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
             </properties>
         </profile>
     </profiles>
