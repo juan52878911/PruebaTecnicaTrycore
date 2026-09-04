@@ -2,6 +2,7 @@ package com.trycore.evm.adapter.in.rest;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -25,6 +26,8 @@ import com.trycore.evm.domain.exception.ProjectNotFoundException;
 public class GlobalExceptionHandler {
 
     private static final String VALIDATION_ERROR_DETAIL = "La petición contiene campos inválidos";
+    private static final String INTEGRITY_ERROR_DETAIL =
+            "La petición viola una restricción de la base de datos y no se pudo guardar";
     private static final String ERRORS_PROPERTY = "errors";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -35,9 +38,21 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    /** El cuerpo ilegible no aporta un detalle que se pueda mostrar al cliente sin filtrar internos. */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleMalformedRequest(final HttpMessageNotReadableException exception) {
+    public ProblemDetail handleMalformedRequest() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, VALIDATION_ERROR_DETAIL);
+    }
+
+    /**
+     * Red de seguridad para lo que la base de datos rechaza y la validación de entrada no atrapó.
+     * Sin este manejador la respuesta sería un 500 con la sentencia SQL y el mensaje del motor en
+     * el cuerpo, lo que rompe el contrato RFC 7807 y expone detalles internos. El mensaje original
+     * no se propaga al cliente justamente por eso.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleIntegrityViolation() {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, INTEGRITY_ERROR_DETAIL);
     }
 
     @ExceptionHandler({InvalidProjectException.class, InvalidActivityException.class})

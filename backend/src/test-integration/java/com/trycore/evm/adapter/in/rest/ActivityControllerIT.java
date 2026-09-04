@@ -178,6 +178,72 @@ class ActivityControllerIT {
     }
 
     @Test
+    void createWithMoreDecimalsThanStorableReturns400WithFieldError() {
+        // La columna guarda dos decimales: aceptar 33.333 haría que la respuesta confirmara una
+        // cifra distinta de la almacenada y que los indicadores no correspondieran a los datos.
+        final Long projectId = createProject();
+        final ActivityRequest invalidRequest =
+                activityRequest("Actividad demasiado precisa", "1000", "33.333", "10", "10.005");
+
+        final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                activitiesPath(projectId), HttpMethod.POST, new HttpEntity<>(invalidRequest), PROBLEM_TYPE);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        final Map<String, Object> problem = response.getBody();
+        assertThat(problem).isNotNull();
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> errors = (List<Map<String, Object>>) problem.get("errors");
+        assertThat(errors).anyMatch(error -> "plannedProgressPercent".equals(error.get("field")));
+        assertThat(errors).anyMatch(error -> "actualCost".equals(error.get("field")));
+    }
+
+    @Test
+    void createWithAmountLargerThanStorableReturns400InsteadOfServerError() {
+        // Sin la restricción de dígitos, este valor llegaba a PostgreSQL, desbordaba la columna y
+        // la respuesta era un 500 con la sentencia SQL en el cuerpo.
+        final Long projectId = createProject();
+        final ActivityRequest invalidRequest =
+                activityRequest("Actividad desbordada", "999999999999999999", "50", "0", "0");
+
+        final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                activitiesPath(projectId), HttpMethod.POST, new HttpEntity<>(invalidRequest), PROBLEM_TYPE);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        final Map<String, Object> problem = response.getBody();
+        assertThat(problem).isNotNull();
+        assertThat(problem).doesNotContainKey("trace");
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> errors = (List<Map<String, Object>>) problem.get("errors");
+        assertThat(errors).anyMatch(error -> "budgetAtCompletion".equals(error.get("field")));
+    }
+
+    @Test
+    void storedActivityMatchesTheOneReturnedOnCreation() {
+        // El cuerpo del 201 y el de la lectura posterior deben coincidir campo por campo: es la
+        // garantía de que nada se redondeó en silencio entre la respuesta y la base de datos.
+        final Long projectId = createProject();
+        final ActivityRequest request = activityRequest("Actividad exacta", "1000.55", "33.33", "10.01", "10.01");
+
+        final ResponseEntity<ActivityResponse> created =
+                restTemplate.postForEntity(activitiesPath(projectId), request, ActivityResponse.class);
+        final ResponseEntity<ActivityResponse[]> listed =
+                restTemplate.getForEntity(activitiesPath(projectId), ActivityResponse[].class);
+
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        final ActivityResponse createdBody = created.getBody();
+        final ActivityResponse[] listedBody = listed.getBody();
+        assertThat(createdBody).isNotNull();
+        assertThat(listedBody).isNotNull().hasSize(1);
+        assertThat(listedBody[0].budgetAtCompletion()).isEqualByComparingTo(createdBody.budgetAtCompletion());
+        assertThat(listedBody[0].plannedProgressPercent())
+                .isEqualByComparingTo(createdBody.plannedProgressPercent());
+        assertThat(listedBody[0].actualProgressPercent()).isEqualByComparingTo(createdBody.actualProgressPercent());
+        assertThat(listedBody[0].actualCost()).isEqualByComparingTo(createdBody.actualCost());
+        assertThat(listedBody[0].indicators().plannedValue())
+                .isEqualByComparingTo(createdBody.indicators().plannedValue());
+    }
+
+    @Test
     void createWithZeroActualCostReturnsNullCpiAndNotApplicableStatus() {
         final Long projectId = createProject();
         final ActivityRequest request = activityRequest("Actividad sin costo", "80000", "25", "0", "0");

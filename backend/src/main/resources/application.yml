@@ -2,6 +2,11 @@
 # El perfil activo se fija por filtrado de recursos de Maven según el perfil de build usado.
 server:
   port: 8080
+  error:
+    # Las trazas nunca viajan en la respuesta: devtools las activa por su cuenta en dev y eso
+    # filtraría sentencias SQL y nombres de tabla al cliente.
+    include-stacktrace: never
+    include-message: never
 
 spring:
   profiles:
