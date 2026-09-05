@@ -20,6 +20,7 @@ import {
   PERCENT_MAX,
   PERCENT_MIN,
 } from '../../core/api/models/activity';
+import { toMilestoneRequests } from '../../core/evm/milestone-request';
 import { isStarted, previewProgress } from '../../core/evm/progress-preview';
 import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
@@ -489,6 +490,10 @@ export class ActivityFormDialog {
       actualStartDate: this.orNull(this.actualStartDate()),
       actualEndDate: this.orNull(this.actualEndDate()),
       measurementMethod: this.measurementMethod(),
+      // Con hitos ponderados el servidor exige la tabla en cada petición: se reenvía intacta.
+      milestones: this.milestoneDriven()
+        ? toMilestoneRequests(this.activity()?.milestones ?? [])
+        : undefined,
     });
   }
 

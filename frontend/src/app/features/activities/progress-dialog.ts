@@ -16,6 +16,7 @@ import {
   PERCENT_MAX,
   PERCENT_MIN,
 } from '../../core/api/models/activity';
+import { toMilestoneRequests } from '../../core/evm/milestone-request';
 import { isStarted, previewProgress } from '../../core/evm/progress-preview';
 import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
@@ -384,6 +385,8 @@ export class ProgressDialog {
       actualEndDate: activity.actualEndDate,
       // Registrar avance no cambia la regla de medición: se reenvía la que ya tenía.
       measurementMethod: activity.measurementMethod,
+      // Con hitos ponderados el servidor exige la tabla en cada petición: se reenvía intacta.
+      milestones: this.milestoneDriven() ? toMilestoneRequests(activity.milestones) : undefined,
     });
   }
 }
