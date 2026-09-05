@@ -33,6 +33,47 @@ module.exports = defineConfig([
           style: 'kebab-case',
         },
       ],
+      // Axios vive confinado en core/api/axios-instance.ts. Es lo que hace que cambiar de cliente
+      // HTTP sea reescribir un fichero en lugar de tocar cada servicio, y evita que alguien cree
+      // una segunda instancia por descuido, sin interceptores ni configuración por entorno.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'axios',
+              message:
+                'Importa AXIOS_INSTANCE desde core/api/axios-instance en lugar de axios directamente.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/testing/*', '**/testing'],
+              message: 'Las ayudas de prueba solo se importan desde ficheros *.spec.ts.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // El único fichero autorizado a construir la instancia de axios, y los interceptores que
+    // necesitan sus tipos. Aquí la regla anterior se apaga a propósito.
+    files: [
+      'src/app/core/api/axios-instance.ts',
+      'src/app/core/api/interceptors/*.ts',
+      'src/app/core/api/testing/*.ts',
+      'src/app/core/api/*-api.ts',
+    ],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  {
+    // Los specs sí pueden usar las ayudas de prueba.
+    files: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
   {

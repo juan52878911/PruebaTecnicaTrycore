@@ -1,23 +1,38 @@
+import { provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
+
 import { App } from './app';
+import { provideApiTesting } from './core/api/testing/fake-adapter';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [provideRouter([]), ...provideApiTesting()],
     }).compileComponents();
   });
 
-  it('should create the app', () => {
+  it('monta el marco de la aplicación', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('monta una sola región de navegación, no las dos a la vez', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Sistema de Valor Ganado');
+
+    const navigations = (fixture.nativeElement as HTMLElement).querySelectorAll('nav');
+
+    expect(navigations.length).toBe(1);
+  });
+
+  it('deja sitio a la salida del enrutador y a los avisos', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('main')).not.toBeNull();
+    expect(element.querySelector('app-toast-host')).not.toBeNull();
   });
 });
