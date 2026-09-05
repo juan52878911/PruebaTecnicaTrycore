@@ -112,9 +112,10 @@ La única fuente del esquema es Flyway, en `backend/src/main/resources/db/migrat
 `docker-compose` arranca vacío y la aplicación crea las tablas al iniciarse. Los datos de demostración son una
 migración repetible que solo carga el perfil `dev`.
 
-`db/init.sql` es el script de inicialización que pide el enunciado: crea el mismo esquema y los mismos datos
-para quien prefiera preparar la base a mano, por ejemplo con `psql -U evm -d evm -f db/init.sql`. No lo monta
-`docker-compose` a propósito, para que no existan dos caminos que puedan divergir en silencio.
+`db/init.sql` es el script de inicialización que pide el enunciado, para quien prefiera preparar la base a
+mano con `psql -U evm -d evm -f db/init.sql`. No se edita: lo genera `./scripts/build-init-sql.sh`
+concatenando las migraciones y la semilla, de modo que no pueda divergir del esquema real. `docker-compose`
+no lo monta a propósito, para que exista un solo camino de inicialización efectivo.
 
 ## API
 
