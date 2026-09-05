@@ -279,7 +279,7 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-254 tests: 135 en el backend (97 unitarios y 38 de integración) y 119 en el frontend. Los valores esperados de
+269 tests: 135 en el backend (97 unitarios y 38 de integración) y 134 en el frontend. Los valores esperados de
 cada cálculo EVM están derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la
 salida del código.
 

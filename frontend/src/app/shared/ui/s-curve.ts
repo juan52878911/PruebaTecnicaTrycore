@@ -62,6 +62,18 @@ interface Series {
         }
       </g>
 
+      @if (points().length > 1) {
+        <line
+          [attr.x1]="viewWidth"
+          [attr.y1]="paddingTop"
+          [attr.x2]="viewWidth"
+          [attr.y2]="baseline"
+          stroke="rgba(139,111,224,.35)"
+          stroke-width="1.5"
+          stroke-dasharray="2 3"
+        />
+      }
+
       @for (series of series(); track series.key) {
         @if (series.area) {
           <path [attr.d]="series.area" fill="url(#valora-ev-fill)" />
@@ -137,6 +149,8 @@ export class SCurve {
 
   protected readonly viewWidth = VIEW_WIDTH;
   protected readonly viewHeight = VIEW_HEIGHT;
+  protected readonly paddingTop = PADDING_TOP;
+  protected readonly baseline = VIEW_HEIGHT - PADDING_BOTTOM;
 
   protected readonly gridLines = computed(() =>
     Array.from({ length: GRID_LINES }, (_, index) => {

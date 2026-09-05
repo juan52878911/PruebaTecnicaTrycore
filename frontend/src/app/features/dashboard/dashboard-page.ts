@@ -9,14 +9,17 @@ import {
 import { Router } from '@angular/router';
 
 import { MeasurementRequest } from '../../core/api/models/measurement';
-import { formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
+import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { formatDate, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
 import { SelectedProjectStore } from '../../core/selection/selected-project-store';
 import { costTone, scheduleTone } from '../../core/status/status-tone';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { GroupedBars } from '../../shared/ui/grouped-bars';
 import { IndexCard } from '../../shared/ui/index-card';
 import { KpiCard } from '../../shared/ui/kpi-card';
+import { OverallStatus } from '../../shared/ui/overall-status';
 import { SCurve } from '../../shared/ui/s-curve';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
@@ -37,9 +40,11 @@ const PERCENT_BASE = 100;
   imports: [
     Dialog,
     EmptyState,
+    GroupedBars,
     IndexCard,
     KpiCard,
     MeasurementDialog,
+    OverallStatus,
     ProjectPicker,
     SCurve,
     Skeleton,
@@ -94,73 +99,55 @@ const PERCENT_BASE = 100;
         (action)="goToActivities()"
       />
     } @else if (evm.indicators(); as indicators) {
-      <div class="grid">
-        <div class="column">
-          <app-kpi-card
-            [title]="labels.title('PV')"
-            [acronym]="labels.showAcronymBadge() ? 'PV' : null"
-            [value]="indicators.plannedValue"
-            unit="USD"
-            [footnote]="plannedShare()"
-          />
-          <app-kpi-card
-            [title]="labels.title('EV')"
-            [acronym]="labels.showAcronymBadge() ? 'EV' : null"
-            [value]="indicators.earnedValue"
-            unit="USD"
-            [footnote]="earnedShare()"
-          />
-          <app-kpi-card
-            [title]="labels.title('AC')"
-            [acronym]="labels.showAcronymBadge() ? 'AC' : null"
-            [value]="indicators.actualCost"
-            unit="USD"
-            [footnote]="costGap()"
-            [footnoteTone]="indicators.costVariance < 0 ? 'danger' : 'success'"
-          />
-        </div>
+      @if (!isDesktop()) {
+        <div class="mobile">
+          <app-overall-status [indicators]="indicators" [cutoffLabel]="lastCutoffLabel()" />
 
-        <div class="column">
-          <app-index-card
-            [title]="labels.title('CPI')"
-            [acronym]="labels.showAcronymBadge() ? 'CPI' : null"
-            [value]="indicators.costPerformanceIndex"
-            [message]="indicators.costStatus.message"
-            [tone]="costTone(indicators.costStatus.status)"
-          />
-          <app-index-card
-            [title]="labels.title('SPI')"
-            [acronym]="labels.showAcronymBadge() ? 'SPI' : null"
-            [value]="indicators.schedulePerformanceIndex"
-            [message]="indicators.scheduleStatus.message"
-            [tone]="scheduleTone(indicators.scheduleStatus.status)"
-          />
-          <div class="card variances">
-            <div>
-              <span class="label">{{ labels.short('CV') }}</span>
-              <p [class]="'figure tone-' + (indicators.costVariance < 0 ? 'danger' : 'success')">
-                {{ money(indicators.costVariance) }}
-              </p>
-            </div>
-            <div>
-              <span class="label">{{ labels.short('SV') }}</span>
-              <p
-                [class]="'figure tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')"
-              >
-                {{ money(indicators.scheduleVariance) }}
-              </p>
-            </div>
+          <div class="pair">
+            <app-index-card
+              [title]="labels.short('CPI')"
+              [value]="indicators.costPerformanceIndex"
+              [message]="indicators.costStatus.message"
+              [tone]="costTone(indicators.costStatus.status)"
+            />
+            <app-index-card
+              [title]="labels.short('SPI')"
+              [value]="indicators.schedulePerformanceIndex"
+              [message]="indicators.scheduleStatus.message"
+              [tone]="scheduleTone(indicators.scheduleStatus.status)"
+            />
           </div>
-        </div>
 
-        <div class="column wide">
           <section class="card chart">
             <header class="chart-head">
               <div>
-                <h2>Curva S del proyecto</h2>
+                <h2>Curva S</h2>
                 <p class="chart-lead">{{ timelineLead() }}</p>
               </div>
+              @if (lastCutoffLabel()) {
+                <span class="cut-chip">Corte: {{ lastCutoffLabel() }}</span>
+              }
             </header>
+            <div class="curve-summary">
+              <div>
+                <p class="curve-figure accent">{{ money(indicators.earnedValue) }}</p>
+                <p class="curve-caption">ganado a la fecha</p>
+              </div>
+              <div class="right">
+                <p
+                  [class]="
+                    'curve-figure tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')
+                  "
+                >
+                  {{ money(indicators.scheduleVariance) }}
+                </p>
+                <p class="curve-caption">
+                  {{
+                    indicators.scheduleVariance < 0 ? 'por debajo del plan' : 'por encima del plan'
+                  }}
+                </p>
+              </div>
+            </div>
             @if (evm.hasTimeline()) {
               <app-s-curve
                 [points]="evm.timeline()"
@@ -171,36 +158,147 @@ const PERCENT_BASE = 100;
             } @else {
               <app-empty-state
                 title="Sin curva S todavía"
-                description="La curva se dibuja con los cortes registrados. Registra el primero para empezar a ver la evolución del proyecto en el tiempo."
+                description="La curva se dibuja con los cortes registrados. Registra el primero para ver la evolución del proyecto en el tiempo."
                 actionLabel="Registrar corte"
                 (action)="measurementOpen.set(true)"
               />
             }
           </section>
+        </div>
+      } @else {
+        <div class="grid">
+          <div class="column">
+            <app-kpi-card
+              [title]="labels.title('PV')"
+              [acronym]="labels.showAcronymBadge() ? 'PV' : null"
+              [value]="indicators.plannedValue"
+              unit="USD"
+              [footnote]="plannedShare()"
+            />
+            <app-kpi-card
+              [title]="labels.title('EV')"
+              [acronym]="labels.showAcronymBadge() ? 'EV' : null"
+              [value]="indicators.earnedValue"
+              unit="USD"
+              [footnote]="earnedShare()"
+            />
+            <app-kpi-card
+              [title]="labels.title('AC')"
+              [acronym]="labels.showAcronymBadge() ? 'AC' : null"
+              [value]="indicators.actualCost"
+              unit="USD"
+              [footnote]="costGap()"
+              [footnoteTone]="indicators.costVariance < 0 ? 'danger' : 'success'"
+            />
+          </div>
 
-          <div class="closing">
-            <div class="card small">
-              <span class="label">{{ labels.short('EAC') }}</span>
-              <p class="figure">{{ money(indicators.estimateAtCompletion) }}</p>
+          <div class="column">
+            <app-index-card
+              [title]="labels.title('CPI')"
+              [acronym]="labels.showAcronymBadge() ? 'CPI' : null"
+              [value]="indicators.costPerformanceIndex"
+              [message]="indicators.costStatus.message"
+              [tone]="costTone(indicators.costStatus.status)"
+            />
+            <app-index-card
+              [title]="labels.title('SPI')"
+              [acronym]="labels.showAcronymBadge() ? 'SPI' : null"
+              [value]="indicators.schedulePerformanceIndex"
+              [message]="indicators.scheduleStatus.message"
+              [tone]="scheduleTone(indicators.scheduleStatus.status)"
+            />
+            <div class="card variances">
+              <div>
+                <span class="label">{{ labels.short('CV') }}</span>
+                <p [class]="'figure tone-' + (indicators.costVariance < 0 ? 'danger' : 'success')">
+                  {{ money(indicators.costVariance) }}
+                </p>
+              </div>
+              <div>
+                <span class="label">{{ labels.short('SV') }}</span>
+                <p
+                  [class]="
+                    'figure tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')
+                  "
+                >
+                  {{ money(indicators.scheduleVariance) }}
+                </p>
+              </div>
             </div>
-            <div class="card small">
-              <span class="label">{{ labels.short('VAC') }}</span>
-              <p
-                [class]="
-                  'figure tone-' +
-                  ((indicators.varianceAtCompletion ?? 0) < 0 ? 'danger' : 'success')
-                "
-              >
-                {{ money(indicators.varianceAtCompletion) }}
-              </p>
-            </div>
-            <div class="card small">
-              <span class="label">{{ labels.short('BAC') }}</span>
-              <p class="figure">{{ money(evm.budgetAtCompletion()) }}</p>
+          </div>
+
+          <div class="column wide">
+            <section class="card chart">
+              <header class="chart-head">
+                <div>
+                  <h2>Curva S del proyecto</h2>
+                  <p class="chart-lead">{{ timelineLead() }}</p>
+                </div>
+              </header>
+              @if (evm.hasTimeline()) {
+                <app-s-curve
+                  [points]="evm.timeline()"
+                  [plannedLabel]="labels.short('PV')"
+                  [earnedLabel]="labels.short('EV')"
+                  [actualCostLabel]="labels.short('AC')"
+                />
+              } @else {
+                <app-empty-state
+                  title="Sin curva S todavía"
+                  description="La curva se dibuja con los cortes registrados. Registra el primero para empezar a ver la evolución del proyecto en el tiempo."
+                  actionLabel="Registrar corte"
+                  (action)="measurementOpen.set(true)"
+                />
+              }
+            </section>
+
+            <div class="closing">
+              <div class="card small">
+                <span class="label">{{ labels.short('EAC') }}</span>
+                <p class="figure">{{ money(indicators.estimateAtCompletion) }}</p>
+              </div>
+              <div class="card small">
+                <span class="label">{{ labels.short('VAC') }}</span>
+                <p
+                  [class]="
+                    'figure tone-' +
+                    ((indicators.varianceAtCompletion ?? 0) < 0 ? 'danger' : 'success')
+                  "
+                >
+                  {{ money(indicators.varianceAtCompletion) }}
+                </p>
+              </div>
+              <div class="card small">
+                <span class="label">{{ labels.short('BAC') }}</span>
+                <p class="figure">{{ money(evm.budgetAtCompletion()) }}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        @if (evm.hasTimeline()) {
+          <section class="card comparison">
+            <header class="chart-head">
+              <div>
+                <h2>
+                  {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }}
+                  por corte
+                </h2>
+                <p class="chart-lead">
+                  La curva muestra la tendencia; esta comparativa, la distancia entre las tres
+                  series en cada corte.
+                </p>
+              </div>
+            </header>
+            <app-grouped-bars
+              [points]="evm.timeline()"
+              [plannedLabel]="labels.short('PV')"
+              [earnedLabel]="labels.short('EV')"
+              [actualCostLabel]="labels.short('AC')"
+            />
+          </section>
+        }
+      }
 
       @if (evm.activitiesAtRisk().length > 0) {
         <section class="card risk">
@@ -353,6 +451,59 @@ const PERCENT_BASE = 100;
     .small .figure {
       font-size: 22px;
     }
+    .mobile {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap-grid);
+    }
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .cut-chip {
+      flex: none;
+      border-radius: var(--radius-pill);
+      background: var(--control-hover);
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 7px 12px;
+      white-space: nowrap;
+    }
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .curve-summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .curve-summary .right {
+      text-align: right;
+    }
+    .curve-figure {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .curve-figure.accent {
+      color: var(--accent-text);
+    }
+    .curve-caption {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .comparison {
+      margin-top: var(--gap-grid);
+    }
     .risk {
       margin-top: var(--gap-grid);
     }
@@ -430,7 +581,17 @@ export class DashboardPage {
   protected readonly pickerOpen = signal(false);
   protected readonly measurementOpen = signal(false);
 
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
   protected readonly selectedId = this.selection.projectId;
+
+  /** Fecha del último corte, que es a la que se refieren las cifras del panel. */
+  protected readonly lastCutoffLabel = computed(() => {
+    const last = this.evm.timeline().at(-1);
+    if (last === undefined) {
+      return null;
+    }
+    return formatDate(last.cutoffDate, this.preferences.preferences().dateFormat);
+  });
   protected readonly projectName = computed(
     () => this.evm.summary()?.project.name ?? 'Panel del proyecto',
   );
