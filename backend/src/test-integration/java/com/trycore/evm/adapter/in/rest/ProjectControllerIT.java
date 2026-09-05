@@ -77,7 +77,7 @@ class ProjectControllerIT extends AbstractRestIntegrationTest {
                 new BigDecimal(plannedPercent),
                 new BigDecimal(actualPercent),
                 new BigDecimal(actualCost),
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         final ResponseEntity<ActivityResponse> response = restTemplate.postForEntity(
                 PROJECTS_PATH + "/" + projectId + "/activities", request, ActivityResponse.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
