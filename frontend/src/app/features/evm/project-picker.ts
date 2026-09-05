@@ -37,6 +37,10 @@ export interface PickerOption {
     <ul class="menu" role="listbox" aria-label="Proyecto activo">
       @if (!isDesktop()) {
         <li class="grabber" aria-hidden="true"></li>
+        <li class="sheet-head" aria-hidden="true">
+          <span class="sheet-title">Cambiar de proyecto</span>
+          <span class="sheet-subtitle">El panel y las actividades se recalculan al elegir.</span>
+        </li>
       }
       @for (option of options(); track option.project.id) {
         <li>
@@ -64,6 +68,11 @@ export interface PickerOption {
               </span>
             </span>
           </button>
+        </li>
+      }
+      @if (!isDesktop()) {
+        <li class="sheet-foot">
+          <button type="button" class="cancel" (click)="dismissed.emit()">Cancelar</button>
         </li>
       }
     </ul>
@@ -106,9 +115,58 @@ export interface PickerOption {
     .grabber {
       width: 38px;
       height: 4px;
-      margin: 0 auto 12px;
+      margin: 0 auto 16px;
       border-radius: var(--radius-pill);
       background: rgba(255, 255, 255, 0.18);
+    }
+    .sheet-head {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 0 8px 16px;
+    }
+    .sheet-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+    .sheet-subtitle {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+    :host(.sheet) .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+    :host(.sheet) li:not(.grabber):not(.sheet-head):not(.sheet-foot) > button {
+      background: var(--card-nested);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 16px 17px;
+    }
+    :host(.sheet) button.selected {
+      background: rgba(139, 111, 224, 0.1);
+      border-color: rgba(139, 111, 224, 0.3);
+    }
+    :host(.sheet) .name {
+      font-size: 14.5px;
+    }
+    :host(.sheet) .meta {
+      font-size: 11.5px;
+    }
+    .cancel {
+      width: 100%;
+      border: none;
+      background: none;
+      padding: 16px 4px 2px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
     }
     .menu {
       list-style: none;

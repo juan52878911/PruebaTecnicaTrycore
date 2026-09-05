@@ -70,6 +70,7 @@ const JUMP_SETTLE_MS = 900;
     <app-page-header
       title="Ajustes"
       subtitle="del cálculo"
+      mobileKicker="Cálculo EVM"
       lead="Estas preferencias se guardan en este navegador. No viajan al servidor ni afectan a los datos del proyecto."
     >
       <button type="button" class="chip" (click)="restore()">Restablecer valores</button>

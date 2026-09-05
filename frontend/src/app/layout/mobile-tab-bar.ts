@@ -22,7 +22,7 @@ import { NAV_ITEMS } from './navigation';
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="item.icon" /></svg>
           <span>{{ item.label }}</span>
         </a>
-        <!-- El botón de alta va en el centro de la barra, elevado sobre ella. -->
+        <!-- El botón de alta va en el centro de la barra, dentro de ella, como en el diseño. -->
         @if (index === centerIndex) {
           <button type="button" class="fab" (click)="newActivity()" aria-label="Nueva actividad">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -47,6 +47,7 @@ import { NAV_ITEMS } from './navigation';
       z-index: 30;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 4px;
       padding: 10px;
       background: rgba(16, 16, 18, 0.94);
@@ -61,18 +62,18 @@ import { NAV_ITEMS } from './navigation';
       flex-direction: column;
       align-items: center;
       gap: 4px;
-      min-height: 44px;
-      padding: 9px 0;
-      border-radius: var(--radius-tile);
+      min-width: 0;
+      padding: 9px 9px;
+      border-radius: 16px;
       text-decoration: none;
       color: var(--text-dim);
       font-size: 10px;
       font-weight: 600;
+      transition: background var(--motion-veil);
     }
     a.active {
-      background: var(--accent-soft);
+      background: rgba(139, 111, 224, 0.14);
       color: var(--accent-text);
-      font-weight: 700;
     }
     a.active span {
       color: var(--text);
@@ -88,11 +89,14 @@ import { NAV_ITEMS } from './navigation';
       place-items: center;
       width: 54px;
       height: 54px;
-      margin-top: -24px;
+      margin: 0 4px;
       border: none;
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+      transition: background var(--motion-veil);
+    }
+    .fab:hover {
+      background: rgba(255, 255, 255, 0.88);
     }
     .fab svg {
       width: 27px;

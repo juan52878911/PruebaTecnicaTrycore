@@ -27,6 +27,9 @@ function today(): string {
     <app-dialog
       title="Registrar corte"
       subtitle="Congela las cifras actuales del proyecto en una fecha, para la curva S."
+      primaryLabel="Registrar corte"
+      [primaryDisabled]="!canSave()"
+      (confirm)="submit()"
       (dismiss)="dismissed.emit()"
     >
       <app-form-field
@@ -65,13 +68,6 @@ function today(): string {
       } @else if (generalError()) {
         <p class="conflict" role="alert">{{ generalError() }}</p>
       }
-
-      <ng-container dialogActions>
-        <button type="button" class="secondary" (click)="dismissed.emit()">Cancelar</button>
-        <button type="button" class="primary" [disabled]="!canSave()" (click)="submit()">
-          Registrar corte
-        </button>
-      </ng-container>
     </app-dialog>
   `,
   styles: `
@@ -83,27 +79,6 @@ function today(): string {
       border: 1px solid rgba(231, 224, 138, 0.22);
       color: var(--warning);
       font-size: 12.5px;
-      font-weight: 600;
-    }
-    .primary,
-    .secondary {
-      border-radius: var(--radius-pill);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 12px 22px;
-      border: 1px solid transparent;
-    }
-    .primary {
-      background: #fff;
-      color: var(--screen);
-    }
-    .primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .secondary {
-      background: var(--control-hover);
-      color: var(--text-muted);
       font-weight: 600;
     }
   `,

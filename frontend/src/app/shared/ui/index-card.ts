@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 
 import { UndefinedIndicator } from '../../core/api/models/evm';
 import { formatIndex, isDefinedIndicator } from '../../core/format/evm-format';
@@ -19,7 +25,7 @@ const FULL_PERCENT = 100;
   selector: 'app-index-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <article class="card" [class]="'tone-' + tone()">
+    <article class="card" [class]="'tone-' + tone()" [class.compact]="compact()">
       <header>
         <h3>{{ title() }}</h3>
         @if (acronym()) {
@@ -33,12 +39,16 @@ const FULL_PERCENT = 100;
         [attr.aria-label]="title() + ': ' + text() + '. Equilibrio en 1,00.'"
       >
         <div class="fill" [class]="'tone-' + tone()" [style.width.%]="fillWidth()"></div>
-        <span class="mark"></span>
+        @if (!compact()) {
+          <span class="mark"></span>
+        }
       </div>
-      <p class="reading">
-        <span class="dot" [class]="'tone-' + tone()"></span>
-        {{ message() }}
-      </p>
+      @if (!compact()) {
+        <p class="reading">
+          <span class="dot" [class]="'tone-' + tone()"></span>
+          {{ message() }}
+        </p>
+      }
     </article>
   `,
   styles: `
@@ -154,6 +164,27 @@ const FULL_PERCENT = 100;
       border-radius: 50%;
       background: currentColor;
     }
+    .card.compact {
+      border-radius: 20px;
+      padding: 18px;
+    }
+    .card.compact h3 {
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      color: var(--text-dim);
+    }
+    .card.compact .figure {
+      margin-top: 10px;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+    .card.compact .track {
+      margin-top: 12px;
+      height: 5px;
+      border-radius: 9px;
+    }
   `,
 })
 export class IndexCard {
@@ -163,6 +194,11 @@ export class IndexCard {
   readonly message = input.required<string>();
   readonly tone = input<Tone>('neutral');
   readonly acronym = input<string | null>(null);
+  /**
+   * Versión de móvil del diseño: rótulo pequeño, cifra a 32 px, barra de 5 px sin marca y sin la
+   * lectura, que en esa pantalla va en la tarjeta de estado general.
+   */
+  readonly compact = input(false, { transform: booleanAttribute });
 
   protected readonly text = computed(() => formatIndex(this.value()));
   protected readonly fillWidth = computed(() => {

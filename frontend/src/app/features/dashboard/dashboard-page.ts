@@ -21,6 +21,7 @@ import {
 } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
+import { EvmIndicators } from '../../core/api/models/evm';
 import { SelectedProjectStore } from '../../core/selection/selected-project-store';
 import { costTone, scheduleTone } from '../../core/status/status-tone';
 import { EmptyState } from '../../shared/ui/empty-state';
@@ -63,6 +64,10 @@ const PERCENT_BASE = 100;
       title="Hola de nuevo"
       subtitle="Alicia"
       lead="Análisis de Valor Ganado a la fecha del último corte."
+      mobileKicker="Proyecto"
+      [mobileTitle]="projectName()"
+      pickable
+      (pick)="pickerOpen.set(true)"
     >
       <div class="anchor">
         <app-chip-button
@@ -70,7 +75,7 @@ const PERCENT_BASE = 100;
           [open]="pickerOpen()"
           (pressed)="pickerOpen.set(!pickerOpen())"
         />
-        @if (pickerOpen()) {
+        @if (pickerOpen() && isDesktop()) {
           <app-project-picker
             [options]="pickerOptions()"
             [selectedId]="selectedId()"
@@ -87,6 +92,16 @@ const PERCENT_BASE = 100;
         />
       }
     </app-page-header>
+
+    <!-- En móvil el selector es una hoja inferior que abre el título de la cabecera. -->
+    @if (pickerOpen() && !isDesktop()) {
+      <app-project-picker
+        [options]="pickerOptions()"
+        [selectedId]="selectedId()"
+        (choose)="choose($event)"
+        (dismissed)="pickerOpen.set(false)"
+      />
+    }
 
     @if (evm.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
@@ -132,7 +147,7 @@ const PERCENT_BASE = 100;
     } @else if (evm.indicators(); as indicators) {
       @if (!isDesktop()) {
         <div class="mobile">
-          <app-overall-status [indicators]="indicators" [cutoffLabel]="lastCutoffLabel()" />
+          <app-overall-status [indicators]="indicators" />
 
           <div class="pair">
             <app-index-card
@@ -140,24 +155,24 @@ const PERCENT_BASE = 100;
               [value]="indicators.costPerformanceIndex"
               [message]="indicators.costStatus.message"
               [tone]="costTone(indicators)"
+              compact
             />
             <app-index-card
               [title]="labels.short('SPI')"
               [value]="indicators.schedulePerformanceIndex"
               [message]="indicators.scheduleStatus.message"
               [tone]="scheduleTone(indicators)"
+              compact
             />
           </div>
 
           <section class="card chart">
             <header class="chart-head">
-              <div>
-                <h2>Curva S</h2>
-                <p class="chart-lead">{{ timelineLead() }}</p>
-              </div>
-              @if (lastCutoffLabel()) {
-                <span class="cut-chip">Corte: {{ lastCutoffLabel() }}</span>
-              }
+              <h2>Curva S</h2>
+              <!-- Misma etiqueta que el diseño; además abre el registro de corte, que en móvil no tiene otro sitio. -->
+              <button type="button" class="cut-chip" (click)="measurementOpen.set(true)">
+                {{ lastCutoffShort() ? 'Corte: ' + lastCutoffShort() : 'Registrar corte' }}
+              </button>
             </header>
             <div class="curve-summary">
               <div>
@@ -185,7 +200,15 @@ const PERCENT_BASE = 100;
                 [plannedLabel]="labels.short('PV')"
                 [earnedLabel]="labels.short('EV')"
                 [actualCostLabel]="labels.short('AC')"
+                compact
               />
+              <p class="curve-note">
+                <span
+                  class="dot"
+                  [class]="'dot tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')"
+                ></span>
+                {{ curveNote(indicators) }}
+              </p>
             } @else {
               <app-empty-state
                 title="Sin curva S todavía"
@@ -472,19 +495,47 @@ const PERCENT_BASE = 100;
     }
     .cut-chip {
       flex: none;
+      border: none;
       border-radius: var(--radius-pill);
       background: var(--control-hover);
-      color: var(--text-muted);
-      font-size: 11.5px;
+      color: var(--text-dim);
+      font-size: 11px;
       font-weight: 600;
-      padding: 7px 12px;
+      padding: 6px 11px;
       white-space: nowrap;
     }
     .chart-head {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 14px;
+      margin-bottom: 14px;
+    }
+    .chart-head h2 {
+      font-size: 14px;
+    }
+    .curve-summary .right .curve-figure {
+      font-size: 14px;
+    }
+    .curve-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin: 14px 0 0;
+      padding-top: 13px;
+      border-top: 1px solid var(--border-card);
+      font-size: 12px;
+      line-height: 1.5;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .curve-note .dot {
+      flex: none;
+      width: 7px;
+      height: 7px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: currentColor;
     }
     .curve-summary {
       display: flex;
@@ -507,7 +558,8 @@ const PERCENT_BASE = 100;
     }
     .curve-caption {
       margin: 4px 0 0;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 500;
       color: var(--text-dim);
     }
     .risk {
@@ -659,14 +711,6 @@ export class DashboardPage {
     return `${formatMoneyRounded(gap)} ${direction} ${this.labels.inline('EV')}`;
   });
 
-  protected readonly timelineLead = computed(() => {
-    const total = this.evm.timeline().length;
-    if (total === 0) {
-      return 'Sin cortes registrados.';
-    }
-    return total === 1 ? '1 corte registrado.' : `${total} cortes registrados.`;
-  });
-
   /** Umbrales con los que el servidor clasificó estas cifras; no se reproducen en el cliente. */
   protected readonly warningLabel = computed(() =>
     formatIndex(this.evm.indicators()?.thresholds.warning ?? null),
@@ -681,6 +725,13 @@ export class DashboardPage {
       this.selection.ensureSelection(this.projects.rows().map((row) => row.project));
       this.evm.select(this.selection.projectId());
     });
+  }
+
+  /** Lectura de la curva del artboard móvil: qué línea va por debajo de cuál y qué significa. */
+  protected curveNote(indicators: EvmIndicators): string {
+    return indicators.scheduleVariance < 0
+      ? 'La línea violeta va por debajo de la punteada: se ha ganado menos trabajo del planificado a hoy.'
+      : 'La línea violeta va por encima de la punteada: se ha ganado al menos el trabajo planificado a hoy.';
   }
 
   protected choose(projectId: number): void {

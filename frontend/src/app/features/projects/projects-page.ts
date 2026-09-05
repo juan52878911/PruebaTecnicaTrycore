@@ -48,7 +48,7 @@ const EMPTY_CELL = '—';
     StatusBadge,
   ],
   template: `
-    <app-page-header title="Proyectos" [subtitle]="countLabel()">
+    <app-page-header title="Proyectos" [subtitle]="countLabel()" mobileTitle="Proyectos">
       <div class="anchor">
         <app-chip-button
           [label]="filterLabel()"
