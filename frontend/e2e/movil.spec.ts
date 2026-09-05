@@ -65,7 +65,8 @@ test.describe('móvil', () => {
     page,
   }) => {
     await page.goto('/proyectos/1/actividades');
-    await page.getByRole('button', { name: '+ Nueva' }).click();
+    // El alta sale del "+" de la barra inferior, como en el diseño.
+    await page.getByRole('button', { name: 'Nueva actividad' }).click();
     const sheet = page.getByRole('dialog', { name: 'Nueva actividad' });
     await expect(sheet).toBeVisible();
 
@@ -86,7 +87,7 @@ test.describe('móvil', () => {
 
   test('la hoja de registrar corte pasa por encima de la barra', async ({ page }) => {
     await page.goto('/panel');
-    await page.getByRole('button', { name: /Corte:|Registrar corte/ }).click();
+    await page.locator('.cut-chip').click();
     await expect(page.getByRole('dialog', { name: 'Registrar corte' })).toBeVisible();
     await page.waitForTimeout(400);
     const nav = (await page.locator('app-mobile-tab-bar nav').boundingBox())!;
@@ -99,7 +100,7 @@ test.describe('móvil', () => {
 
   test('el selector de proyecto se abre como hoja inferior', async ({ page }) => {
     await page.goto('/panel');
-    await page.getByRole('button', { name: 'Planta Solar Norte' }).click();
+    await page.getByRole('button', { name: 'Cambiar de proyecto' }).click();
     const list = page.getByRole('listbox', { name: 'Proyecto activo' });
     await expect(list).toBeVisible();
 
@@ -110,13 +111,51 @@ test.describe('móvil', () => {
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
 
     await page.getByRole('option', { name: /Migración core bancario/ }).click();
-    await expect(page.getByRole('button', { name: 'Migración core bancario' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cambiar de proyecto' })).toHaveText(
+      /Migración core bancario/,
+    );
   });
 
-  test('la comparativa por corte cabe en el ancho de la pantalla', async ({ page }) => {
+  test('la cabecera sigue el artboard: rótulo, título y avatar, sin chips', async ({ page }) => {
+    const expected: Record<string, [string, string]> = {
+      '/panel': ['Proyecto', 'Planta Solar Norte'],
+      '/proyectos': ['2 activos', 'Proyectos'],
+      '/proyectos/1/actividades': ['Planta Solar Norte', 'Actividades'],
+      '/proyectos/1/actividades/1': ['Planta Solar Norte', 'Obra civil — cimentación'],
+      '/ajustes': ['Cálculo EVM', 'Ajustes'],
+      '/perfil': ['Administrador', 'Perfil'],
+    };
+    for (const [route, [kicker, title]] of Object.entries(expected)) {
+      await page.goto(route);
+      const header = page.locator('app-page-header header');
+      await expect(header.locator('.kicker'), route).toHaveText(kicker);
+      await expect(header.locator('h1'), route).toHaveText(title);
+      await expect(header.locator('.avatar'), route).toBeVisible();
+      await expect(header.locator('app-chip-button:visible'), route).toHaveCount(0);
+    }
+    // Solo el panel y las actividades permiten cambiar de proyecto desde el título.
+    await page.goto('/proyectos');
+    await expect(page.getByRole('button', { name: 'Cambiar de proyecto' })).toHaveCount(0);
+  });
+
+  test('el botón de alta va dentro de la barra, entre Proyectos y Actividades', async ({
+    page,
+  }) => {
+    await page.goto('/panel');
+    const nav = page.locator('app-mobile-tab-bar nav');
+    const bar = await settledBox(nav);
+    const plus = (await page.getByRole('button', { name: 'Nueva actividad' }).boundingBox())!;
+    expect(plus.y).toBeGreaterThanOrEqual(bar.y);
+    expect(plus.y + plus.height).toBeLessThanOrEqual(bar.y + bar.height);
+    const projects = (await nav.getByRole('link', { name: 'Proyectos' }).boundingBox())!;
+    const activities = (await nav.getByRole('link', { name: 'Actividades' }).boundingBox())!;
+    expect(plus.x).toBeGreaterThan(projects.x + projects.width - 1);
+    expect(plus.x + plus.width).toBeLessThan(activities.x + 1);
+  });
+
+  test('la comparativa por corte es de escritorio: en móvil no se muestra', async ({ page }) => {
     await page.goto('/proyectos/1/actividades');
-    await expect(page.locator('app-grouped-bars .group')).toHaveCount(3);
-    const plot = (await page.locator('app-grouped-bars .plot').boundingBox())!;
-    expect(plot.x + plot.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    await expect(page.locator('app-activities-page .cards li')).toHaveCount(5);
+    await expect(page.locator('app-grouped-bars')).toHaveCount(0);
   });
 });
