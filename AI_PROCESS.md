@@ -2261,3 +2261,39 @@ Intentar nuevamente
 ```text
 si, sigue con lo que falta
 ```
+
+### 2026-09-04 23:26 -05 - Claude Code
+
+```text
+continua con los métodos de medición
+```
+### 2026-09-04 23:36 -05 - Claude Code
+
+```text
+continua con los hitos ponderados y las demas piezas
+```
+### 2026-09-05 02:32 -05 - Claude Code
+
+```text
+Al estar en dashboard el tamaño del contenedor no es el mismo que cuando estoy en actividades por alguna razon, crea temblores en la UI y no hay fluidez
+```
+### 2026-09-05 02:36 -05 - Claude Code
+
+```text
+Alinea bien los contenedores para que esten con el tamaño correcto
+```
+### 2026-09-05 02:44 -05 - Claude Code
+
+```text
+arregla también lo del resize, elimina todos los procesos de ejecucion del front, hay algo que usa el puerto y no me permite seguir. Yo ejecuto el front manualmente
+```
+### 2026-09-05 02:48 -05 - Claude Code
+
+```text
+mergea los dos PRs
+```
+### 2026-09-05 02:56 -05 - Claude Code
+
+```text
+actualiza el AI_PROCESS con todo lo de estas últimas sesiones, resume mis decisiones, problemas y todo lo que pide el documento
+```
