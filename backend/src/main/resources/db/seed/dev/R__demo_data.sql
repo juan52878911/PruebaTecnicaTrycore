@@ -289,3 +289,22 @@ WHERE l.measurement_id = m.id
   AND l.activity_name = 'Obra civil — cimentación'
   AND m.cutoff_date >= DATE '2026-06-30'
   AND l.earned_value <> 398500.00;
+
+-- ---------------------------------------------------------------------------------------------
+-- Responsables de los proyectos de demostración
+--
+-- Se asignan con UPDATE y no en los INSERT de arriba porque esos INSERT llevan WHERE NOT EXISTS:
+-- en una base que ya cargó una versión anterior de la semilla no volverían a ejecutarse y los
+-- proyectos se quedarían sin responsable. El UPDATE solo escribe donde hace falta, así que es
+-- idempotente y no pisa una asignación posterior distinta de nula.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE projects p
+SET manager = v.manager
+FROM (VALUES
+    ('Planta Solar Norte',       'Alicia Ramos'),
+    ('Migración core bancario',  'Diego Muñoz'),
+    ('Portal de autogestión',    'Laura Peña')
+) AS v(name, manager)
+WHERE p.name = v.name
+  AND p.manager IS NULL;

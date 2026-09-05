@@ -134,6 +134,48 @@ CREATE INDEX IF NOT EXISTS idx_project_measurement_activities_measurement_id
     ON project_measurement_activities(measurement_id);
 
 -- =============================================================================
+-- V4__add_activity_measurement_method.sql
+-- =============================================================================
+
+-- Regla con la que cada actividad reconoce valor a partir de su avance.
+--
+-- La columna es obligatoria con valor por defecto, de modo que las filas existentes conservan el
+-- comportamiento de siempre: reconocer el porcentaje declarado tal cual. Esto importa además porque
+-- el seed de demostración es una migración repetible, y una columna obligatoria sin valor por
+-- defecto impediría reejecutarlo.
+--
+-- La restricción de valores admitidos acopla el esquema al enumerado del dominio: añadir una quinta
+-- regla exigirá una migración que la amplíe. Se asume a cambio de que la base rechace un valor que
+-- la aplicación no sabría interpretar.
+
+ALTER TABLE activities
+    ADD COLUMN IF NOT EXISTS measurement_method VARCHAR(24) NOT NULL DEFAULT 'PERCENT_COMPLETE';
+
+ALTER TABLE activities DROP CONSTRAINT IF EXISTS chk_activities_measurement_method;
+ALTER TABLE activities ADD CONSTRAINT chk_activities_measurement_method
+    CHECK (measurement_method IN ('PERCENT_COMPLETE', 'FIXED_0_100', 'FIXED_50_50', 'WEIGHTED_MILESTONES'));
+
+-- =============================================================================
+-- V6__add_project_manager.sql
+-- =============================================================================
+
+-- Responsable del proyecto: la persona a cuyo cargo está.
+--
+-- El tablero muestra "24 actividades · Alicia Ramos" bajo el nombre del proyecto, y hoy esa
+-- segunda mitad no existe en ninguna parte.
+--
+-- Migración aditiva: la columna admite nulos, así que las filas existentes siguen siendo válidas
+-- y el contrato del API no cambia para quien no envíe responsable. Admite nulos a propósito y no
+-- por comodidad: un proyecto puede registrarse antes de que se designe a quien lo dirige, y una
+-- columna obligatoria obligaría a inventar un nombre para poder crearlo.
+--
+-- Se usa ADD COLUMN IF NOT EXISTS por la misma razón que en las migraciones anteriores: la base
+-- local puede haber sido preparada a mano con db/init.sql y ambas rutas de inicialización deben
+-- poder convivir.
+
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS manager VARCHAR(120);
+
+-- =============================================================================
 -- R__demo_data.sql (datos de demostración, solo perfil dev)
 -- =============================================================================
 
@@ -428,3 +470,22 @@ WHERE l.measurement_id = m.id
   AND l.activity_name = 'Obra civil — cimentación'
   AND m.cutoff_date >= DATE '2026-06-30'
   AND l.earned_value <> 398500.00;
+
+-- ---------------------------------------------------------------------------------------------
+-- Responsables de los proyectos de demostración
+--
+-- Se asignan con UPDATE y no en los INSERT de arriba porque esos INSERT llevan WHERE NOT EXISTS:
+-- en una base que ya cargó una versión anterior de la semilla no volverían a ejecutarse y los
+-- proyectos se quedarían sin responsable. El UPDATE solo escribe donde hace falta, así que es
+-- idempotente y no pisa una asignación posterior distinta de nula.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE projects p
+SET manager = v.manager
+FROM (VALUES
+    ('Planta Solar Norte',       'Alicia Ramos'),
+    ('Migración core bancario',  'Diego Muñoz'),
+    ('Portal de autogestión',    'Laura Peña')
+) AS v(name, manager)
+WHERE p.name = v.name
+  AND p.manager IS NULL;
