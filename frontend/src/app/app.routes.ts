@@ -1,4 +1,7 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
+
+import { SelectedProjectStore } from './core/selection/selected-project-store';
 
 /**
  * Rutas de la aplicación, todas con carga diferida.
@@ -18,6 +21,21 @@ export const routes: Routes = [
     path: 'proyectos',
     title: 'Proyectos · Valora',
     loadComponent: () => import('./features/projects/projects-page').then((m) => m.ProjectsPage),
+  },
+  {
+    // La pestaña de la barra no lleva identificador: resuelve al proyecto activo, y al listado
+    // de proyectos si todavía no hay ninguno elegido.
+    path: 'actividades',
+    canActivate: [
+      () => {
+        const projectId = inject(SelectedProjectStore).projectId();
+        const router = inject(Router);
+        return projectId === undefined
+          ? router.createUrlTree(['/proyectos'])
+          : router.createUrlTree(['/proyectos', projectId, 'actividades']);
+      },
+    ],
+    children: [],
   },
   {
     path: 'proyectos/:projectId/actividades',

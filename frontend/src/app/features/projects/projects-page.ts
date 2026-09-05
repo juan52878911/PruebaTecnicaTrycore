@@ -20,6 +20,7 @@ import {
   scheduleTone,
   Tone,
 } from '../../core/status/status-tone';
+import { ChipGroup, ChipOption } from '../../shared/ui/chip-group';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -43,6 +44,8 @@ interface ProjectRow {
   readonly hasData: boolean;
 }
 
+type ProjectFilter = 'todos' | 'riesgo' | 'al-dia';
+
 const EMPTY_CELL = '—';
 
 /**
@@ -56,7 +59,7 @@ const EMPTY_CELL = '—';
 @Component({
   selector: 'app-projects-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EmptyState, IndexValue, ProjectFormDialog, Skeleton, StatusBadge],
+  imports: [ChipGroup, EmptyState, IndexValue, ProjectFormDialog, Skeleton, StatusBadge],
   template: `
     <header class="page-header">
       <h1>
@@ -67,6 +70,15 @@ const EMPTY_CELL = '—';
 
     @if (store.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
+    }
+
+    @if (rows().length > 0) {
+      <div class="filters">
+        <app-chip-group label="Filtrar proyectos" [options]="filterOptions" [(selected)]="filter" />
+        @if (filter() !== 'todos') {
+          <span class="filter-count">{{ filterCountLabel() }}</span>
+        }
+      </div>
     }
 
     @if (store.isLoading() && rows().length === 0) {
@@ -96,7 +108,7 @@ const EMPTY_CELL = '—';
           <span role="columnheader">{{ labels.short('SPI') }}</span>
           <span role="columnheader">Estado</span>
         </div>
-        @for (row of rows(); track row.project.id) {
+        @for (row of visibleRows(); track row.project.id) {
           <div class="row" role="row">
             <button type="button" class="name" role="cell" (click)="openActivities(row.project.id)">
               <span class="title">{{ row.project.name }}</span>
@@ -169,6 +181,17 @@ const EMPTY_CELL = '—';
       font-weight: 700;
       padding: 12px 22px;
       white-space: nowrap;
+    }
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .filter-count {
+      font-size: 12.5px;
+      color: var(--text-dim);
     }
     .banner {
       margin: 0 0 18px;
@@ -283,11 +306,45 @@ export class ProjectsPage {
   protected readonly formOpen = signal(false);
   protected readonly editing = signal<Project | null>(null);
 
+  protected readonly filterOptions: readonly ChipOption<ProjectFilter>[] = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'riesgo', label: 'En riesgo' },
+    { value: 'al-dia', label: 'Al día' },
+  ];
+  protected readonly filter = signal<ProjectFilter>('todos');
+
   protected readonly rows = computed(() =>
     this.store
       .projects()
       .map((project) => this.summaries().get(project.id) ?? this.pendingRow(project)),
   );
+
+  /**
+   * Filtro por salud del proyecto.
+   *
+   * Se apoya en el estado que devuelve el servidor, no en un umbral del cliente: "en riesgo" es lo
+   * que el backend marca como sobre presupuesto o atrasado. Un proyecto sin datos no es ninguna de
+   * las dos cosas, así que solo aparece en "Todos".
+   */
+  protected readonly visibleRows = computed(() => {
+    const filter = this.filter();
+    if (filter === 'todos') {
+      return this.rows();
+    }
+    return this.rows().filter((row) => {
+      if (!row.hasData) {
+        return false;
+      }
+      const atRisk = row.statusTone === 'danger' || row.statusTone === 'warning';
+      return filter === 'riesgo' ? atRisk : !atRisk;
+    });
+  });
+
+  protected readonly filterCountLabel = computed(() => {
+    const shown = this.visibleRows().length;
+    const total = this.rows().length;
+    return shown === 1 ? `1 de ${total} proyectos` : `${shown} de ${total} proyectos`;
+  });
 
   protected readonly countLabel = computed(() => {
     const total = this.store.projects().length;

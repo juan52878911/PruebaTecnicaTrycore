@@ -62,7 +62,17 @@ export interface MetricBar {
     .fill {
       height: 100%;
       border-radius: 9px;
+      transform-origin: left center;
       transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
+      animation: valora-fill 700ms cubic-bezier(0.4, 0, 0.2, 1) both 120ms;
+    }
+    @keyframes valora-fill {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
     }
   `,
 })

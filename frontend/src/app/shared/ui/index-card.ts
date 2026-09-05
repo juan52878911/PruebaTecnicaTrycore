@@ -102,6 +102,19 @@ const FULL_PERCENT = 100;
       inset: 0 auto 0 0;
       border-radius: var(--radius-pill);
       transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
+      /* Se llena desde cero al montar; después la transición cubre los cambios de valor. */
+      animation: valora-fill 700ms cubic-bezier(0.4, 0, 0.2, 1) both 120ms;
+    }
+    @keyframes valora-fill {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
+    }
+    .fill {
+      transform-origin: left center;
     }
     .fill.tone-danger {
       background: linear-gradient(90deg, var(--danger), #ffb48f);

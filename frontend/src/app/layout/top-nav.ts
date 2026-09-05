@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
+import { SelectedProjectStore } from '../core/selection/selected-project-store';
 import { NAV_ITEMS } from './navigation';
 
 /** Barra de navegación de escritorio: píldora con la pestaña activa en blanco. */
@@ -31,6 +32,11 @@ import { NAV_ITEMS } from './navigation';
           <span class="name">Alicia Ramos</span>
         </span>
       </a>
+      <button type="button" class="add" (click)="newActivity()" aria-label="Nueva actividad">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+      </button>
     </nav>
   `,
   styles: `
@@ -111,8 +117,47 @@ import { NAV_ITEMS } from './navigation';
       font-size: 13px;
       font-weight: 700;
     }
+    .add {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      flex: none;
+      border: 1px solid var(--border-control);
+      border-radius: 50%;
+      background: var(--control);
+      transition: background var(--motion-veil);
+    }
+    .add:hover {
+      background: var(--control-hover);
+    }
+    .add svg {
+      width: 22px;
+      height: 22px;
+      fill: rgba(255, 255, 255, 0.7);
+    }
   `,
 })
 export class TopNav {
+  private readonly selection = inject(SelectedProjectStore);
+  private readonly router = inject(Router);
+
   protected readonly items = NAV_ITEMS;
+
+  /**
+   * Abre el alta de actividad del proyecto activo.
+   *
+   * El estado del diálogo viaja en la URL en lugar de en un servicio compartido: así el botón
+   * funciona desde cualquier vista y el formulario abierto se puede enlazar.
+   */
+  protected newActivity(): void {
+    const projectId = this.selection.projectId();
+    if (projectId === undefined) {
+      void this.router.navigate(['/proyectos']);
+      return;
+    }
+    void this.router.navigate(['/proyectos', projectId, 'actividades'], {
+      queryParams: { nueva: 1 },
+    });
+  }
 }

@@ -39,10 +39,18 @@ WHERE NOT EXISTS (SELECT 1 FROM projects WHERE name = 'Data warehouse fase II');
 -- Actividades
 --
 -- Planta Solar Norte: proyecto sobre presupuesto y atrasado.
---   PV = 420 000 + 380 000 + 260 000 + 180 000 = 1 240 000
---   EV = 400 000 + 361 000 + 240 500 + 116 000 = 1 117 500
---   AC = 468 000 + 352 000 + 244 000 + 194 000 = 1 258 000
---   CPI = 1 117 500 / 1 258 000 = 0,8883   SPI = 1 117 500 / 1 240 000 = 0,9012
+--
+-- Las cifras reproducen el artboard del panel del diseño, que es la referencia visual del
+-- producto. Por eso el presupuesto suma 2 000 000: la quinta actividad, aún sin arrancar, aporta
+-- los 300 000 que faltaban.
+--   BAC = 500 000 + 475 000 + 325 000 + 400 000 + 300 000 = 2 000 000
+--   PV  = 420 000 + 380 000 + 260 000 + 180 000 +       0 = 1 240 000
+--   EV  = 398 500 + 361 000 + 240 500 + 116 000 +       0 = 1 116 000
+--   AC  = 468 000 + 352 000 + 244 000 + 194 000 +       0 = 1 258 000
+--   CV  = 1 116 000 - 1 258 000 = -142 000
+--   SV  = 1 116 000 - 1 240 000 = -124 000
+--   CPI = 1 116 000 / 1 258 000 = 0,8871   SPI = 1 116 000 / 1 240 000 = 0,9000
+--   EAC = 2 000 000 x 1 258 000 / 1 116 000 = 2 254 480,29   VAC = -254 480,29
 -- ---------------------------------------------------------------------------------------------
 
 INSERT INTO activities (
@@ -52,8 +60,8 @@ SELECT p.id, v.name, v.bac, v.planned, v.actual, v.ac,
        v.planned_start, v.planned_end, v.actual_start, v.actual_end
 FROM projects p
 CROSS JOIN (VALUES
-    -- PV 420 000 · EV 400 000 · CPI 0,8547 · SPI 0,9524 -> sobrecosto
-    ('Obra civil — cimentación',     500000.00, 84.00, 80.00, 468000.00,
+    -- PV 420 000 · EV 398 500 · CPI 0,8515 · SPI 0,9488 -> sobrecosto
+    ('Obra civil — cimentación',     500000.00, 84.00, 79.70, 468000.00,
      DATE '2026-01-15', DATE '2026-04-30', DATE '2026-01-15', DATE '2026-05-20'),
     -- PV 380 000 · EV 361 000 · CPI 1,0256 · SPI 0,9500 -> en presupuesto, algo atrasada
     ('Montaje de estructuras',       475000.00, 80.00, 76.00, 352000.00,
@@ -63,7 +71,12 @@ CROSS JOIN (VALUES
      DATE '2026-05-10', DATE '2026-09-20', DATE '2026-05-18', NULL),
     -- PV 180 000 · EV 116 000 · CPI 0,5979 · SPI 0,6444 -> crítica
     ('Pruebas y puesta en marcha',   400000.00, 45.00, 29.00, 194000.00,
-     DATE '2026-08-01', DATE '2026-11-30', DATE '2026-08-10', NULL)
+     DATE '2026-08-01', DATE '2026-11-30', DATE '2026-08-10', NULL),
+    -- Sin arrancar a la fecha de corte: PV, EV y AC valen 0, así que ni el CPI ni el SPI están
+    -- definidos. Es el caso borde de la actividad planificada que todavía no ha empezado, distinto
+    -- del de "Integración con el core", que sí tiene avance planificado pero ningún costo.
+    ('Conexión a la red',            300000.00,  0.00,  0.00,      0.00,
+     DATE '2026-11-01', DATE '2027-01-31', NULL, NULL)
 ) AS v(name, bac, planned, actual, ac, planned_start, planned_end, actual_start, actual_end)
 WHERE p.name = 'Planta Solar Norte'
   AND NOT EXISTS (SELECT 1 FROM activities a WHERE a.project_id = p.id AND a.name = v.name);
@@ -135,15 +148,15 @@ INSERT INTO project_measurements (
 SELECT p.id, v.cutoff, v.notes, v.bac, v.pv, v.ev, v.ac
 FROM projects p
 CROSS JOIN (VALUES
-    (DATE '2026-01-31', 'Cierre de enero',   1700000.00,  105000.00,   95000.00,  100000.00),
-    (DATE '2026-02-28', 'Cierre de febrero', 1700000.00,  235000.00,  210000.00,  228000.00),
-    (DATE '2026-03-31', 'Cierre de marzo',   1700000.00,  400000.00,  360000.00,  396000.00),
-    (DATE '2026-04-30', 'Cierre de abril',   1700000.00,  550000.00,  505000.00,  560000.00),
-    (DATE '2026-05-31', 'Cierre de mayo',    1700000.00,  690000.00,  636000.00,  694000.00),
-    (DATE '2026-06-30', 'Cierre de junio',   1700000.00,  850000.00,  790000.00,  850000.00),
-    (DATE '2026-07-31', 'Cierre de julio',   1700000.00,  990000.00,  920000.00,  984000.00),
-    -- Coincide con el consolidado en vivo: CPI 0,8883 y SPI 0,9012.
-    (DATE '2026-08-31', 'Cierre de agosto',  1700000.00, 1240000.00, 1117500.00, 1258000.00)
+    (DATE '2026-01-31', 'Cierre de enero',   2000000.00,  105000.00,   95000.00,  100000.00),
+    (DATE '2026-02-28', 'Cierre de febrero', 2000000.00,  235000.00,  210000.00,  228000.00),
+    (DATE '2026-03-31', 'Cierre de marzo',   2000000.00,  400000.00,  360000.00,  396000.00),
+    (DATE '2026-04-30', 'Cierre de abril',   2000000.00,  550000.00,  505000.00,  560000.00),
+    (DATE '2026-05-31', 'Cierre de mayo',    2000000.00,  690000.00,  636000.00,  694000.00),
+    (DATE '2026-06-30', 'Cierre de junio',   2000000.00,  850000.00,  788500.00,  850000.00),
+    (DATE '2026-07-31', 'Cierre de julio',   2000000.00,  990000.00,  918500.00,  984000.00),
+    -- Coincide con el consolidado en vivo: CPI 0,8871 y SPI 0,9000.
+    (DATE '2026-08-31', 'Cierre de agosto',  2000000.00, 1240000.00, 1116000.00, 1258000.00)
 ) AS v(cutoff, notes, bac, pv, ev, ac)
 WHERE p.name = 'Planta Solar Norte'
   AND NOT EXISTS (
@@ -185,13 +198,13 @@ CROSS JOIN (VALUES
     (DATE '2026-05-31', 'Obra civil — cimentación',   500000.00,  420000.00, 396000.00, 462000.00),
     (DATE '2026-05-31', 'Montaje de estructuras',     475000.00,  230000.00, 205000.00, 196000.00),
     (DATE '2026-05-31', 'Instalación eléctrica',      325000.00,   40000.00,  35000.00,  36000.00),
-    (DATE '2026-06-30', 'Obra civil — cimentación',   500000.00,  420000.00, 400000.00, 468000.00),
+    (DATE '2026-06-30', 'Obra civil — cimentación',   500000.00,  420000.00, 398500.00, 468000.00),
     (DATE '2026-06-30', 'Montaje de estructuras',     475000.00,  320000.00, 290000.00, 280000.00),
     (DATE '2026-06-30', 'Instalación eléctrica',      325000.00,  110000.00, 100000.00, 102000.00),
-    (DATE '2026-07-31', 'Obra civil — cimentación',   500000.00,  420000.00, 400000.00, 468000.00),
+    (DATE '2026-07-31', 'Obra civil — cimentación',   500000.00,  420000.00, 398500.00, 468000.00),
     (DATE '2026-07-31', 'Montaje de estructuras',     475000.00,  380000.00, 350000.00, 340000.00),
     (DATE '2026-07-31', 'Instalación eléctrica',      325000.00,  190000.00, 170000.00, 176000.00),
-    (DATE '2026-08-31', 'Obra civil — cimentación',   500000.00,  420000.00, 400000.00, 468000.00),
+    (DATE '2026-08-31', 'Obra civil — cimentación',   500000.00,  420000.00, 398500.00, 468000.00),
     (DATE '2026-08-31', 'Montaje de estructuras',     475000.00,  380000.00, 361000.00, 352000.00),
     (DATE '2026-08-31', 'Instalación eléctrica',      325000.00,  260000.00, 240500.00, 244000.00),
     (DATE '2026-08-31', 'Pruebas y puesta en marcha', 400000.00,  180000.00, 116000.00, 194000.00)
@@ -225,3 +238,54 @@ WHERE p.name = 'Migración core bancario'
   AND NOT EXISTS (
       SELECT 1 FROM project_measurement_activities l
       WHERE l.measurement_id = m.id AND l.activity_name = v.activity_name);
+
+-- ---------------------------------------------------------------------------------------------
+-- Realineación de los datos de demostración
+--
+-- Los INSERT de arriba llevan WHERE NOT EXISTS para ser idempotentes, lo que significa que en una
+-- base que ya cargó una versión anterior de esta semilla no actualizan nada: las filas ya existen
+-- y se quedan con las cifras viejas. Flyway sí vuelve a ejecutar esta migración cuando cambia su
+-- contenido, así que las correcciones se aplican aquí de forma explícita.
+--
+-- Solo afecta a las filas de demostración del perfil dev, identificadas por nombre. Si alguien
+-- editó a mano el proyecto de ejemplo, este bloque devuelve sus cifras a las del diseño; es
+-- deliberado, porque son datos de muestra y no de trabajo.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE activities a
+SET actual_progress_percent = 79.70
+FROM projects p
+WHERE a.project_id = p.id
+  AND p.name = 'Planta Solar Norte'
+  AND a.name = 'Obra civil — cimentación'
+  AND a.actual_progress_percent <> 79.70;
+
+UPDATE project_measurements m
+SET budget_at_completion = 2000000.00
+FROM projects p
+WHERE m.project_id = p.id
+  AND p.name = 'Planta Solar Norte'
+  AND m.budget_at_completion <> 2000000.00;
+
+UPDATE project_measurements m
+SET earned_value = v.earned_value
+FROM projects p,
+     (VALUES
+         (DATE '2026-06-30', 788500.00),
+         (DATE '2026-07-31', 918500.00),
+         (DATE '2026-08-31', 1116000.00)
+     ) AS v(cutoff_date, earned_value)
+WHERE m.project_id = p.id
+  AND p.name = 'Planta Solar Norte'
+  AND m.cutoff_date = v.cutoff_date
+  AND m.earned_value <> v.earned_value;
+
+UPDATE project_measurement_activities l
+SET earned_value = 398500.00
+FROM project_measurements m
+JOIN projects p ON p.id = m.project_id
+WHERE l.measurement_id = m.id
+  AND p.name = 'Planta Solar Norte'
+  AND l.activity_name = 'Obra civil — cimentación'
+  AND m.cutoff_date >= DATE '2026-06-30'
+  AND l.earned_value <> 398500.00;
