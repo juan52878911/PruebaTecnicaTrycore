@@ -2314,3 +2314,9 @@ mergea el PR a develop
 ```text
 La tabla de actividades no tiene la alineacion correcta, ademas los botones aparecen y ocultan en un espacio regulado, que queda vacio y ocupa espacio asi tengamos las herramientas ocultas de editar y eliminar
 ```
+
+### 2026-09-05 16:50 -05 - Claude Code
+
+```text
+Analiza a fondo el modo mobile ya que esta roto, el navbar aparece en frente de los modales, los anchos de los modales no estan bien, se salen del borde, todos los comportamientos del diseño deben ser tal cual en la pagina final, verifica y genera pruebas de comportamiento con playwright y corrige todos los bugs visuales
+```
