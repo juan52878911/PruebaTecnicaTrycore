@@ -13,7 +13,6 @@ import { formatIndex } from '../../core/format/evm-format';
 import { SelectedProjectStore } from '../../core/selection/selected-project-store';
 import { ProjectEvmStore } from '../evm/project-evm-store';
 import { PageHeader } from '../../shared/ui/page-header';
-import { FormField } from '../../shared/ui/form-field';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 
@@ -32,7 +31,7 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
   providers: [ProjectEvmStore],
   // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
   host: { class: 'v-rise' },
-  imports: [ChipGroup, FormField, FormsModule, PageHeader, ToggleSwitch],
+  imports: [ChipGroup, FormsModule, PageHeader, ToggleSwitch],
   template: `
     <app-page-header
       title="Ajustes"

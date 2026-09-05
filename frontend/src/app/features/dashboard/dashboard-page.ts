@@ -31,8 +31,6 @@ import { KpiSkeleton } from '../../shared/ui/kpi-skeleton';
 import { PageHeader } from '../../shared/ui/page-header';
 import { OverallStatus } from '../../shared/ui/overall-status';
 import { SCurve } from '../../shared/ui/s-curve';
-import { Skeleton } from '../../shared/ui/skeleton';
-import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { MeasurementDialog } from '../evm/measurement-dialog';
 import { ProjectEvmStore } from '../evm/project-evm-store';
@@ -59,8 +57,6 @@ const PERCENT_BASE = 100;
     PageHeader,
     ProjectPicker,
     SCurve,
-    Skeleton,
-    StatusBadge,
   ],
   template: `
     <app-page-header
