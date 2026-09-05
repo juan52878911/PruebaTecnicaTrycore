@@ -1,57 +1,36 @@
-import { computed, inject, Injectable, resource, signal, Signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
-import { ApiError, asDisplayableError, toApiError } from '../../core/api/api-error';
+import { ApiError, toApiError } from '../../core/api/api-error';
 import { Project, ProjectRequest } from '../../core/api/models/project';
 import { ProjectsApi } from '../../core/api/projects-api';
+import { ProjectSummariesStore } from './project-summaries-store';
 
 /**
- * Fachada de los proyectos.
+ * Escrituras sobre proyectos.
+ *
+ * La lectura vive en `ProjectSummariesStore`, que trae cada proyecto con su consolidado en una
+ * sola petición; tener aquí otra lista sería pedir dos veces lo mismo. Tras cada escritura se
+ * recarga ese consolidado, que es lo que pintan el listado, el perfil y el selector.
  *
  * Solo expone signals: ni una promesa ni un observable cruza la frontera hacia el componente. En
  * una aplicación sin zone.js, lo que repinta la vista es la escritura de un signal que la
- * plantilla lee, no el hecho de que la promesa se resuelva.
- *
- * Las escrituras nunca rechazan hacia el llamante: el fallo viaja por `error()`. Así un rechazo
- * olvidado no aparece como excepción sin capturar en la consola.
+ * plantilla lee, no el hecho de que la promesa se resuelva. Las escrituras nunca rechazan hacia
+ * el llamante: el fallo viaja por `error()`, así un rechazo olvidado no aparece como excepción sin
+ * capturar en la consola.
  */
 @Injectable({ providedIn: 'root' })
 export class ProjectsStore {
   private readonly api = inject(ProjectsApi);
+  private readonly summaries = inject(ProjectSummariesStore);
 
   private readonly mutating = signal(false);
   private readonly mutationError = signal<ApiError | null>(null);
 
-  private readonly listResource = resource<Project[], void>({
-    loader: ({ abortSignal }) => this.api.list({ signal: abortSignal }),
-    defaultValue: [],
-  });
-
-  /**
-   * Lista publicada.
-   *
-   * Se lee a través de `hasValue()` y no directamente de `value()`: en Angular 22 un recurso en
-   * estado de error LANZA al leer su valor, incluso habiendo declarado `defaultValue`. Sin esta
-   * guarda, cualquier fallo del API rompería la plantilla en lugar de mostrar el aviso.
-   */
-  readonly projects: Signal<readonly Project[]> = computed(() =>
-    this.listResource.hasValue() ? this.listResource.value() : [],
-  );
-  readonly isLoading = computed(() => this.listResource.isLoading() || this.mutating());
-  readonly error = computed(
-    () => asDisplayableError(this.listResource.error()) ?? this.mutationError(),
-  );
-  readonly isEmpty = computed(() => !this.isLoading() && this.projects().length === 0);
-
-  reload(): void {
-    this.listResource.reload();
-  }
+  readonly isMutating = this.mutating.asReadonly();
+  readonly error = this.mutationError.asReadonly();
 
   clearError(): void {
     this.mutationError.set(null);
-  }
-
-  byId(id: number): Signal<Project | undefined> {
-    return computed(() => this.projects().find((project) => project.id === id));
   }
 
   async create(request: ProjectRequest): Promise<Project | null> {
@@ -75,7 +54,7 @@ export class ProjectsStore {
     this.mutationError.set(null);
     try {
       const result = await operation();
-      this.listResource.reload();
+      this.summaries.reload();
       return result;
     } catch (error: unknown) {
       this.mutationError.set(toApiError(error));
