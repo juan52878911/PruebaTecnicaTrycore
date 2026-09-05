@@ -268,17 +268,37 @@ Si un proyecto tiene dos cortes, la gráfica tiene dos puntos: un tramo que nadi
 
 **Los ajustes que el cliente no puede honrar no se ponen como controles.** Sin backend de configuración, las
 preferencias viven en `localStorage`. Todo lo que aparece como control cambia algo de verdad y se conserva
-entre sesiones. La medición del avance y la fórmula del EAC las decide el servidor, así que se muestran como
-valor fijo con su fórmula visible, no como interruptor deshabilitado que aparente ser configurable.
+entre sesiones. En la primera entrega la medición del avance y la fórmula del EAC eran valores fijos del
+servidor y se mostraban como tales, con su fórmula visible, no como interruptor deshabilitado. Cuando el
+backend las hizo elegibles, cada una fue al sitio que le corresponde: la fórmula del EAC es una preferencia
+que viaja como parámetro `eacFormula` en cada consulta, y la regla de medición se elige por actividad en su
+formulario, porque es un dato de la actividad y no un gusto del usuario. Los umbrales de severidad, en cambio,
+se retiraron de Ajustes: los fija el servidor y viajan en cada respuesta con la severidad ya clasificada, y
+repetirlos en el cliente era una segunda fuente de verdad que discrepaba de la primera.
 
-**La vista previa del cálculo se rotula como estimación.** Los formularios calculan EV, CPI y SPI en el
-navegador mientras se escribe, en coma flotante. El servidor calcula en `BigDecimal` y es su respuesta la que
-queda en pantalla al guardar. Decirlo en la propia tarjeta evita que alguien tome la estimación por el dato.
+**La vista previa del cálculo se rotula como estimación y aplica la misma regla que el servidor.** Los
+formularios calculan EV, CPI y SPI en el navegador mientras se escribe, en coma flotante. El servidor calcula
+en `BigDecimal` y es su respuesta la que queda en pantalla al guardar. Decirlo en la propia tarjeta evita que
+alguien tome la estimación por el dato. Cuando llegaron las reglas de medición, la fórmula `EV = % x BAC` dejó
+de valer para tres de las cuatro: con 0 / 100 al 65 % la vista previa decía 65.000 y el servidor guardaba 0.
+La vista previa reconoce ahora el porcentaje por regla, a los dos lados, y muestra los porcentajes
+reconocidos cuando difieren de los declarados; es la única aritmética de negocio que el cliente reproduce, y
+lo hace con un test por regla cuyos valores están derivados a mano.
 
-**Limitación conocida: el listado de proyectos hace N+1.** `GET /projects` no devuelve cifras, así que la tabla
-pide el consolidado de cada proyecto en paralelo. Con la cantidad que maneja esta herramienta es irrelevante;
-si la lista creciera, el arreglo correcto es un endpoint consolidado en el backend, no multiplicar peticiones
-desde el navegador. Se deja anotado en lugar de resolverlo fuera de alcance.
+**Con hitos ponderados el avance se registra marcando hitos, no escribiendo un porcentaje.** El contrato
+exige la tabla de hitos en cada petición con esa regla, incluso en una edición que no la toca, y rechaza el
+porcentaje real porque lo deriva de los pesos. Se descubrió en el navegador, con un 400 al registrar el costo
+de la actividad sembrada, y la primera reacción fue reenviar la tabla intacta. La solución final es la
+natural: el editor de hitos valida en el cliente lo mismo que el servidor (al menos un hito, pesos entre 0 y
+100 con dos decimales, fecha solo en hitos cumplidos y suma exacta de 100) y "registrar avance" en esa regla
+es marcar los hitos cumplidos.
+
+**El N+1 del listado quedó anotado y después resuelto desde el backend.** `GET /projects` no devolvía cifras,
+así que la tabla pedía el consolidado de cada proyecto en paralelo; se dejó anotado como limitación en vez de
+resolverlo fuera de alcance. El backend expuso luego `includeIndicators=true` sobre el propio listado, con las
+cifras salidas del mismo servicio que el detalle, y el frontend pasó a una sola petición. El store de
+escritura de proyectos perdió su lista propia en el mismo cambio: mantener dos lecturas de lo mismo era pedir
+dos veces lo mismo.
 
 **Hallazgo que costó un test:** en Angular 22, un `resource()` en estado de error **lanza** al leer su
 `value()`, incluso habiendo declarado `defaultValue`. Leerlo a pelo hacía que cualquier fallo del API rompiera
