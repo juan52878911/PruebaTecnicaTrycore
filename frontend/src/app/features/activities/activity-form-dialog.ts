@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   linkedSignal,
   output,
@@ -19,14 +20,30 @@ import {
   PERCENT_MAX,
   PERCENT_MIN,
 } from '../../core/api/models/activity';
-import { previewProgress } from '../../core/evm/progress-preview';
-import { formatIndex, formatMoneyRounded } from '../../core/format/evm-format';
+import { isStarted, previewProgress } from '../../core/evm/progress-preview';
+import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { Dialog } from '../../shared/ui/dialog';
 import { FormField } from '../../shared/ui/form-field';
-import { inject } from '@angular/core';
 
 const DECIMAL_FACTOR = 10;
+
+interface MethodOption {
+  readonly value: MeasurementMethod;
+  readonly label: string;
+}
+
+/**
+ * Reglas que este formulario puede honrar por sí solo. La de hitos ponderados exige una tabla de
+ * hitos que aquí no se edita, así que no se ofrece al crear: solo aparece, bloqueada, cuando la
+ * actividad ya la tiene.
+ */
+const SELECTABLE_METHODS: readonly MethodOption[] = [
+  { value: 'PERCENT_COMPLETE', label: 'Porcentaje completado' },
+  { value: 'FIXED_0_100', label: '0 / 100 — nada hasta cerrar' },
+  { value: 'FIXED_50_50', label: '50 / 50 — mitad al iniciar' },
+];
+const MILESTONE_METHOD: MethodOption = { value: 'WEIGHTED_MILESTONES', label: 'Hitos ponderados' };
 
 /** Cuenta los decimales de un número escrito por el usuario. */
 function decimalsOf(value: number): number {
@@ -90,9 +107,9 @@ function decimalsOf(value: number): number {
           />
         </app-form-field>
         <app-form-field
-          label="% avance real"
+          [label]="milestoneDriven() ? '% avance real · derivado de hitos' : '% avance real'"
           fieldId="activity-actual"
-          [error]="fieldError('actualProgressPercent') ?? percentError(actualProgressPercent())"
+          [error]="actualPercentError()"
         >
           <input
             id="activity-actual"
@@ -101,14 +118,20 @@ function decimalsOf(value: number): number {
             [min]="percentMin"
             [max]="percentMax"
             step="0.01"
+            [disabled]="milestoneDriven()"
             [(ngModel)]="actualProgressPercent"
           />
         </app-form-field>
       </div>
 
       <app-form-field label="Regla de medición" fieldId="activity-method" [hint]="methodHint()">
-        <select id="activity-method" name="measurementMethod" [(ngModel)]="measurementMethod">
-          @for (option of methodOptions; track option.value) {
+        <select
+          id="activity-method"
+          name="measurementMethod"
+          [disabled]="milestoneDriven()"
+          [(ngModel)]="measurementMethod"
+        >
+          @for (option of methodOptions(); track option.value) {
             <option [value]="option.value">{{ option.label }}</option>
           }
         </select>
@@ -196,6 +219,12 @@ function decimalsOf(value: number): number {
             <dd>{{ index(preview().schedulePerformanceIndex) }}</dd>
           </div>
         </dl>
+        @if (recognisesLessThanDeclared()) {
+          <p class="effective">
+            La regla reconoce {{ percent(preview().effectivePlannedProgressPercent) }} del avance
+            planificado y {{ percent(preview().effectiveActualProgressPercent) }} del real.
+          </p>
+        }
       </section>
 
       @if (generalError()) {
@@ -252,6 +281,14 @@ function decimalsOf(value: number): number {
       font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
+    .effective {
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--divider);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
     .general-error {
       margin: 0;
       font-size: 12.5px;
@@ -298,6 +335,7 @@ export class ActivityFormDialog {
   protected readonly percentMax = PERCENT_MAX;
   protected readonly money = formatMoneyRounded;
   protected readonly index = formatIndex;
+  protected readonly percent = formatPercent;
 
   protected readonly name = linkedSignal(() => this.activity()?.name ?? '');
   protected readonly budgetAtCompletion = linkedSignal(
@@ -318,18 +356,25 @@ export class ActivityFormDialog {
     () => this.activity()?.measurementMethod ?? 'PERCENT_COMPLETE',
   );
 
+  protected readonly isEdit = computed(() => this.activity() !== null);
+
   /**
-   * Las cuatro reglas del contrato.
-   *
+   * Con hitos ponderados el avance real no es un dato de entrada: lo deriva el servidor de los
+   * hitos cumplidos, y enviarlo es un 400. El campo se muestra bloqueado con el valor derivado.
+   */
+  protected readonly milestoneDriven = computed(
+    () => this.measurementMethod() === 'WEIGHTED_MILESTONES',
+  );
+
+  /**
    * La regla se aplica al valor planificado y al ganado a la vez: restar dos cifras medidas con
    * varas distintas fabricaría atrasos que no existen.
    */
-  protected readonly methodOptions: readonly { value: MeasurementMethod; label: string }[] = [
-    { value: 'PERCENT_COMPLETE', label: 'Porcentaje completado' },
-    { value: 'FIXED_0_100', label: '0 / 100 — nada hasta cerrar' },
-    { value: 'FIXED_50_50', label: '50 / 50 — mitad al iniciar' },
-    { value: 'WEIGHTED_MILESTONES', label: 'Hitos ponderados' },
-  ];
+  protected readonly methodOptions = computed<readonly MethodOption[]>(() =>
+    this.activity()?.measurementMethod === 'WEIGHTED_MILESTONES'
+      ? [...SELECTABLE_METHODS, MILESTONE_METHOD]
+      : SELECTABLE_METHODS,
+  );
 
   protected readonly methodHint = computed(() => {
     switch (this.measurementMethod()) {
@@ -338,13 +383,11 @@ export class ActivityFormDialog {
       case 'FIXED_50_50':
         return 'Reconoce la mitad al iniciar y el resto al cerrar. Una actividad se considera iniciada si tiene fecha real de inicio o avance declarado.';
       case 'WEIGHTED_MILESTONES':
-        return 'Deriva el avance de los hitos cumplidos y sus pesos.';
+        return 'El avance se deriva de los hitos cumplidos y sus pesos. Este formulario conserva la tabla de hitos actual.';
       default:
         return 'Reconoce el porcentaje declarado tal cual.';
     }
   });
-
-  protected readonly isEdit = computed(() => this.activity() !== null);
 
   protected readonly preview = computed(() =>
     previewProgress({
@@ -352,8 +395,19 @@ export class ActivityFormDialog {
       plannedProgressPercent: Number(this.plannedProgressPercent()),
       actualProgressPercent: Number(this.actualProgressPercent()),
       actualCost: Number(this.actualCost()),
+      measurementMethod: this.measurementMethod(),
+      started: isStarted(this.actualStartDate(), Number(this.actualProgressPercent())),
     }),
   );
+
+  /** Solo con las reglas de umbral lo reconocido puede diferir de lo declarado. */
+  protected readonly recognisesLessThanDeclared = computed(() => {
+    const preview = this.preview();
+    return (
+      preview.effectivePlannedProgressPercent !== Number(this.plannedProgressPercent()) ||
+      preview.effectiveActualProgressPercent !== Number(this.actualProgressPercent())
+    );
+  });
 
   protected readonly plannedRangeError = computed(() =>
     this.rangeError(this.plannedStartDate(), this.plannedEndDate()),
@@ -362,13 +416,20 @@ export class ActivityFormDialog {
     this.rangeError(this.actualStartDate(), this.actualEndDate()),
   );
 
+  protected readonly actualPercentError = computed(() =>
+    this.milestoneDriven()
+      ? null
+      : (this.fieldError('actualProgressPercent') ??
+        this.percentError(this.actualProgressPercent())),
+  );
+
   protected readonly canSave = computed(
     () =>
       this.name().trim().length > 0 &&
       this.moneyError(this.budgetAtCompletion()) === null &&
       this.moneyError(this.actualCost()) === null &&
       this.percentError(this.plannedProgressPercent()) === null &&
-      this.percentError(this.actualProgressPercent()) === null &&
+      this.actualPercentError() === null &&
       this.plannedRangeError() === null &&
       this.actualRangeError() === null,
   );
@@ -419,7 +480,9 @@ export class ActivityFormDialog {
       name: this.name().trim(),
       budgetAtCompletion: this.round(Number(this.budgetAtCompletion())),
       plannedProgressPercent: this.round(Number(this.plannedProgressPercent())),
-      actualProgressPercent: this.round(Number(this.actualProgressPercent())),
+      actualProgressPercent: this.milestoneDriven()
+        ? null
+        : this.round(Number(this.actualProgressPercent())),
       actualCost: this.round(Number(this.actualCost())),
       plannedStartDate: this.orNull(this.plannedStartDate()),
       plannedEndDate: this.orNull(this.plannedEndDate()),

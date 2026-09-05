@@ -44,6 +44,8 @@ function activity(id: number, name: string, overrides: Partial<EvmIndicators> = 
     measurementMethodDescription: 'Porcentaje completado',
     effectivePlannedProgressPercent: 45,
     effectiveActualProgressPercent: 29,
+    derivedProgressPercent: null,
+    milestones: [],
     indicators: indicators(overrides),
   };
 }

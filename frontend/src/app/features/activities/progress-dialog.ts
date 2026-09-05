@@ -16,7 +16,7 @@ import {
   PERCENT_MAX,
   PERCENT_MIN,
 } from '../../core/api/models/activity';
-import { previewProgress } from '../../core/evm/progress-preview';
+import { isStarted, previewProgress } from '../../core/evm/progress-preview';
 import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { Dialog } from '../../shared/ui/dialog';
@@ -29,7 +29,8 @@ const STEP = 1;
  * Registro de avance de una actividad.
  *
  * Solo cambian el porcentaje real y el costo incurrido; el resto de campos se reenvían tal como
- * están porque el endpoint recibe la actividad completa.
+ * están porque el endpoint recibe la actividad completa. Con hitos ponderados el porcentaje no es
+ * un dato de entrada: se muestra la tabla de hitos y solo se registra el costo.
  */
 @Component({
   selector: 'app-progress-dialog',
@@ -37,23 +38,54 @@ const STEP = 1;
   imports: [FormsModule, Dialog, DualProgress, FormField],
   template: `
     <app-dialog title="Registrar avance" [subtitle]="activity().name" (dismiss)="dismissed.emit()">
-      <div class="stepper">
-        <div class="stepper-head">
-          <span class="label">% de avance real</span>
-          <span class="value">{{ percentLabel() }}</span>
-        </div>
-        <div class="stepper-controls">
-          <button type="button" (click)="decrease()" aria-label="Reducir un punto">−</button>
-          <div class="bar">
-            <app-dual-progress
-              [planned]="activity().plannedProgressPercent"
-              [actual]="actualProgressPercent()"
-            />
+      @if (milestoneDriven()) {
+        <section class="milestones">
+          <div class="stepper-head">
+            <span class="label">Avance derivado de los hitos</span>
+            <span class="value">{{ percentLabel() }}</span>
           </div>
-          <button type="button" (click)="increase()" aria-label="Aumentar un punto">+</button>
+          <ul>
+            @for (milestone of activity().milestones; track $index) {
+              <li [class.achieved]="milestone.achieved">
+                <span class="mark" aria-hidden="true">{{
+                  milestone.achieved ? '[ok]' : '[ ]'
+                }}</span>
+                <span class="name">{{ milestone.name }}</span>
+                <span class="weight">{{ percent(milestone.weightPercent) }}</span>
+              </li>
+            }
+          </ul>
+          <p class="hint">
+            El porcentaje lo deriva el servidor de los hitos cumplidos; aquí solo se registra el
+            costo incurrido.
+          </p>
+        </section>
+      } @else {
+        <div class="stepper">
+          <div class="stepper-head">
+            <span class="label">% de avance real</span>
+            <span class="value">{{ percentLabel() }}</span>
+          </div>
+          <div class="stepper-controls">
+            <button type="button" (click)="decrease()" aria-label="Reducir un punto">−</button>
+            <div class="bar">
+              <app-dual-progress
+                [planned]="activity().plannedProgressPercent"
+                [actual]="actualProgressPercent()"
+              />
+            </div>
+            <button type="button" (click)="increase()" aria-label="Aumentar un punto">+</button>
+          </div>
+          <p class="hint">Planificado a la fecha de corte: {{ plannedLabel() }}</p>
+          @if (recognisesLessThanDeclared()) {
+            <p class="hint">
+              {{ activity().measurementMethodDescription }}: la regla reconoce
+              {{ percent(preview().effectiveActualProgressPercent) }} de este avance y
+              {{ percent(preview().effectivePlannedProgressPercent) }} del planificado.
+            </p>
+          }
         </div>
-        <p class="hint">Planificado a la fecha de corte: {{ plannedLabel() }}</p>
-      </div>
+      }
 
       <app-form-field
         [label]="'Costo real acumulado · ' + labels.inline('AC')"
@@ -145,7 +177,40 @@ const STEP = 1;
     .hint {
       margin: 12px 0 0;
       font-size: 12px;
+      line-height: 1.5;
       color: var(--text-dim);
+    }
+    .milestones ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .milestones li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .milestones li.achieved {
+      color: var(--text);
+    }
+    .mark {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .achieved .mark {
+      color: var(--ok);
+    }
+    .name {
+      flex: 1;
+      min-width: 0;
+    }
+    .weight {
+      font-variant-numeric: tabular-nums;
     }
     .preview {
       background: var(--card-nested);
@@ -225,32 +290,55 @@ export class ProgressDialog {
 
   protected readonly money = formatMoneyRounded;
   protected readonly index = formatIndex;
+  protected readonly percent = formatPercent;
 
   protected readonly actualProgressPercent = linkedSignal(
     () => this.activity().actualProgressPercent,
   );
   protected readonly actualCost = linkedSignal(() => this.activity().actualCost);
 
+  /** Con hitos ponderados el porcentaje lo deriva el servidor y enviarlo es un 400. */
+  protected readonly milestoneDriven = computed(
+    () => this.activity().measurementMethod === 'WEIGHTED_MILESTONES',
+  );
+
   protected readonly percentLabel = computed(() => formatPercent(this.actualProgressPercent()));
   protected readonly plannedLabel = computed(() =>
     formatPercent(this.activity().plannedProgressPercent),
   );
 
-  protected readonly preview = computed(() =>
-    previewProgress({
-      budgetAtCompletion: this.activity().budgetAtCompletion,
-      plannedProgressPercent: this.activity().plannedProgressPercent,
-      actualProgressPercent: Number(this.actualProgressPercent()),
+  protected readonly preview = computed(() => {
+    const activity = this.activity();
+    const actualProgressPercent = Number(this.actualProgressPercent());
+    return previewProgress({
+      budgetAtCompletion: activity.budgetAtCompletion,
+      plannedProgressPercent: activity.plannedProgressPercent,
+      actualProgressPercent,
       actualCost: Number(this.actualCost()),
-    }),
-  );
+      measurementMethod: activity.measurementMethod,
+      started: isStarted(activity.actualStartDate, actualProgressPercent),
+    });
+  });
+
+  /** Solo con las reglas de umbral lo reconocido puede diferir de lo declarado. */
+  protected readonly recognisesLessThanDeclared = computed(() => {
+    const preview = this.preview();
+    return (
+      preview.effectiveActualProgressPercent !== Number(this.actualProgressPercent()) ||
+      preview.effectivePlannedProgressPercent !== this.activity().plannedProgressPercent
+    );
+  });
 
   /** Lectura en lenguaje llano de lo que implicaría guardar este avance. */
   protected readonly reading = computed(() => {
-    const { costPerformanceIndex, schedulePerformanceIndex } = this.preview();
+    const preview = this.preview();
+    const { costPerformanceIndex, schedulePerformanceIndex } = preview;
     const percent = this.percentLabel();
     if (costPerformanceIndex === null) {
       return `Sin costo real registrado: la eficiencia en costo no está definida.`;
+    }
+    if (preview.effectiveActualProgressPercent === 0 && Number(this.actualProgressPercent()) > 0) {
+      return `La regla todavía no reconoce valor para ${percent} de avance: los índices solo informarán cuando la actividad alcance el hito que la regla exige.`;
     }
     const overBudget = costPerformanceIndex < 1;
     const late = schedulePerformanceIndex !== null && schedulePerformanceIndex < 1;
@@ -288,7 +376,7 @@ export class ProgressDialog {
       name: activity.name,
       budgetAtCompletion: activity.budgetAtCompletion,
       plannedProgressPercent: activity.plannedProgressPercent,
-      actualProgressPercent: Number(this.actualProgressPercent()),
+      actualProgressPercent: this.milestoneDriven() ? null : Number(this.actualProgressPercent()),
       actualCost: Number(this.actualCost()),
       plannedStartDate: activity.plannedStartDate,
       plannedEndDate: activity.plannedEndDate,
