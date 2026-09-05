@@ -145,6 +145,29 @@ class ActivityServiceTest {
     }
 
     @Test
+    @DisplayName("get devuelve la actividad del proyecto con sus indicadores")
+    void getReturnsActivityWithIndicators() {
+        final Activity existing = existingActivity(NAME);
+        when(activityRepository.findByIdAndProjectId(ACTIVITY_ID, PROJECT_ID)).thenReturn(Optional.of(existing));
+
+        final ActivityEvm result = activityService.get(PROJECT_ID, ACTIVITY_ID);
+
+        assertThat(result.activity()).isEqualTo(existing);
+        // EV = 0,40 x 100.000 = 40.000, la misma cifra que da el listado del proyecto
+        assertThat(result.indicators().earnedValue()).isEqualByComparingTo("40000.00");
+    }
+
+    @Test
+    @DisplayName("get de una actividad que no es de ese proyecto lanza ActivityNotFoundException")
+    void getActivityOfAnotherProjectThrows() {
+        when(activityRepository.findByIdAndProjectId(ACTIVITY_ID, MISSING_PROJECT_ID))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> activityService.get(MISSING_PROJECT_ID, ACTIVITY_ID))
+                .isInstanceOf(ActivityNotFoundException.class);
+    }
+
+    @Test
     @DisplayName("listByProject en un proyecto existente devuelve sus actividades")
     void listByProjectInExistingProjectReturnsActivities() {
         when(projectRepository.existsById(PROJECT_ID)).thenReturn(true);

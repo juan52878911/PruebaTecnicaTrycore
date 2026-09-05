@@ -3,12 +3,18 @@ package com.trycore.evm.adapter.out.persistence;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -61,6 +67,19 @@ public class ActivityJpaEntity {
 
     @Column(name = "actual_end_date")
     private LocalDate actualEndDate;
+
+    /**
+     * Hitos de la actividad, ordenados por su posición. La cascada y la eliminación de huérfanos
+     * hacen que el conjunto se escriba y se borre siempre entero con su actividad, que es
+     * exactamente la semántica que exige la invariante de los pesos.
+     */
+    @OneToMany(
+            mappedBy = "activity",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    @OrderBy("position ASC")
+    private List<ActivityMilestoneJpaEntity> milestones = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -174,6 +193,11 @@ public class ActivityJpaEntity {
 
     public void setActualEndDate(final LocalDate actualEndDate) {
         this.actualEndDate = actualEndDate;
+    }
+
+    /** Lista viva de hitos: quien la modifique cambia lo que se persiste al cerrar la transacción. */
+    public List<ActivityMilestoneJpaEntity> getMilestones() {
+        return milestones;
     }
 
     public Instant getCreatedAt() {

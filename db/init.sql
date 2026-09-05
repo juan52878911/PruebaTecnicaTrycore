@@ -134,6 +134,96 @@ CREATE INDEX IF NOT EXISTS idx_project_measurement_activities_measurement_id
     ON project_measurement_activities(measurement_id);
 
 -- =============================================================================
+-- V4__add_activity_measurement_method.sql
+-- =============================================================================
+
+-- Regla con la que cada actividad reconoce valor a partir de su avance.
+--
+-- La columna es obligatoria con valor por defecto, de modo que las filas existentes conservan el
+-- comportamiento de siempre: reconocer el porcentaje declarado tal cual. Esto importa además porque
+-- el seed de demostración es una migración repetible, y una columna obligatoria sin valor por
+-- defecto impediría reejecutarlo.
+--
+-- La restricción de valores admitidos acopla el esquema al enumerado del dominio: añadir una quinta
+-- regla exigirá una migración que la amplíe. Se asume a cambio de que la base rechace un valor que
+-- la aplicación no sabría interpretar.
+
+ALTER TABLE activities
+    ADD COLUMN IF NOT EXISTS measurement_method VARCHAR(24) NOT NULL DEFAULT 'PERCENT_COMPLETE';
+
+ALTER TABLE activities DROP CONSTRAINT IF EXISTS chk_activities_measurement_method;
+ALTER TABLE activities ADD CONSTRAINT chk_activities_measurement_method
+    CHECK (measurement_method IN ('PERCENT_COMPLETE', 'FIXED_0_100', 'FIXED_50_50', 'WEIGHTED_MILESTONES'));
+
+-- =============================================================================
+-- V5__create_activity_milestones.sql
+-- =============================================================================
+
+-- Hitos ponderados de una actividad: el desglose del que se deriva su avance real cuando la regla
+-- de medición es WEIGHTED_MILESTONES.
+--
+-- La invariante central de esta tabla es que los pesos de los hitos de una misma actividad sumen
+-- exactamente 100. NO se comprueba aquí, y es una decisión, no un olvido: PostgreSQL solo puede
+-- expresar restricciones sobre una fila, y una suma cruza todas las filas de la actividad. Hacerla
+-- cumplir en la base exigiría un disparador que recorriera el conjunto en cada INSERT, UPDATE y
+-- DELETE, es decir, lógica de negocio escrita en el motor y duplicada respecto a la del dominio.
+-- Por eso la invariante vive en ProgressMeasurement y por eso el conjunto de hitos siempre se
+-- escribe completo desde el caso de uso: una escritura parcial dejaría la tabla en un estado que
+-- ninguna capa considera válido.
+--
+-- Lo que sí cabe en una fila sí se comprueba aquí: el peso positivo y acotado a 100, y la fecha de
+-- cumplimiento solo en hitos cumplidos. Son la misma reglas del dominio, y tenerlas también en el
+-- motor protege de las escrituras que no pasen por la aplicación.
+--
+-- Se usa CREATE TABLE IF NOT EXISTS por la misma razón que en V1 y V3: la base local puede haber
+-- sido preparada a mano con db/init.sql y ambas rutas de inicialización deben poder convivir.
+
+CREATE TABLE IF NOT EXISTS activity_milestones (
+    id BIGSERIAL PRIMARY KEY,
+    activity_id BIGINT NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+    name VARCHAR(120) NOT NULL,
+    weight_percent NUMERIC(5,2) NOT NULL CHECK (weight_percent > 0 AND weight_percent <= 100),
+    achieved BOOLEAN NOT NULL DEFAULT false,
+    achieved_on DATE,
+    -- El orden del hito es su posición en la lista de la actividad, no un dato que el cliente
+    -- edite: se asigna al escribir el conjunto y por eso empieza en cero y no tiene huecos.
+    position INTEGER NOT NULL
+);
+
+-- Los hitos siempre se leen completos junto con su actividad.
+CREATE INDEX IF NOT EXISTS idx_activity_milestones_activity_id ON activity_milestones(activity_id);
+
+-- Dos hitos de la misma actividad en la misma posición harían ambiguo el orden de la tabla.
+ALTER TABLE activity_milestones DROP CONSTRAINT IF EXISTS uq_activity_milestones_activity_position;
+ALTER TABLE activity_milestones ADD CONSTRAINT uq_activity_milestones_activity_position
+    UNIQUE (activity_id, position);
+
+-- Una fecha de cumplimiento en un hito no cumplido es una contradicción, no un dato incompleto.
+ALTER TABLE activity_milestones DROP CONSTRAINT IF EXISTS chk_activity_milestones_achieved_on;
+ALTER TABLE activity_milestones ADD CONSTRAINT chk_activity_milestones_achieved_on
+    CHECK (achieved_on IS NULL OR achieved);
+
+-- =============================================================================
+-- V6__add_project_manager.sql
+-- =============================================================================
+
+-- Responsable del proyecto: la persona a cuyo cargo está.
+--
+-- El tablero muestra "24 actividades · Alicia Ramos" bajo el nombre del proyecto, y hoy esa
+-- segunda mitad no existe en ninguna parte.
+--
+-- Migración aditiva: la columna admite nulos, así que las filas existentes siguen siendo válidas
+-- y el contrato del API no cambia para quien no envíe responsable. Admite nulos a propósito y no
+-- por comodidad: un proyecto puede registrarse antes de que se designe a quien lo dirige, y una
+-- columna obligatoria obligaría a inventar un nombre para poder crearlo.
+--
+-- Se usa ADD COLUMN IF NOT EXISTS por la misma razón que en las migraciones anteriores: la base
+-- local puede haber sido preparada a mano con db/init.sql y ambas rutas de inicialización deben
+-- poder convivir.
+
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS manager VARCHAR(120);
+
+-- =============================================================================
 -- R__demo_data.sql (datos de demostración, solo perfil dev)
 -- =============================================================================
 
@@ -416,6 +506,10 @@ FROM projects p,
 WHERE a.project_id = p.id
   AND p.name IN ('Planta Solar Norte', 'Migración core bancario', 'Portal de autogestión')
   AND a.name = v.name
+  -- Las actividades medidas por hitos quedan fuera: su avance real no es un dato de referencia,
+  -- es una proyección de los pesos cumplidos, y devolverlo al valor del diseño lo dejaría en
+  -- contradicción con sus propios hitos.
+  AND a.measurement_method = 'PERCENT_COMPLETE'
   AND (a.budget_at_completion, a.planned_progress_percent, a.actual_progress_percent, a.actual_cost)
       IS DISTINCT FROM (v.bac, v.planned, v.actual, v.ac);
 
@@ -448,3 +542,79 @@ WHERE l.measurement_id = m.id
   AND l.activity_name = 'Obra civil — cimentación'
   AND m.cutoff_date >= DATE '2026-06-30'
   AND l.earned_value <> 398500.00;
+
+-- ---------------------------------------------------------------------------------------------
+-- Responsables de los proyectos de demostración
+--
+-- Se asignan con UPDATE y no en los INSERT de arriba porque esos INSERT llevan WHERE NOT EXISTS:
+-- en una base que ya cargó una versión anterior de la semilla no volverían a ejecutarse y los
+-- proyectos se quedarían sin responsable. El UPDATE solo escribe donde hace falta, así que es
+-- idempotente y no pisa una asignación posterior distinta de nula.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE projects p
+SET manager = v.manager
+FROM (VALUES
+    ('Planta Solar Norte',       'Alicia Ramos'),
+    ('Migración core bancario',  'Diego Muñoz'),
+    ('Portal de autogestión',    'Laura Peña')
+) AS v(name, manager)
+WHERE p.name = v.name
+  AND p.manager IS NULL;
+
+-- ---------------------------------------------------------------------------------------------
+-- Reglas de medición del avance
+--
+-- Se asignan con UPDATE por el mismo motivo que los responsables: los INSERT de arriba llevan
+-- WHERE NOT EXISTS y no se reejecutan sobre una base que ya cargó una versión anterior de la
+-- semilla. Cada regla queda representada al menos una vez para que el tablero muestre las cuatro
+-- ramas de cálculo con datos reales, y para que se vea la diferencia entre el avance declarado y
+-- el que la regla reconoce.
+--
+--   "Montaje de estructuras" pasa a mitad al iniciar y mitad al cerrar. Declara 76 % pero la regla
+--   reconoce 50 % por ambos lados, así que su PV y su EV valen 237 500 y su SPI es exactamente 1.
+--   "Conexión a la red" pasa a todo o nada. Sigue en cero por los dos lados, luego no cambia nada:
+--   sirve para enseñar la regla sin alterar el consolidado del proyecto.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE activities a
+SET measurement_method = v.method
+FROM (VALUES
+    ('Montaje de estructuras', 'FIXED_50_50'),
+    ('Conexión a la red',      'FIXED_0_100')
+) AS v(name, method)
+WHERE a.name = v.name
+  AND a.measurement_method IS DISTINCT FROM v.method;
+
+-- ---------------------------------------------------------------------------------------------
+-- Hitos ponderados
+--
+-- "Certificación regulatoria" pasa a medirse por hitos. Sus pesos suman exactamente 100, que es la
+-- invariante del dominio, y los dos primeros están cumplidos: 15 + 30 = 45, de modo que su avance
+-- real queda derivado en 45 % en lugar del 46 % que declaraba. Con BAC 280 000 su EV pasa de
+-- 128 800 a 126 000.
+--
+-- El avance derivado se escribe también en la columna de porcentaje porque para estas actividades
+-- ese valor es una proyección de los hitos, no un dato independiente: mantener los dos sin
+-- sincronizar sería tener dos verdades sobre lo mismo.
+-- ---------------------------------------------------------------------------------------------
+
+INSERT INTO activity_milestones (activity_id, name, weight_percent, achieved, achieved_on, position)
+SELECT a.id, v.name, v.weight, v.achieved, v.achieved_on, v.position
+FROM activities a
+CROSS JOIN (VALUES
+    ('Expediente presentado',      15.00, true,  DATE '2026-07-10', 0),
+    ('Auditoría de cumplimiento',  30.00, true,  DATE '2026-09-18', 1),
+    ('Resolución favorable',       40.00, false, NULL,              2),
+    ('Publicación en el registro', 15.00, false, NULL,              3)
+) AS v(name, weight, achieved, achieved_on, position)
+WHERE a.name = 'Certificación regulatoria'
+  AND NOT EXISTS (SELECT 1 FROM activity_milestones m WHERE m.activity_id = a.id AND m.name = v.name);
+
+-- Sin condicionar a la regla actual: el UPDATE debe poder reparar una base que quedó a medias,
+-- por ejemplo si una versión anterior de esta semilla dejó la regla puesta y el avance sin derivar.
+UPDATE activities
+SET measurement_method = 'WEIGHTED_MILESTONES',
+    actual_progress_percent = 45.00
+WHERE name = 'Certificación regulatoria'
+  AND (measurement_method, actual_progress_percent) IS DISTINCT FROM ('WEIGHTED_MILESTONES', 45.00);

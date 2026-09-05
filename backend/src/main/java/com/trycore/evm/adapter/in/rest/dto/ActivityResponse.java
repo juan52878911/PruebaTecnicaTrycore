@@ -2,6 +2,7 @@ package com.trycore.evm.adapter.in.rest.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -56,6 +57,15 @@ public record ActivityResponse(
                 description = "Porcentaje real que la regla reconoce; puede no coincidir con el declarado",
                 example = "40.00")
         BigDecimal effectiveActualProgressPercent,
+
+        @Schema(
+                description = "Avance derivado de los hitos cumplidos; nulo si la regla no es la de hitos "
+                        + "ponderados. Cuando existe, es el porcentaje de avance real de la actividad.",
+                example = "70.00")
+        BigDecimal derivedProgressPercent,
+
+        @Schema(description = "Hitos declarados, en orden. Se devuelven aunque la regla vigente no los use.")
+        List<MilestoneResponse> milestones,
 
         @Schema(description = "Indicadores de Valor Ganado calculados a partir de las cifras de la actividad")
         EvmIndicatorsResponse indicators) {

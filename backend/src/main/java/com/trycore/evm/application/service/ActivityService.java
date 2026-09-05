@@ -64,6 +64,11 @@ public final class ActivityService implements ActivityUseCases {
     }
 
     @Override
+    public ActivityEvm get(final Long projectId, final Long activityId) {
+        return withIndicators(findActivity(projectId, activityId));
+    }
+
+    @Override
     public List<ActivityEvm> listByProject(final Long projectId) {
         requireProjectExists(projectId);
         return activityRepository.findAllByProjectId(projectId).stream().map(this::withIndicators).toList();

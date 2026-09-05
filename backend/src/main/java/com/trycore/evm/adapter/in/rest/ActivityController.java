@@ -1,5 +1,6 @@
 package com.trycore.evm.adapter.in.rest;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 
@@ -21,12 +22,14 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.trycore.evm.adapter.in.rest.dto.ActivityRequest;
 import com.trycore.evm.adapter.in.rest.dto.ActivityResponse;
+import com.trycore.evm.adapter.in.rest.dto.MilestoneRequest;
 import com.trycore.evm.adapter.in.rest.dto.ValidationProblemResponse;
 import com.trycore.evm.adapter.in.rest.mapper.ActivityRestMapper;
 import com.trycore.evm.application.port.in.ActivityUseCases;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.Milestone;
 import com.trycore.evm.domain.model.ProgressMeasurement;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,6 +65,24 @@ public class ActivityController {
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public List<ActivityResponse> list(@PathVariable final Long projectId) {
         return activityUseCases.listByProject(projectId).stream().map(ActivityRestMapper::toResponse).toList();
+    }
+
+    @GetMapping("/{activityId}")
+    @Operation(
+            summary = "Obtener actividad",
+            description = "Devuelve una actividad del proyecto con sus indicadores calculados. Es el recurso al "
+                    + "que apunta la cabecera Location de la creación. El proyecto forma parte de la identidad "
+                    + "de la búsqueda: una actividad que existe pero pertenece a otro proyecto devuelve 404.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Actividad encontrada",
+            content = @Content(schema = @Schema(implementation = ActivityResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "No existe la actividad en ese proyecto",
+            content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    public ActivityResponse get(@PathVariable final Long projectId, @PathVariable final Long activityId) {
+        return ActivityRestMapper.toResponse(activityUseCases.get(projectId, activityId));
     }
 
     @PostMapping
@@ -131,7 +152,20 @@ public class ActivityController {
     }
 
     private static ProgressMeasurement toProgress(final ActivityRequest request) {
-        return new ProgressMeasurement(request.measurementMethod());
+        return new ProgressMeasurement(request.measurementMethod(), toMilestones(request));
+    }
+
+    /** Una lista ausente no es una lista vacía: significa no tocar los hitos que ya existan. */
+    private static List<Milestone> toMilestones(final ActivityRequest request) {
+        if (request.milestones() == null) {
+            return List.of();
+        }
+        return request.milestones().stream().map(ActivityController::toMilestone).toList();
+    }
+
+    private static Milestone toMilestone(final MilestoneRequest milestone) {
+        return new Milestone(
+                milestone.name(), milestone.weightPercent(), milestone.achieved(), milestone.achievedOn());
     }
 
     private static ActivitySchedule toSchedule(final ActivityRequest request) {
@@ -142,11 +176,19 @@ public class ActivityController {
                 request.actualEndDate());
     }
 
+    /**
+     * Con la regla de hitos ponderados la petición no trae avance real, así que se parte de cero y
+     * es la propia actividad la que lo sustituye por el que derivan sus hitos. La validación de
+     * entrada ya garantiza que el campo solo falte en ese caso.
+     */
     private static ActivityFigures toFigures(final ActivityRequest request) {
+        final BigDecimal actualProgressPercent = request.actualProgressPercent() == null
+                ? BigDecimal.ZERO
+                : request.actualProgressPercent();
         return new ActivityFigures(
                 request.budgetAtCompletion(),
                 request.plannedProgressPercent(),
-                request.actualProgressPercent(),
+                actualProgressPercent,
                 request.actualCost());
     }
 
