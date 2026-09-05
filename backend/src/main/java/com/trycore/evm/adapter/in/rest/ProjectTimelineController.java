@@ -4,13 +4,16 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trycore.evm.adapter.in.rest.dto.ProjectTimelineResponse;
 import com.trycore.evm.adapter.in.rest.mapper.ProjectTimelineRestMapper;
 import com.trycore.evm.application.port.in.ProjectMeasurementUseCases;
+import com.trycore.evm.domain.model.EstimateFormula;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -42,7 +45,8 @@ public class ProjectTimelineController {
             description = "Devuelve un punto por cada corte registrado, ordenados por fecha de la más "
                     + "antigua a la más reciente, con las cuatro cifras base y los indicadores ya "
                     + "calculados e interpretados. Es la respuesta que consume directamente una gráfica "
-                    + "de líneas. Un proyecto sin cortes devuelve 200 con la lista de puntos vacía.")
+                    + "de líneas. Un proyecto sin cortes devuelve 200 con la lista de puntos vacía. El "
+                    + "parámetro eacFormula acepta los mismos valores que el análisis en vivo.")
     @ApiResponse(
             responseCode = "200",
             description = "Serie temporal del proyecto",
@@ -51,7 +55,10 @@ public class ProjectTimelineController {
             responseCode = "404",
             description = "No existe un proyecto con ese identificador",
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    public ProjectTimelineResponse timeline(@PathVariable final Long projectId) {
-        return ProjectTimelineRestMapper.toResponse(measurementUseCases.timeline(projectId));
+    public ProjectTimelineResponse timeline(
+            @PathVariable final Long projectId,
+            @Parameter(description = "Fórmula con la que calcular el EAC de cada punto")
+            @RequestParam(required = false) final EstimateFormula eacFormula) {
+        return ProjectTimelineRestMapper.toResponse(measurementUseCases.timeline(projectId, eacFormula));
     }
 }

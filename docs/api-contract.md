@@ -81,6 +81,37 @@ Estados posibles:
 | --- | --- |
 | `costStatus.status` | `UNDER_BUDGET`, `ON_BUDGET`, `OVER_BUDGET`, `NOT_APPLICABLE` |
 | `scheduleStatus.status` | `AHEAD_OF_SCHEDULE`, `ON_SCHEDULE`, `BEHIND_SCHEDULE`, `NOT_APPLICABLE` |
+| `costStatus.severity` y `scheduleStatus.severity` | `NONE`, `WARNING`, `CRITICAL`, `NOT_APPLICABLE` |
+
+### Estado y severidad
+
+El estado es un hecho aritmético y la severidad una política de tolerancia. Un CPI de 0,9857 está
+`OVER_BUDGET`, porque se gastó más de lo que se ganó, y su severidad es `WARNING`, porque la desviación cabe
+dentro de lo admitido. Quien pinte un color debe usar `severity`; quien muestre un texto, `status`. Los
+umbrales con los que se clasificó viajan en `indicators.thresholds` para que ningún cliente los repita:
+
+```json
+"thresholds": { "warning": 1.00, "critical": 0.95 }
+```
+
+Las bandas son cerradas por abajo: `índice >= warning` es `NONE`, `critical <= índice < warning` es `WARNING`,
+y por debajo `CRITICAL`. Un índice nulo es `NOT_APPLICABLE`, siempre a la vez en estado y en severidad.
+
+### Estimaciones del costo final
+
+`estimateAtCompletion` y `varianceAtCompletion` son los de la fórmula titular, y `estimates` trae las tres
+fórmulas estándar sobre las mismas cifras, cada una con su supuesto:
+
+| Fórmula | Cálculo | Supuesto |
+| --- | --- | --- |
+| `BAC_OVER_CPI` (por defecto) | BAC / CPI | El desempeño de costo observado se mantiene |
+| `AC_PLUS_REMAINING` | AC + (BAC - EV) | La desviación fue puntual; lo que queda va a presupuesto |
+| `AC_PLUS_REMAINING_OVER_CPI_SPI` | AC + (BAC - EV) / (CPI x SPI) | Hay que recuperar el atraso sin ampliar plazo |
+
+El parámetro de consulta `eacFormula` elige la titular en `GET /projects/{id}/evm` y en
+`GET /projects/{id}/timeline`; un valor desconocido devuelve 400. Una fórmula que no se puede calcular
+devuelve `null` con `applicable: false`, y **no se sustituye** por otra que sí aplique. La segunda nunca es
+indefinida porque no divide: su cero en un proyecto vacío es un cero real, no un indefinido disfrazado.
 
 Cuando `actualCost` es 0, `costPerformanceIndex`, `estimateAtCompletion` y `varianceAtCompletion` son `null`
 y `costStatus` es `NOT_APPLICABLE` con el motivo. Cuando `plannedValue` es 0, `schedulePerformanceIndex` es

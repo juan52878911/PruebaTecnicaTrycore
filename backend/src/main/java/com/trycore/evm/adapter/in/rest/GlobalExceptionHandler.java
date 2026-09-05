@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.trycore.evm.adapter.in.rest.dto.ValidationErrorResponse;
 import com.trycore.evm.domain.exception.ActivityNotFoundException;
@@ -33,6 +34,7 @@ public class GlobalExceptionHandler {
     private static final String INTEGRITY_ERROR_DETAIL =
             "La petición viola una restricción de la base de datos y no se pudo guardar";
     private static final String ERRORS_PROPERTY = "errors";
+    private static final String UNKNOWN_PARAMETER_VALUE = "El valor del parámetro %s no es válido";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationError(final MethodArgumentNotValidException exception) {
@@ -46,6 +48,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail handleMalformedRequest() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, VALIDATION_ERROR_DETAIL);
+    }
+
+    /**
+     * Un parámetro de consulta con un valor que no corresponde a ninguno admitido, por ejemplo una
+     * fórmula de EAC inexistente. Sin este manejador la respuesta sería un 500, cuando en realidad
+     * el error está en la petición.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleUnknownParameterValue(final MethodArgumentTypeMismatchException exception) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, UNKNOWN_PARAMETER_VALUE.formatted(exception.getName()));
     }
 
     /**
