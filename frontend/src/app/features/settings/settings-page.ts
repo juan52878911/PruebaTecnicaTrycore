@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { PreferencesStore } from '../../core/preferences/preferences-store';
@@ -15,6 +25,24 @@ import { ProjectEvmStore } from '../evm/project-evm-store';
 import { PageHeader } from '../../shared/ui/page-header';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ToggleSwitch } from '../../shared/ui/toggle-switch';
+
+const SECTIONS = [
+  { id: 'presentacion', label: 'Presentación' },
+  { id: 'umbrales', label: 'Umbrales' },
+  { id: 'formato', label: 'Formato' },
+  { id: 'cierre', label: 'Costo al cierre' },
+  { id: 'servidor', label: 'Cálculo del servidor' },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]['id'];
+
+const FIRST_SECTION: SectionId = 'presentacion';
+const LAST_SECTION: SectionId = 'servidor';
+
+/** Fracción del alto de la ventana por debajo de la cual una sección cuenta como "en vista". */
+const READING_LINE = 0.3;
+/** Margen para dar por alcanzado el final del documento, en píxeles. */
+const BOTTOM_TOLERANCE = 2;
 
 /**
  * Ajustes de la aplicación.
@@ -42,13 +70,24 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
     </app-page-header>
 
     <div class="layout">
+      <!--
+        Botones y no anclas: un href="#seccion" lo captura el enrutador como navegación a la raíz
+        y devolvía al panel. El desplazamiento se hace a mano y el resaltado sigue al scroll.
+      -->
       <nav class="side" aria-label="Secciones de ajustes">
         <ul>
-          <li><a href="#presentacion" class="active">Presentación</a></li>
-          <li><a href="#umbrales">Umbrales</a></li>
-          <li><a href="#formato">Formato</a></li>
-          <li><a href="#cierre">Costo al cierre</a></li>
-          <li><a href="#servidor">Cálculo del servidor</a></li>
+          @for (section of sections; track section.id) {
+            <li>
+              <button
+                type="button"
+                [class.active]="section.id === activeSection()"
+                [attr.aria-current]="section.id === activeSection() ? 'true' : null"
+                (click)="jumpTo(section.id)"
+              >
+                {{ section.label }}
+              </button>
+            </li>
+          }
         </ul>
       </nav>
 
@@ -223,6 +262,10 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
       gap: 28px;
       align-items: start;
     }
+    .side {
+      position: sticky;
+      top: 22px;
+    }
     .side ul {
       list-style: none;
       margin: 0;
@@ -231,19 +274,29 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
       flex-direction: column;
       gap: 4px;
     }
-    .side a {
+    .side button {
       display: block;
+      width: 100%;
       padding: 11px 14px;
+      border: none;
       border-radius: var(--radius-input);
+      background: none;
       font-size: 13.5px;
       font-weight: 600;
       color: var(--text-muted);
-      text-decoration: none;
+      text-align: left;
+      white-space: nowrap;
+      transition:
+        background var(--motion-veil),
+        color var(--motion-veil);
     }
-    .side a:hover,
-    .side a.active {
+    .side button:hover,
+    .side button.active {
       background: var(--card-nested);
       color: var(--text);
+    }
+    section.card {
+      scroll-margin-top: 20px;
     }
     .panels {
       display: flex;
@@ -448,6 +501,11 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 })
 export class SettingsPage {
   protected readonly preferences = inject(PreferencesStore);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly sections = SECTIONS;
+  protected readonly activeSection = signal<SectionId>(FIRST_SECTION);
   /**
    * Store del proyecto activo, solo para leer los umbrales con los que el servidor clasificó su
    * última respuesta. Se provee a nivel de esta ruta: no se comparte con el panel.
@@ -458,6 +516,7 @@ export class SettingsPage {
   private readonly selection = inject(SelectedProjectStore);
 
   constructor() {
+    afterNextRender(() => this.followScroll());
     // Los umbrales llegan con el análisis del proyecto activo; sin seleccionarlo no habría nada
     // que leer y la tarjeta se quedaría en su mensaje de reserva.
     effect(() => this.evm.select(this.selection.projectId()));
@@ -543,5 +602,37 @@ export class SettingsPage {
   protected restore(): void {
     this.preferences.reset();
     this.toasts.info('Ajustes restablecidos', 'Se recuperaron los valores por defecto.');
+  }
+  /** Desplaza hasta la sección y la marca al instante, sin esperar a que el scroll la alcance. */
+  protected jumpTo(id: SectionId): void {
+    this.activeSection.set(id);
+    this.host.nativeElement
+      .querySelector(`#${id}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /**
+   * Resalta la sección en vista: la última cuyo borde superior ha cruzado la línea de lectura, o
+   * la final cuando el documento ya no da más de sí, porque una sección corta al pie nunca
+   * llegaría a cruzarla.
+   */
+  private followScroll(): void {
+    const update = (): void => {
+      const line = window.innerHeight * READING_LINE;
+      let current: SectionId = FIRST_SECTION;
+      for (const section of SECTIONS) {
+        const element = this.host.nativeElement.querySelector(`#${section.id}`);
+        if (element !== null && element.getBoundingClientRect().top <= line) {
+          current = section.id;
+        }
+      }
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - BOTTOM_TOLERANCE;
+      this.activeSection.set(atBottom ? LAST_SECTION : current);
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    this.destroyRef.onDestroy(() => window.removeEventListener('scroll', update));
+    update();
   }
 }
