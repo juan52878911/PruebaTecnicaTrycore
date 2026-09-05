@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Size;
 
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.MeasurementMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -90,5 +91,11 @@ public record ActivityRequest(
         LocalDate actualStartDate,
 
         @Schema(description = "Fecha de fin real", example = "2026-09-28")
-        LocalDate actualEndDate) {
+        LocalDate actualEndDate,
+
+        @Schema(
+                description = "Regla con la que la actividad reconoce valor. Si se omite se usa el porcentaje "
+                        + "completado, que es el comportamiento por defecto.",
+                example = "PERCENT_COMPLETE")
+        MeasurementMethod measurementMethod) {
 }

@@ -27,6 +27,10 @@ public final class ActivityRestMapper {
                 schedule.plannedEnd(),
                 schedule.actualStart(),
                 schedule.actualEnd(),
+                activity.progress().method().name(),
+                activity.progress().method().description(),
+                activityEvm.effectivePlannedPercent(),
+                activityEvm.effectiveActualPercent(),
                 EvmIndicatorsRestMapper.toResponse(activityEvm.indicators()));
     }
 }

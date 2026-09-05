@@ -56,6 +56,37 @@ Request de creación/edición (`ActivityRequest`):
 | `plannedProgressPercent` | decimal | obligatorio, 0-100 |
 | `actualProgressPercent` | decimal | obligatorio, 0-100 |
 | `actualCost` | decimal | obligatorio, >= 0 |
+| `measurementMethod` | enum | opcional; si se omite, `PERCENT_COMPLETE` |
+
+### Regla de medición del avance
+
+Cada actividad reconoce valor según su regla, y **la regla se aplica tanto al valor planificado como al
+ganado**. Es lo que hace que SV y SPI signifiquen algo: restar dos cifras medidas con varas distintas fabrica
+atrasos que no existen.
+
+| Valor | Qué reconoce |
+| --- | --- |
+| `PERCENT_COMPLETE` | El porcentaje declarado tal cual. Comportamiento por defecto |
+| `FIXED_0_100` | Nada hasta llegar al 100 %, y entonces todo |
+| `FIXED_50_50` | La mitad al iniciar, el resto al cerrar |
+| `WEIGHTED_MILESTONES` | El avance derivado de los hitos cumplidos y sus pesos |
+
+Una actividad se considera iniciada si tiene fecha real de inicio **o** un avance declarado mayor que cero.
+La primera señal es la que importa en `FIXED_50_50`: quien usa esa regla no estima el avance intermedio y deja
+el porcentaje a cero hasta cerrar, así que deducir el arranque del porcentaje anularía el método.
+
+La respuesta de actividad incluye `effectivePlannedProgressPercent` y `effectiveActualProgressPercent`, que son
+los porcentajes que la regla reconoció. Con las reglas de umbral pueden no coincidir con los declarados, y sin
+ese dato un valor ganado de cero sobre un avance del 65 % parecería un error en vez de la regla haciendo su
+trabajo.
+
+Ejemplo con BAC 100.000, planificado 50 %, real 40 % y AC 60.000:
+
+| Regla | PV | EV | SV | SPI |
+| --- | --- | --- | --- | --- |
+| `PERCENT_COMPLETE` | 50.000 | 40.000 | -10.000 | 0,8000 |
+| `FIXED_0_100` | 0 | 0 | 0 | `null` |
+| `FIXED_50_50` | 50.000 | 50.000 | 0 | 1,0000 |
 
 ### EvmIndicators
 
@@ -81,6 +112,37 @@ Estados posibles:
 | --- | --- |
 | `costStatus.status` | `UNDER_BUDGET`, `ON_BUDGET`, `OVER_BUDGET`, `NOT_APPLICABLE` |
 | `scheduleStatus.status` | `AHEAD_OF_SCHEDULE`, `ON_SCHEDULE`, `BEHIND_SCHEDULE`, `NOT_APPLICABLE` |
+| `costStatus.severity` y `scheduleStatus.severity` | `NONE`, `WARNING`, `CRITICAL`, `NOT_APPLICABLE` |
+
+### Estado y severidad
+
+El estado es un hecho aritmético y la severidad una política de tolerancia. Un CPI de 0,9857 está
+`OVER_BUDGET`, porque se gastó más de lo que se ganó, y su severidad es `WARNING`, porque la desviación cabe
+dentro de lo admitido. Quien pinte un color debe usar `severity`; quien muestre un texto, `status`. Los
+umbrales con los que se clasificó viajan en `indicators.thresholds` para que ningún cliente los repita:
+
+```json
+"thresholds": { "warning": 1.00, "critical": 0.95 }
+```
+
+Las bandas son cerradas por abajo: `índice >= warning` es `NONE`, `critical <= índice < warning` es `WARNING`,
+y por debajo `CRITICAL`. Un índice nulo es `NOT_APPLICABLE`, siempre a la vez en estado y en severidad.
+
+### Estimaciones del costo final
+
+`estimateAtCompletion` y `varianceAtCompletion` son los de la fórmula titular, y `estimates` trae las tres
+fórmulas estándar sobre las mismas cifras, cada una con su supuesto:
+
+| Fórmula | Cálculo | Supuesto |
+| --- | --- | --- |
+| `BAC_OVER_CPI` (por defecto) | BAC / CPI | El desempeño de costo observado se mantiene |
+| `AC_PLUS_REMAINING` | AC + (BAC - EV) | La desviación fue puntual; lo que queda va a presupuesto |
+| `AC_PLUS_REMAINING_OVER_CPI_SPI` | AC + (BAC - EV) / (CPI x SPI) | Hay que recuperar el atraso sin ampliar plazo |
+
+El parámetro de consulta `eacFormula` elige la titular en `GET /projects/{id}/evm` y en
+`GET /projects/{id}/timeline`; un valor desconocido devuelve 400. Una fórmula que no se puede calcular
+devuelve `null` con `applicable: false`, y **no se sustituye** por otra que sí aplique. La segunda nunca es
+indefinida porque no divide: su cero en un proyecto vacío es un cero real, no un indefinido disfrazado.
 
 Cuando `actualCost` es 0, `costPerformanceIndex`, `estimateAtCompletion` y `varianceAtCompletion` son `null`
 y `costStatus` es `NOT_APPLICABLE` con el motivo. Cuando `plannedValue` es 0, `schedulePerformanceIndex` es

@@ -4,6 +4,7 @@ import com.trycore.evm.application.port.in.ProjectEvmUseCase;
 import com.trycore.evm.application.port.out.ActivityRepositoryPort;
 import com.trycore.evm.application.port.out.ProjectRepositoryPort;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
+import com.trycore.evm.domain.model.EstimateFormula;
 import com.trycore.evm.domain.model.Project;
 import com.trycore.evm.domain.model.ProjectEvmSummary;
 import com.trycore.evm.domain.service.EvmCalculator;
@@ -29,8 +30,16 @@ public final class ProjectEvmService implements ProjectEvmUseCase {
 
     @Override
     public ProjectEvmSummary analyze(final Long projectId) {
+        return analyze(projectId, null);
+    }
+
+    @Override
+    public ProjectEvmSummary analyze(final Long projectId, final EstimateFormula formula) {
         final Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        return evmCalculator.consolidate(project, activityRepository.findAllByProjectId(projectId));
+        final var activities = activityRepository.findAllByProjectId(projectId);
+        return formula == null
+                ? evmCalculator.consolidate(project, activities)
+                : evmCalculator.consolidate(project, activities, formula);
     }
 }

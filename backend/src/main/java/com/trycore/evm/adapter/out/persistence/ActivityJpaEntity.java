@@ -23,6 +23,8 @@ import com.trycore.evm.domain.model.Activity;
 @Table(name = "activities")
 public class ActivityJpaEntity {
 
+    private static final int MEASUREMENT_METHOD_LENGTH = 24;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,6 +46,9 @@ public class ActivityJpaEntity {
 
     @Column(name = "actual_cost", nullable = false)
     private BigDecimal actualCost;
+
+    @Column(name = "measurement_method", nullable = false, length = MEASUREMENT_METHOD_LENGTH)
+    private String measurementMethod;
 
     @Column(name = "planned_start_date")
     private LocalDate plannedStartDate;
@@ -129,6 +134,14 @@ public class ActivityJpaEntity {
 
     public void setActualCost(final BigDecimal actualCost) {
         this.actualCost = actualCost;
+    }
+
+    public String getMeasurementMethod() {
+        return measurementMethod;
+    }
+
+    public void setMeasurementMethod(final String measurementMethod) {
+        this.measurementMethod = measurementMethod;
     }
 
     public LocalDate getPlannedStartDate() {

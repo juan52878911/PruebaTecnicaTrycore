@@ -663,6 +663,33 @@ Lo que señaló y no es corregible por Claude, porque son decisiones o trabajo d
 Su veredicto literal fue que el backend cumple con holgura y resiste el escrutinio, pero que la entrega en
 conjunto no cumple todavía, y que lo más débil es justamente el entregable de mayor peso.
 
+## 7d. Ampliación posterior: histórico y series temporales
+
+Después de la release, Juan pidió el backend necesario para las gráficas de evolución que tiene planeadas en el
+dashboard. Antes de escribir nada hubo tres decisiones que no estaban en el enunciado y que Claude no podía
+tomar por su cuenta, porque cambiaban el modelo de datos: qué gráficas quería, cómo se registra cada punto del
+histórico y si las actividades debían llevar fechas propias. Juan eligió curva de valores acumulados más
+tendencia de índices, cortes manuales por fecha, y fechas planificadas y reales.
+
+Decisiones de diseño tomadas al implementarlo:
+
+- **Los índices no se almacenan.** Un corte guarda solo las cuatro cifras base y los índices se derivan al
+  leerlo con el mismo servicio que usa el análisis en vivo. Guardar el CPI calculado habría creado una segunda
+  fuente de verdad: si mañana se corrige una fórmula, el histórico seguiría mostrando números que ya nadie
+  podría reproducir.
+- **Cada línea del corte guarda el nombre de la actividad y no tiene clave foránea hacia ella.** Un registro
+  histórico debe sobrevivir a que la actividad se renombre o se elimine. Es la excepción deliberada a la
+  integridad referencial que el resto del esquema sí aplica.
+- **Un corte con fecha futura se rechaza.** Las cifras se toman del estado actual, así que fecharlas en el
+  futuro haría que el punto de la gráfica no correspondiera a su fecha.
+
+Corrección al trabajo del agente que construyó la infraestructura: la regla de la fecha futura leía el reloj
+del sistema dentro del servicio. El propio agente lo señaló en su informe como algo que no había resuelto por
+no tocar el dominio. El efecto era que su prueba unitaria afirmaba cosas distintas según cuándo se ejecutara, y
+que la de integración usaba fechas fijas que habrían fallado con el reloj de la máquina por detrás de ellas. Se
+inyectó un reloj por constructor, la prueba unitaria lo fija y la de integración calcula sus fechas desde el
+día de ejecución. Commit `Take the current date from an injected clock`.
+
 ## 8. Registro cronológico de prompts de Juan
 
 Cada entrada es el texto exacto enviado a Claude Code, con fecha y hora local (Bogotá, UTC-5).
@@ -1596,6 +1623,164 @@ no existe backend para la configuración, así que quiero que los ajustes que po
 <status>failed</status>
 <summary>Background command "Start backend in dev mode" failed with exit code 1</summary>
 </task-notification>
+
+### 2026-09-04 14:36 -05 - Claude Code
+
+```text
+ajustemos eso después, anotarlo en obsidian como checklist y ayúdame creando un sistema de track de fechas para los avances y datos pertinentes para poder generar gráficas en el Dashboard que tengo planeadas, solo backend. el front está en Otra sesión 
+```
+
+### 2026-09-04 15:04 -05 - Claude Code
+
+```text
+<task-notification>
+<task-id>a50624861e82193ce</task-id>
+<tool-use-id>toolu_01QcWUoADdvf1XicmUzVSLBr</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-juanbedoya-Documents-GitHub-PruebaTecnicaTrycore/ef7d43e4-410f-46ac-aa2b-4b22f2583cf2/tasks/a50624861e82193ce.output</output-file>
+<status>completed</status>
+<summary>Agent "Measurement history infrastructure" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Juan, la infraestructura del histórico está completa y verificada de verdad. No hice commit, push ni PR: todo queda en el árbol de trabajo, y `AI_PROCESS.md` sigue intacto (mtime 14:36, anterior a mi trabajo).
+
+## Ficheros creados
+
+| Capa | Fichero |
+| --- | --- |
+| Migración | `backend/src/main/resources/db/migration/V3__create_project_measurements.sql` |
+| Dominio (solo excepciones nuevas) | `domain/exception/MeasurementAlreadyExistsException.java`, `MeasurementNotFoundException.java` |
+| Puertos | `application/port/in/ProjectMeasurementUseCases.java`, `application/port/out/ProjectMeasurementRepositoryPort.java` |
+| Servicio | `application/service/ProjectMeasurementService.java` |
+| Persistencia | `adapter/out/persistence/ProjectMeasurementJpaEntity.java`, `ProjectMeasurementActivityJpaEntity.java`, `ProjectMeasurementJpaRepository.java`, `ProjectMeasurementPersistenceMapper.java`, `ProjectMeasurementPersistenceAdapter.java` |
+| REST | `adapter/in/rest/MeasurementController.java`, `ProjectTimelineController.java`; DTOs `MeasurementRequest`, `MeasurementResponse`, `ActivityMeasurementResponse`, `EvmTotalsResponse`, `MeasurementPointResponse`, `ProjectTimelineResponse`; mapeadores `MeasurementRestMapper`, `ProjectTimelineRestMapper` |
+| Tests | `src/test/.../ProjectMeasurementServiceTest.java` (14 casos), `src/test-integration/.../MeasurementControllerIT.java` (11 casos) |
+
+Modificados: `GlobalExceptionHandler` (409 para duplicado, 404 para medición inexistente, `InvalidMeasurementException` al grupo de 400), `BeanConfiguration` (bean nuevo), `ApplicationStartsIT` (el test fijaba 10 operaciones OpenAPI; ahora son 15 y renombré el método), `docs/api-contract.md` y `README.md` (sección "Histórico y series temporales", tabla de endpoints, recuento de tests 131).
+
+Decisiones que conviene que revises:
+- **Controlador aparte para `/timeline`**: su recurso cuelga del proyecto, no de la colección de mediciones; meterlo en `MeasurementController` obligaría a una ruta absoluta ajena a su `@RequestMapping` y a mezclar en una etiqueta de OpenAPI el registro de cortes y la gráfica.
+- **Una medición devuelve cifras, no indicadores**. Los índices solo aparecen en `/timeline`. Calcularlos en el `MeasurementResponse` exigiría meter el `EvmCalculator` en el controlador, que es justo lo que no queremos; el puerto de entrada devuelve `ProjectMeasurement` y ahí no hay indicadores.
+
+## Comandos ejecutados
+
+| Comando | Resultado real |
+| --- | --- |
+| `./mvnw -q verify -Ptest` (1.ª) | Falló: mis fechas de corte 2026-09-07/09-14 son futuras respecto a hoy (2026-09-04) y el servicio las rechaza. Cambiadas a 2026-08-24 y 2026-08-31 |
+| `./mvnw -q verify -Ptest` (2.ª) | Falló solo `ApplicationStartsIT`: esperaba 10 operaciones OpenAPI, hay 15 |
+| `./mvnw -q verify -Ptest` (3.ª) | **EXIT=0**, Checkstyle sin violaciones, JaCoCo `check` en verde |
+| Tests | 97 unitarios + 34 de integración = 131, todos en verde |
+| Cobertura (jacoco-merged) | `application.service` 72/72 líneas y 12/12 ramas; `domain.service` 78/78 y 18/18; `domain.model` 105/112 y 56/68 |
+| `./mvnw spring-boot:run -Pdev` | Arrancó en 1,96 s reutilizando `evm-postgres`; Flyway aplicó V3 |
+
+## Números verificados a mano por HTTP (proyecto 1)
+
+| Comprobación | Esperado a mano | Devuelto |
+| --- | --- | --- |
+| Corte A (2026-08-24) | BAC 430.000 / PV 170.000 / EV 152.500 / AC 160.000 | idéntico, 201 + `Location .../measurements/1` |
+| Punto A: CPI = 152.500/160.000 | 0,9531 | 0.9531 |
+| Punto A: SPI = 152.500/170.000 | 0,8971 | 0.8971 |
+| Punto A: EAC = 430.000 x 160.000 / 152.500 | 451.147,54 | 451147.54 |
+| Punto A: VAC, CV, SV | -21.147,54 / -7.500 / -17.500 | iguales, `OVER_BUDGET` + `BEHIND_SCHEDULE` |
+| Corte B (2026-08-31, con actividad temporal de BAC 100.000 al 100 %) | BAC 530.000 / PV 270.000 / EV 252.500 / AC 210.000 | idéntico |
+| Punto B: CPI = 252.500/210.000 | 1,2024 | 1.2024 |
+| Punto B: SPI = 252.500/270.000 | 0,9352 | 0.9352 |
+| Punto B: EAC = 530.000 x 210.000 / 252.500 | 440.792,08 | 440792.08 |
+| Punto B: VAC / CV | 89.207,92 / 42.500 | iguales, `UNDER_BUDGET` |
+| Serie temporal | 2 puntos ordenados 08-24 -&gt; 08-31 | correcto |
+| Histórico sobrevive al borrado de la actividad | el corte B conserva su 4.ª línea tras `DELETE /activities/11` | confirmado |
+| Corte duplicado 2026-08-24 | 409 | 409 con detalle que nombra la fecha |
+| Corte 2027-01-01 | 400 | 400 "La fecha de corte no puede ser futura..." |
+| Corte sin fecha | 400 con `errors[cutoffDate]` | correcto |
+| `GET /measurements/999`, `GET /projects/999/timeline` | 404 | 404 |
+| `DELETE /measurements/2` | 204 y desaparece de la lista | correcto |
+| `/api-docs` | 15 operaciones; `POST /measurements` con 201/400/404/409; esquemas nuevos publicados | correcto |
+
+Maté el proceso del perfil dev; el puerto 8080 quedó libre. En la base de dev queda la medición 1 del proyecto 1 (para que `/timeline` no salga vacío si quieres mirarlo en Swagger) y la actividad temporal ya borrada.
+
+## Cambios que creo que el dominio necesitaría (no hechos)
+
+1. **`EvmCalculator` no expone la regla de la fecha futura.** Hoy vive en `ProjectMeasurementService` con `LocalDate.now()`, así que la capa de aplicación depende del reloj del sistema y no se puede fijar el tiempo en un test. Lo natural sería o un `Clock` inyectado en el servicio, o que `ProjectMeasurement` reciba la fecha "de hoy" y valide la invariante él mismo. Lo dejé como está para no tocar el dominio.
+2. **`ProjectMeasurement` no valida que `activities` sume los `totals` del proyecto.** El invariante existe de hecho porque solo `capture` construye mediciones, pero nada impide crear un corte incoherente desde el adaptador de persistencia.
+3. **`ProjectTimeline` no distingue "sin cortes" de "proyecto recién creado"**; hoy ambos son una lista vacía y para la gráfica basta, pero si más adelante quieres una tendencia (mejora/empeora) hará falta un tipo que la calcule en el dominio, no en el cliente.
+
+## Lo que no pude comprobar
+
+- No probé el perfil `prod` ni el frontend: fuera del alcance de esta tarea.
+- La cascada de borrado del proyecto se comprueba en el IT contando filas con `JdbcTemplate`, no por HTTP: una vez borrado el proyecto no queda endpoint que consultar. Por curl no la verifiqué para no borrar el proyecto de demostración.
+- El único riesgo temporal que veo: las fechas de corte de los tests son fijas y pasadas, así que no caducan; pero si alguien ejecuta la suite con el reloj del sistema retrasado antes de 2026-08-31, `MeasurementControllerIT` fallaría por la regla de fecha futura.</result>
+<usage><subagent_tokens>197800</subagent_tokens><tool_uses>53</tool_uses><duration_ms>1031490</duration_ms></usage>
+</task-notification>
+```
+
+### 2026-09-04 18:12 -05 - Claude Code
+
+```text
+quiero que veas de otro proyecto otra cosa tengo instanciada una arquitectura en mi AWS y quiero ver qué paso, es un proyecto que usa VibeVoice y necesito saber que pasa con el sistema de colas que lleva 2 horas procesando un vídeo. ayúdame con eso
+```
+
+### 2026-09-04 18:18 -05 - Claude Code
+
+```text
+no usamos gpu porque no tenemos permiso para estás instancias, podemos procesar el vídeo localmente y ponerlo en la plataforma con las herramientas? y mientras arregla el sistema para arreglar el out of memory
+```
+
+### 2026-09-04 18:26 -05 - Claude Code
+
+```text
+hagámoslo 
+```
+
+### 2026-09-04 18:51 -05 - Claude Code
+
+```text
+intentemoslo, quiero dejar el vídeo procesado en la plataforma 
+```
+
+### 2026-09-04 19:15 -05 - Claude Code
+
+```text
+arregla la página, al parecer los vídeos traducidos no se ven en Mobile y si en desktop
+```
+
+### 2026-09-04 19:21 -05 - Claude Code
+
+```text
+lo utilizo en Android en Chrome 
+```
+
+### 2026-09-04 19:23 -05 - Claude Code
+
+```text
+en ingles no carga en español si carga el video
+```
+
+### 2026-09-04 19:29 -05 - Claude Code
+
+```text
+sube el cambio, no lo veo reflejado en el dominio
+```
+
+### 2026-09-04 19:35 -05 - Claude Code
+
+```text
+no funciona, estoy desde Mobile como reinicio el cache?
+```
+
+### 2026-09-04 19:37 -05 - Claude Code
+
+```text
+V2 también se muestra igual
+```
+
+### 2026-09-04 20:24 -05 - Claude Code
+
+```text
+toca cambiar el origen a mano para que aparezca el vídeo, cuando se abre el modal no funciona directamente 
+```
+
+### 2026-09-04 20:31 -05 - Claude Code
+
+```text
+funciona en debug pero en esta nueva versión no
 ```
 
 ### 2026-09-04 21:19 -05 - Claude Code
@@ -1818,6 +2003,31 @@ aplica la semilla
 
 ```text
 mergea el PR a develop
+```
+
+### 2026-09-04 22:23 -05 - Claude Code
+
+```text
+Ayudame a implementar lo que necesito para que el front funcione perfectamente y tenga los datos necesarios. Crea tambien datos de ejemplo como los que se ven en el diseño Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
+https://claude.ai/design/p/fd9cb3bd-e12e-4610-a0f4-c36966108a24?file=Valora+Prototipo.dc.html
+
+Focus on these files (the whole project is readable):
+- `Valora Prototipo.dc.html`
+
+Also read these files the selection imports:
+- `support.js`
+
+Implement: `Valora Prototipo.dc.html`
+
+Nivel 1 — cosas que hoy funcionan a medias
+Estas son rodeos que ya están en el código y que un revisor va a ver.
+1. Un listado de proyectos con cifras. `GET /projects` devuelve solo id, nombre, descripción y fechas. Para pintar BAC/EV/AC/CPI/SPI por fila, el frontend hace `Promise.all` sobre `/projects/{id}/evm`: son 1+N peticiones, y el perfil hace 1+2N porque además cuenta cortes. Con cuatro proyectos da igual; es el primer olor a problema que salta en una revisión.
+
+```
+### 2026-09-04 22:22 -05 - Claude Code
+
+```text
+ya puedes acceder al diseño
 ```
 
 ### 2026-09-04 22:49 -05 - Claude Code

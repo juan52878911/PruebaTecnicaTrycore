@@ -3,6 +3,8 @@ package com.trycore.evm.adapter.out.persistence;
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.MeasurementMethod;
+import com.trycore.evm.domain.model.ProgressMeasurement;
 
 /** Traducción explícita entre {@link Activity} y {@link ActivityJpaEntity}, sin librerías de mapeo. */
 final class ActivityPersistenceMapper {
@@ -18,8 +20,10 @@ final class ActivityPersistenceMapper {
         final ActivitySchedule schedule = new ActivitySchedule(
                 entity.getPlannedStartDate(), entity.getPlannedEndDate(),
                 entity.getActualStartDate(), entity.getActualEndDate());
+        final ProgressMeasurement progress = new ProgressMeasurement(
+                MeasurementMethod.valueOf(entity.getMeasurementMethod()));
         return new Activity(
-                entity.getId(), entity.getProjectId(), entity.getName(), figures, schedule,
+                entity.getId(), entity.getProjectId(), entity.getName(), figures, schedule, progress,
                 entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
@@ -37,5 +41,6 @@ final class ActivityPersistenceMapper {
         entity.setPlannedEndDate(schedule.plannedEnd());
         entity.setActualStartDate(schedule.actualStart());
         entity.setActualEndDate(schedule.actualEnd());
+        entity.setMeasurementMethod(activity.progress().method().name());
     }
 }

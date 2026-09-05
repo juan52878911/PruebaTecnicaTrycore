@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -12,11 +13,16 @@ import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivityMeasurement;
+import com.trycore.evm.domain.model.CompletionEstimate;
+import com.trycore.evm.domain.model.DeviationSeverity;
+import com.trycore.evm.domain.model.EstimateFormula;
 import com.trycore.evm.domain.model.EvmIndicators;
 import com.trycore.evm.domain.model.EvmTotals;
 import com.trycore.evm.domain.model.IndexInterpretation;
+import com.trycore.evm.domain.model.MeasurementMethod;
 import com.trycore.evm.domain.model.MeasurementPoint;
 import com.trycore.evm.domain.model.PerformanceStatus;
+import com.trycore.evm.domain.model.PerformanceThresholds;
 import com.trycore.evm.domain.model.Project;
 import com.trycore.evm.domain.model.ProjectEvmSummary;
 import com.trycore.evm.domain.model.ProjectMeasurement;
@@ -33,12 +39,24 @@ import com.trycore.evm.domain.model.ProjectTimeline;
  * <ul>
  *   <li>Un índice con divisor cero (CPI con AC = 0, SPI con PV = 0) es nulo y se interpreta como
  *       NOT_APPLICABLE con su motivo. Nunca se devuelve 0 ni se lanza una excepción.</li>
- *   <li>EAC = BAC / CPI se calcula como BAC x AC / EV con precisión completa y se redondea al
- *       final, para no arrastrar el redondeo a cuatro decimales del CPI. Con EV = 0 el CPI es 0 y
- *       el EAC queda indefinido (nulo); con AC = 0 hereda la indefinición del CPI.</li>
+ *   <li>El EAC se calcula con la fórmula pedida, o con la de por defecto, y siempre desarrollando
+ *       la expresión para no arrastrar el redondeo a cuatro decimales de los índices. Junto al
+ *       titular se devuelven las tres fórmulas estándar, porque el rango entre ellas informa más
+ *       que una sola cifra. Ver {@link EstimateFormula}.</li>
+ *   <li>Cada actividad reconoce valor según su regla de medición, y la regla se aplica tanto al
+ *       valor planificado como al ganado. Ver {@link MeasurementMethod}.</li>
  *   <li>El consolidado del proyecto suma BAC, PV, EV y AC y calcula los índices sobre las sumas.
  *       No se promedian los índices de las actividades.</li>
+ *   <li>Cada índice viaja con su estado y con la severidad de su desviación. El estado es el hecho
+ *       aritmético y la severidad la tolerancia admitida; los umbrales se reciben al construir el
+ *       servicio y viajan en el resultado para que ningún cliente los repita por su cuenta.</li>
  * </ul>
+ *
+ * <p>Aviso sobre el SPI, conocido en el estándar: converge a 1 al cierre del proyecto aunque este
+ * termine con retraso, porque cuando todo el trabajo está hecho EV y PV valen ambos BAC. Su
+ * severidad es fiable en la primera mitad del proyecto y cada vez menos hacia el final. La
+ * corrección ortodoxa es medir el cronograma en unidades de tiempo (Earned Schedule), que queda
+ * fuera de este alcance y se nombra aquí para que la limitación esté dicha y no escondida.
  */
 public final class EvmCalculator {
 
@@ -50,12 +68,62 @@ public final class EvmCalculator {
     private static final RoundingMode ROUNDING = RoundingMode.HALF_UP;
     private static final MathContext EXACT_DIVISION = MathContext.DECIMAL128;
     private static final BigDecimal PERCENT_DIVISOR = new BigDecimal("100");
+    private static final EstimateFormula DEFAULT_FORMULA = EstimateFormula.BAC_OVER_CPI;
 
-    /** Indicadores de una sola actividad a partir de sus cifras. */
+    private final PerformanceThresholds thresholds;
+
+    /** Calculador con los umbrales de tolerancia por defecto del dominio. */
+    public EvmCalculator() {
+        this(PerformanceThresholds.defaults());
+    }
+
+    public EvmCalculator(final PerformanceThresholds thresholds) {
+        this.thresholds = thresholds == null ? PerformanceThresholds.defaults() : thresholds;
+    }
+
+    /** Umbrales con los que este calculador clasifica la severidad de las desviaciones. */
+    public PerformanceThresholds thresholds() {
+        return thresholds;
+    }
+
+    /** Indicadores de una sola actividad a partir de sus cifras, con la fórmula de EAC por defecto. */
     public EvmIndicators calculate(final ActivityFigures figures) {
-        final BigDecimal plannedValue = percentOf(figures.plannedProgressPercent(), figures.budgetAtCompletion());
-        final BigDecimal earnedValue = percentOf(figures.actualProgressPercent(), figures.budgetAtCompletion());
-        return calculate(figures.budgetAtCompletion(), plannedValue, earnedValue, figures.actualCost());
+        return calculate(figures, DEFAULT_FORMULA);
+    }
+
+    /** Indicadores de una sola actividad a partir de sus cifras, con la fórmula de EAC indicada. */
+    public EvmIndicators calculate(final ActivityFigures figures, final EstimateFormula formula) {
+        return calculate(totalsOf(figures, MeasurementMethod.PERCENT_COMPLETE, false), formula);
+    }
+
+    /** Indicadores de una actividad, aplicando su propia regla de medición. */
+    public EvmIndicators calculate(final Activity activity) {
+        return calculate(activity, DEFAULT_FORMULA);
+    }
+
+    /** Indicadores de una actividad, con su regla de medición y la fórmula de EAC indicada. */
+    public EvmIndicators calculate(final Activity activity, final EstimateFormula formula) {
+        return calculate(
+                totalsOf(activity.figures(), activity.progress().method(), activity.started()), formula);
+    }
+
+    /**
+     * Cifras de una actividad tras aplicar su regla de medición a los dos lados.
+     *
+     * <p>La misma regla gobierna el valor planificado y el ganado. Al lado planificado no le consta
+     * ninguna fecha real, así que su señal de "iniciada" es que el plan previera algún avance a la
+     * fecha; al lado real le basta con haber arrancado.
+     */
+    private static EvmTotals totalsOf(
+            final ActivityFigures figures, final MeasurementMethod method, final boolean started) {
+        final BigDecimal plannedPercent = method.recognisedPercent(
+                figures.plannedProgressPercent(), figures.plannedProgressPercent().signum() > 0);
+        final BigDecimal earnedPercent = method.recognisedPercent(figures.actualProgressPercent(), started);
+        return new EvmTotals(
+                figures.budgetAtCompletion(),
+                percentOf(plannedPercent, figures.budgetAtCompletion()),
+                percentOf(earnedPercent, figures.budgetAtCompletion()),
+                figures.actualCost());
     }
 
     /**
@@ -65,21 +133,36 @@ public final class EvmCalculator {
      * indicadores se calculan aquí al leerla, con las mismas reglas que el análisis en vivo.
      */
     public EvmIndicators calculate(final EvmTotals totals) {
-        return calculate(
-                totals.budgetAtCompletion(), totals.plannedValue(), totals.earnedValue(), totals.actualCost());
+        return calculate(totals, DEFAULT_FORMULA);
+    }
+
+    /**
+     * Actividad con sus indicadores y con los porcentajes que su regla de medición reconoce.
+     *
+     * <p>Es la unidad que consume una vista de detalle: la misma que compone el consolidado, de
+     * modo que una actividad vista suelta y vista dentro del proyecto dan exactamente lo mismo.
+     */
+    public ActivityEvm evaluate(final Activity activity) {
+        return toActivityEvm(activity, DEFAULT_FORMULA);
+    }
+
+    /** Indicadores de cada actividad y consolidado del proyecto, con la fórmula de EAC por defecto. */
+    public ProjectEvmSummary consolidate(final Project project, final List<Activity> activities) {
+        return consolidate(project, activities, DEFAULT_FORMULA);
     }
 
     /** Indicadores de cada actividad y consolidado del proyecto sobre las sumas. */
-    public ProjectEvmSummary consolidate(final Project project, final List<Activity> activities) {
+    public ProjectEvmSummary consolidate(
+            final Project project, final List<Activity> activities, final EstimateFormula formula) {
         final List<ActivityEvm> perActivity = activities.stream()
-                .map(activity -> new ActivityEvm(activity, calculate(activity.figures())))
+                .map(activity -> toActivityEvm(activity, formula))
                 .toList();
         final BigDecimal totalBudget = sum(perActivity, item -> item.activity().figures().budgetAtCompletion());
         final BigDecimal totalPlannedValue = sum(perActivity, item -> item.indicators().plannedValue());
         final BigDecimal totalEarnedValue = sum(perActivity, item -> item.indicators().earnedValue());
         final BigDecimal totalActualCost = sum(perActivity, item -> item.indicators().actualCost());
-        final EvmIndicators consolidated =
-                calculate(totalBudget, totalPlannedValue, totalEarnedValue, totalActualCost);
+        final EvmIndicators consolidated = calculate(
+                new EvmTotals(totalBudget, totalPlannedValue, totalEarnedValue, totalActualCost), formula);
         return new ProjectEvmSummary(project, money(totalBudget), consolidated, perActivity);
     }
 
@@ -128,27 +211,44 @@ public final class EvmCalculator {
      * existir, así que el orden es estable.
      */
     public ProjectTimeline buildTimeline(final Project project, final List<ProjectMeasurement> measurements) {
+        return buildTimeline(project, measurements, DEFAULT_FORMULA);
+    }
+
+    /**
+     * Serie temporal con la fórmula de EAC indicada. Acepta el mismo parámetro que el análisis en
+     * vivo a propósito: si cada pantalla usara una fórmula distinta, mostrarían estimaciones
+     * diferentes para las mismas cifras y parecería un fallo.
+     */
+    public ProjectTimeline buildTimeline(
+            final Project project,
+            final List<ProjectMeasurement> measurements,
+            final EstimateFormula formula) {
         final List<MeasurementPoint> points = measurements.stream()
                 .sorted(Comparator.comparing(ProjectMeasurement::cutoffDate))
                 .map(measurement -> new MeasurementPoint(
                         measurement.cutoffDate(),
                         measurement.notes(),
                         measurement.totals(),
-                        calculate(measurement.totals())))
+                        calculate(measurement.totals(), formula)))
                 .toList();
         return new ProjectTimeline(project, points);
     }
 
-    private EvmIndicators calculate(
-            final BigDecimal budgetAtCompletion,
-            final BigDecimal plannedValue,
-            final BigDecimal earnedValue,
-            final BigDecimal actualCost) {
+    /** Indicadores de unas cifras dadas, con la fórmula de EAC indicada. */
+    public EvmIndicators calculate(final EvmTotals totals, final EstimateFormula formula) {
+        final EstimateFormula selected = formula == null ? DEFAULT_FORMULA : formula;
+        final BigDecimal plannedValue = totals.plannedValue();
+        final BigDecimal earnedValue = totals.earnedValue();
+        final BigDecimal actualCost = totals.actualCost();
         final BigDecimal costPerformanceIndex = index(earnedValue, actualCost);
         final BigDecimal schedulePerformanceIndex = index(earnedValue, plannedValue);
-        final BigDecimal estimateAtCompletion = estimateAtCompletion(budgetAtCompletion, earnedValue, actualCost);
-        final BigDecimal varianceAtCompletion =
-                estimateAtCompletion == null ? null : money(budgetAtCompletion.subtract(estimateAtCompletion));
+        final List<CompletionEstimate> estimates = Arrays.stream(EstimateFormula.values())
+                .map(candidate -> CompletionEstimate.of(candidate, totals))
+                .toList();
+        final CompletionEstimate headline = estimates.stream()
+                .filter(estimate -> estimate.formula() == selected)
+                .findFirst()
+                .orElseThrow();
         return new EvmIndicators(
                 money(plannedValue),
                 money(earnedValue),
@@ -157,10 +257,24 @@ public final class EvmCalculator {
                 money(earnedValue.subtract(plannedValue)),
                 costPerformanceIndex,
                 schedulePerformanceIndex,
-                estimateAtCompletion,
-                varianceAtCompletion,
+                headline.estimateAtCompletion(),
+                headline.varianceAtCompletion(),
+                selected,
+                estimates,
                 interpretCost(costPerformanceIndex),
-                interpretSchedule(schedulePerformanceIndex));
+                interpretSchedule(schedulePerformanceIndex),
+                thresholds);
+    }
+
+    private ActivityEvm toActivityEvm(final Activity activity, final EstimateFormula formula) {
+        final MeasurementMethod method = activity.progress().method();
+        final ActivityFigures figures = activity.figures();
+        return new ActivityEvm(
+                activity,
+                calculate(activity, formula),
+                method.recognisedPercent(
+                        figures.plannedProgressPercent(), figures.plannedProgressPercent().signum() > 0),
+                method.recognisedPercent(figures.actualProgressPercent(), activity.started()));
     }
 
     private static BigDecimal percentOf(final BigDecimal percent, final BigDecimal amount) {
@@ -175,40 +289,43 @@ public final class EvmCalculator {
         return dividend.divide(divisor, INDEX_SCALE, ROUNDING);
     }
 
-    /** EAC = BAC / CPI = BAC x AC / EV, sin redondeo intermedio; nulo si AC = 0 o EV = 0. */
-    private static BigDecimal estimateAtCompletion(
-            final BigDecimal budgetAtCompletion,
-            final BigDecimal earnedValue,
-            final BigDecimal actualCost) {
-        if (isZero(actualCost) || isZero(earnedValue)) {
-            return null;
-        }
-        return money(budgetAtCompletion.multiply(actualCost).divide(earnedValue, EXACT_DIVISION));
-    }
-
-    private static IndexInterpretation interpretCost(final BigDecimal costPerformanceIndex) {
+    private IndexInterpretation interpretCost(final BigDecimal costPerformanceIndex) {
         if (costPerformanceIndex == null) {
             return IndexInterpretation.notApplicable(NO_ACTUAL_COST_REASON);
         }
-        return IndexInterpretation.of(statusFor(
-                costPerformanceIndex,
-                PerformanceStatus.UNDER_BUDGET,
-                PerformanceStatus.ON_BUDGET,
-                PerformanceStatus.OVER_BUDGET));
+        return IndexInterpretation.of(
+                statusFor(
+                        costPerformanceIndex,
+                        PerformanceStatus.UNDER_BUDGET,
+                        PerformanceStatus.ON_BUDGET,
+                        PerformanceStatus.OVER_BUDGET),
+                severityOf(costPerformanceIndex));
     }
 
-    private static IndexInterpretation interpretSchedule(final BigDecimal schedulePerformanceIndex) {
+    private IndexInterpretation interpretSchedule(final BigDecimal schedulePerformanceIndex) {
         if (schedulePerformanceIndex == null) {
             return IndexInterpretation.notApplicable(NO_PLANNED_VALUE_REASON);
         }
-        return IndexInterpretation.of(statusFor(
-                schedulePerformanceIndex,
-                PerformanceStatus.AHEAD_OF_SCHEDULE,
-                PerformanceStatus.ON_SCHEDULE,
-                PerformanceStatus.BEHIND_SCHEDULE));
+        return IndexInterpretation.of(
+                statusFor(
+                        schedulePerformanceIndex,
+                        PerformanceStatus.AHEAD_OF_SCHEDULE,
+                        PerformanceStatus.ON_SCHEDULE,
+                        PerformanceStatus.BEHIND_SCHEDULE),
+                severityOf(schedulePerformanceIndex));
     }
 
-    /** Mayor que 1 favorable, igual a 1 en objetivo, menor que 1 desfavorable. */
+    private DeviationSeverity severityOf(final BigDecimal indexValue) {
+        return thresholds.severityOf(indexValue);
+    }
+
+    /**
+     * Mayor que 1 favorable, igual a 1 en objetivo, menor que 1 desfavorable.
+     *
+     * <p>La comparación se hace sobre el índice ya redondeado a la escala de índice, así que la
+     * igualdad "exacta" es en realidad una banda de anchura 0,0001. Es una consecuencia declarada
+     * del redondeo, no un descuido: la banda con sentido de negocio es la severidad.
+     */
     private static PerformanceStatus statusFor(
             final BigDecimal indexValue,
             final PerformanceStatus favorable,
