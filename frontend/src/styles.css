@@ -78,8 +78,9 @@
   box-sizing: border-box;
 }
 
-/* Con una capa modal abierta solo se desplaza la capa; ver ScrollLock. */
-body.scroll-locked {
+/* Con una capa modal abierta solo se desplaza la capa; ver ScrollLock. En móvil desplaza <main>. */
+body.scroll-locked,
+body.scroll-locked main {
   overflow: hidden;
 }
 

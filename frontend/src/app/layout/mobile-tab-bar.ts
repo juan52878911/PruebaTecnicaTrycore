@@ -35,16 +35,15 @@ import { NAV_ITEMS } from './navigation';
   `,
   styles: `
     /*
-     * Fija a la ventana, no al final del documento: la barra tiene que estar a mano en cualquier
-     * punto del scroll. El marco reserva sitio abajo para que no tape el último contenido.
+     * En flujo, al pie del marco de altura fija: el contenido se desplaza dentro de <main> y la
+     * barra no se mueve nunca, tampoco cuando el navegador muestra u oculta su propia barra.
      */
+    :host {
+      display: block;
+      flex: none;
+      padding: 12px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    }
     nav {
-      position: fixed;
-      left: 16px;
-      right: 16px;
-      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-      /* Por debajo de diálogos (40) y avisos (50): una hoja inferior debe taparla. */
-      z-index: 30;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -139,8 +138,14 @@ export class MobileTabBar {
     return -1;
   });
 
+  /**
+   * Abre el alta en el proyecto de la vista actual si la URL lo lleva, y si no en el seleccionado.
+   * Leer primero la URL evita una carrera al entrar en Actividades: la selección se actualiza en
+   * el primer ciclo de la vista y una pulsación muy temprana la encontraría vacía.
+   */
   protected newActivity(): void {
-    const projectId = this.selection.projectId();
+    const fromUrl = /\/proyectos\/(\d+)/.exec(this.url())?.[1];
+    const projectId = fromUrl === undefined ? this.selection.projectId() : Number(fromUrl);
     if (projectId === undefined) {
       void this.router.navigate(['/proyectos']);
       return;

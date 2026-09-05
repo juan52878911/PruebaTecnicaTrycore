@@ -1,6 +1,14 @@
-import { expect, Locator, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
 
 import { mockApi, ROUTES } from './fixtures/api';
+
+/** En móvil el desplazamiento es del contenido, no del documento. */
+async function scrollToBottom(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const main = document.querySelector('main')!;
+    main.scrollTop = main.scrollHeight;
+  });
+}
 
 /** Caja del elemento una vez terminada su animación de entrada: dos lecturas seguidas iguales. */
 async function settledBox(locator: Locator) {
@@ -44,14 +52,19 @@ test.describe('móvil', () => {
 
     const viewport = page.viewportSize();
     const before = await settledBox(nav);
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await scrollToBottom(page);
     const after = await nav.boundingBox();
 
     expect(before).not.toBeNull();
     expect(after).toEqual(before);
     expect(after!.y + after!.height).toBeLessThanOrEqual(viewport!.height);
 
-    // El último elemento del documento termina por encima de la barra.
+    // Al final del desplazamiento, el último contenido queda entero por encima de la barra.
+    const scrolled = await page.evaluate(() => {
+      const main = document.querySelector('main')!;
+      return main.scrollTop > 0 && main.scrollTop + main.clientHeight >= main.scrollHeight - 1;
+    });
+    expect(scrolled).toBe(true);
     const lastBottom = await page.evaluate(() => {
       const items = [...document.querySelectorAll('main *')].filter(
         (element) => element.getBoundingClientRect().height > 0,
