@@ -23,3 +23,9 @@ springdoc:
 logging:
   level:
     root: INFO
+
+evm:
+  cors:
+    # Sin valor por defecto a propósito: un despliegue que no declare el origen del frontend no abre
+    # el API a nadie. Se pasa como lista separada por comas.
+    allowed-origins: ${EVM_CORS_ALLOWED_ORIGINS:}
