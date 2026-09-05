@@ -10,6 +10,7 @@ const PROJECT = {
   id: 1,
   name: 'Planta Solar Norte',
   description: 'Construcción de la planta fotovoltaica del corredor norte',
+  manager: null,
   createdAt: '2026-09-03T21:00:00Z',
   updatedAt: '2026-09-03T21:00:00Z',
 };
@@ -40,17 +41,35 @@ describe('ProjectsApi', () => {
     expect(handle.requests).toEqual([{ method: 'get', url: `${BASE}/projects`, body: undefined }]);
   });
 
+  it('pide el listado consolidado con el parámetro includeIndicators', async () => {
+    const summary = {
+      ...PROJECT,
+      activityCount: 0,
+      totals: { budgetAtCompletion: 0, plannedValue: 0, earnedValue: 0, actualCost: 0 },
+      indicators: null,
+    };
+    const { api, handle } = configure([
+      { method: 'get', url: `${BASE}/projects`, status: 200, data: [summary] },
+    ]);
+
+    const summaries = await api.listWithIndicators();
+
+    expect(summaries).toEqual([summary]);
+    expect(handle.requests[0]?.params).toEqual({ includeIndicators: true });
+  });
+
   it('envía el cuerpo declarado al crear un proyecto', async () => {
     const { api, handle } = configure([
       { method: 'post', url: `${BASE}/projects`, status: 201, data: PROJECT },
     ]);
 
-    await api.create({ name: 'Planta Solar Norte', description: 'Descripción' });
+    await api.create({ name: 'Planta Solar Norte', description: 'Descripción', manager: null });
 
     expect(handle.requests[0]?.method).toBe('post');
     expect(handle.requests[0]?.body).toEqual({
       name: 'Planta Solar Norte',
       description: 'Descripción',
+      manager: null,
     });
   });
 
@@ -59,7 +78,7 @@ describe('ProjectsApi', () => {
       { method: 'put', url: `${BASE}/projects/1`, status: 200, data: PROJECT },
     ]);
 
-    await api.update(1, { name: 'Nuevo nombre', description: null });
+    await api.update(1, { name: 'Nuevo nombre', description: null, manager: null });
 
     expect(handle.requests[0]?.url).toBe(`${BASE}/projects/1`);
   });
@@ -96,7 +115,9 @@ describe('ProjectsApi', () => {
       },
     ]);
 
-    const failure: unknown = await api.create({ name: '', description: null }).catch((e) => e);
+    const failure: unknown = await api
+      .create({ name: '', description: null, manager: null })
+      .catch((e) => e);
 
     expect(isApiError(failure)).toBe(true);
     const error = failure as ApiError;

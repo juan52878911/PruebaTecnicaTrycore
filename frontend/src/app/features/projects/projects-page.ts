@@ -72,11 +72,11 @@ const EMPTY_CELL = '—';
       <button type="button" class="primary" (click)="openCreate()">+ Nuevo proyecto</button>
     </app-page-header>
 
-    @if (store.error(); as error) {
+    @if (error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
     }
 
-    @if (store.isLoading() && rows().length === 0) {
+    @if (summaries.isLoading() && rows().length === 0) {
       <div class="card">
         @for (placeholder of placeholders; track placeholder) {
           <div class="skeleton-row">
@@ -85,7 +85,7 @@ const EMPTY_CELL = '—';
           </div>
         }
       </div>
-    } @else if (store.isEmpty()) {
+    } @else if (isEmpty()) {
       <app-empty-state
         title="Aún no hay proyectos"
         description="Crea el primer proyecto para empezar a registrar actividades y analizar su Valor Ganado."
@@ -403,7 +403,7 @@ export class ProjectsPage {
   protected readonly emptyCell = EMPTY_CELL;
   protected readonly placeholders = [0, 1, 2, 3];
 
-  private readonly summaries = inject(ProjectSummariesStore);
+  protected readonly summaries = inject(ProjectSummariesStore);
   protected readonly formOpen = signal(false);
   protected readonly editing = signal<Project | null>(null);
 
@@ -469,9 +469,15 @@ export class ProjectsPage {
   });
 
   protected readonly countLabel = computed(() => {
-    const total = this.store.projects().length;
+    const total = this.rows().length;
     return total === 1 ? '1 activo' : `${total} activos`;
   });
+
+  /** El fallo de lectura y el de escritura salen por el mismo aviso. */
+  protected readonly error = computed(() => this.summaries.error() ?? this.store.error());
+  protected readonly isEmpty = computed(
+    () => !this.summaries.isLoading() && this.rows().length === 0,
+  );
 
   protected openCreate(): void {
     this.store.clearError();
@@ -511,7 +517,6 @@ export class ProjectsPage {
       existing === null ? 'Proyecto creado' : 'Proyecto actualizado',
       `${saved.name}. Los indicadores se recalculan al leerlos.`,
     );
-    this.summaries.reload();
   }
 
   protected async confirmRemove(project: Project): Promise<void> {
@@ -525,7 +530,6 @@ export class ProjectsPage {
     }
     if (await this.store.remove(project.id)) {
       this.toasts.info('Proyecto borrado', `${project.name} ya no aparece en el listado.`);
-      this.summaries.reload();
     }
   }
 }

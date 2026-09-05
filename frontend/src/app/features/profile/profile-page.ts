@@ -12,9 +12,8 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { PageHeader } from '../../shared/ui/page-header';
 
 import { MeasurementsApi } from '../../core/api/measurements-api';
-import { ProjectsApi } from '../../core/api/projects-api';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
-import { ProjectsStore } from '../projects/projects-store';
+import { ProjectSummariesStore } from '../projects/project-summaries-store';
 
 /**
  * Perfil del administrador.
@@ -290,15 +289,14 @@ import { ProjectsStore } from '../projects/projects-store';
 export class ProfilePage {
   protected readonly preferences = inject(PreferencesStore);
   protected readonly isDesktop = inject(BreakpointService).isDesktop;
-  private readonly projects = inject(ProjectsStore);
-  private readonly projectsApi = inject(ProjectsApi);
+  private readonly projects = inject(ProjectSummariesStore);
   private readonly measurementsApi = inject(MeasurementsApi);
 
-  private readonly counts = signal({ activities: 0, measurements: 0 });
+  private readonly measurements = signal(0);
 
-  protected readonly projectCount = computed(() => this.projects.projects().length);
-  protected readonly activityCount = computed(() => this.counts().activities);
-  protected readonly measurementCount = computed(() => this.counts().measurements);
+  protected readonly projectCount = computed(() => this.projects.rows().length);
+  protected readonly activityCount = this.projects.totalActivities;
+  protected readonly measurementCount = this.measurements.asReadonly();
 
   protected readonly dateFormat = computed(() => this.preferences.preferences().dateFormat);
   protected readonly namingLabel = computed(() =>
@@ -307,33 +305,22 @@ export class ProfilePage {
 
   constructor() {
     effect(() => {
-      const projects = this.projects.projects();
-      void this.loadCounts(projects.map((project) => project.id));
+      const projects = this.projects.rows();
+      void this.loadMeasurementCount(projects.map((row) => row.project.id));
     });
   }
 
   /**
-   * Cuenta actividades y cortes recorriendo los proyectos.
+   * Cuenta los cortes recorriendo los proyectos.
    *
-   * Son varias peticiones porque el API no expone un conteo global. Aquí es asumible: el perfil se
-   * abre de vez en cuando y la cantidad de proyectos es pequeña. Si creciera, lo correcto sería un
-   * endpoint de resumen en el backend, no multiplicar llamadas desde el navegador.
+   * Proyectos y actividades salen del listado consolidado; los cortes no, porque el API no expone
+   * un conteo global. Aquí es asumible: el perfil se abre de vez en cuando y la cantidad de
+   * proyectos es pequeña. Si creciera, lo correcto sería un endpoint de resumen en el backend.
    */
-  private async loadCounts(projectIds: readonly number[]): Promise<void> {
-    if (projectIds.length === 0) {
-      this.counts.set({ activities: 0, measurements: 0 });
-      return;
-    }
-    const [summaries, measurements] = await Promise.all([
-      Promise.all(projectIds.map((id) => this.projectsApi.evmSummary(id).catch(() => null))),
-      Promise.all(projectIds.map((id) => this.measurementsApi.list(id).catch(() => null))),
-    ]);
-    this.counts.set({
-      activities: summaries.reduce(
-        (total, summary) => total + (summary?.activities.length ?? 0),
-        0,
-      ),
-      measurements: measurements.reduce((total, list) => total + (list?.length ?? 0), 0),
-    });
+  private async loadMeasurementCount(projectIds: readonly number[]): Promise<void> {
+    const lists = await Promise.all(
+      projectIds.map((id) => this.measurementsApi.list(id).catch(() => null)),
+    );
+    this.measurements.set(lists.reduce((total, list) => total + (list?.length ?? 0), 0));
   }
 }

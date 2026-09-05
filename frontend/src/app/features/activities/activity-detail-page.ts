@@ -10,6 +10,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { Activity, ActivityRequest } from '../../core/api/models/activity';
 import {
+  formatDate,
   formatDateRange,
   formatIndex,
   formatIndexPrecise,
@@ -164,6 +165,31 @@ import { ProgressDialog } from './progress-dialog';
         </div>
       </section>
 
+      @if (current.milestones.length > 0) {
+        <section class="card milestones">
+          <h2>Hitos</h2>
+          @if (current.measurementMethod !== 'WEIGHTED_MILESTONES') {
+            <p class="rule">
+              La regla vigente no es la de hitos: la tabla se conserva, pero no gobierna el avance.
+            </p>
+          }
+          <ul>
+            @for (milestone of current.milestones; track $index) {
+              <li [class.achieved]="milestone.achieved">
+                <span class="mark" aria-hidden="true">{{
+                  milestone.achieved ? '[ok]' : '[ ]'
+                }}</span>
+                <span class="name">{{ milestone.name }}</span>
+                <span class="when">{{
+                  milestone.achievedOn ? date(milestone.achievedOn) : ''
+                }}</span>
+                <span class="weight">{{ percent(milestone.weightPercent) }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
       @if (showInterpretation()) {
         <section class="card interpretation">
           <h2>Interpretación</h2>
@@ -301,6 +327,39 @@ import { ProgressDialog } from './progress-dialog';
       font-weight: 600;
       color: var(--text-strong);
     }
+    .milestones ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .milestones li {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      gap: 12px;
+      align-items: baseline;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .milestones li.achieved {
+      color: var(--text);
+    }
+    .milestones .mark {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .milestones .achieved .mark {
+      color: var(--ok);
+    }
+    .milestones .when {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .milestones .weight {
+      font-variant-numeric: tabular-nums;
+    }
     .rule {
       margin: 14px 0 0;
       padding-top: 12px;
@@ -406,6 +465,10 @@ export class ActivityDetailPage {
   protected readonly money = formatMoneyRounded;
   protected readonly index = formatIndex;
   protected readonly percent = formatPercent;
+
+  protected date(value: string): string {
+    return formatDate(value, this.preferences.preferences().dateFormat);
+  }
   protected readonly combinedStatusLabel = combinedStatusLabel;
   protected readonly overallTone = overallTone;
 

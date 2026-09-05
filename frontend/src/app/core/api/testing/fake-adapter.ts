@@ -21,6 +21,8 @@ export interface RecordedRequest {
   readonly method: string;
   readonly url: string;
   readonly body: unknown;
+  /** Parámetros de consulta, si la petición los llevaba. */
+  readonly params?: Record<string, unknown>;
 }
 
 export interface FakeAdapterHandle {
@@ -90,7 +92,7 @@ export function createFakeAdapter(routes: readonly FakeRoute[]): FakeAdapterHand
   const adapter: AxiosAdapter = async (config: InternalAxiosRequestConfig) => {
     const method = (config.method ?? 'get').toLowerCase();
     const url = fullUrl(config);
-    requests.push({ method, url, body: parseBody(config.data) });
+    requests.push({ method, url, body: parseBody(config.data), params: config.params });
 
     const route = routes.find((candidate) => matches(candidate, method, url));
     if (route === undefined) {

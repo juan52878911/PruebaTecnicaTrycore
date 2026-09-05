@@ -1,7 +1,12 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { FakeRoute, provideApiTesting } from '../../core/api/testing/fake-adapter';
+import {
+  FAKE_ADAPTER_HANDLE,
+  FakeAdapterHandle,
+  FakeRoute,
+  provideApiTesting,
+} from '../../core/api/testing/fake-adapter';
 import { ProjectsStore } from './projects-store';
 
 const BASE = 'http://localhost/api/v1';
@@ -10,9 +15,12 @@ const PROJECT = {
   id: 1,
   name: 'Planta Solar Norte',
   description: null,
+  manager: null,
   createdAt: '2026-09-03T21:00:00Z',
   updatedAt: '2026-09-03T21:00:00Z',
 };
+
+const REQUEST = { name: 'Nuevo', description: null, manager: null };
 
 /**
  * `resource()` arranca su carga desde un efecto, así que no basta con esperar una microtarea: sin
@@ -25,77 +33,47 @@ async function settle(): Promise<void> {
   await TestBed.inject(ApplicationRef).whenStable();
 }
 
-function configure(routes: readonly FakeRoute[]): ProjectsStore {
+function configure(routes: readonly FakeRoute[]): {
+  store: ProjectsStore;
+  handle: FakeAdapterHandle;
+} {
   TestBed.configureTestingModule({
     providers: provideApiTesting({ routes, config: { baseUrl: BASE } }),
   });
-  return TestBed.inject(ProjectsStore);
+  return { store: TestBed.inject(ProjectsStore), handle: TestBed.inject(FAKE_ADAPTER_HANDLE) };
 }
 
 describe('ProjectsStore', () => {
-  it('publica la lista que devuelve el servidor', async () => {
-    const store = configure([
-      { method: 'get', url: `${BASE}/projects`, status: 200, data: [PROJECT] },
-    ]);
-
-    await settle();
-
-    expect(store.projects()).toEqual([PROJECT]);
-    expect(store.error()).toBeNull();
-  });
-
-  it('deja de estar cargando cuando la respuesta llega', async () => {
-    const store = configure([
-      { method: 'get', url: `${BASE}/projects`, status: 200, data: [PROJECT] },
-    ]);
-
-    await settle();
-
-    expect(store.isLoading()).toBe(false);
-  });
-
-  it('reconoce la lista vacía como estado vacío, no como error', async () => {
-    const store = configure([{ method: 'get', url: `${BASE}/projects`, status: 200, data: [] }]);
-
-    await settle();
-
-    expect(store.isEmpty()).toBe(true);
-    expect(store.error()).toBeNull();
-  });
-
-  it('expone el fallo de carga por el signal de error', async () => {
-    const store = configure([
-      {
-        method: 'get',
-        url: `${BASE}/projects`,
-        status: 500,
-        data: { status: 500, detail: 'fallo interno' },
-      },
-    ]);
-
-    await settle();
-
-    expect(store.error()?.kind).toBe('server');
-    expect(store.projects()).toEqual([]);
-  });
-
-  it('recarga la lista después de crear un proyecto', async () => {
-    const store = configure([
-      { method: 'get', url: `${BASE}/projects`, status: 200, data: [PROJECT] },
+  it('devuelve el proyecto creado y recarga el consolidado', async () => {
+    const { store, handle } = configure([
       { method: 'post', url: `${BASE}/projects`, status: 201, data: PROJECT },
+      { method: 'get', url: `${BASE}/projects`, status: 200, data: [] },
     ]);
-    await settle();
 
-    const created = await store.create({ name: 'Nuevo', description: null });
+    const created = await store.create(REQUEST);
     await settle();
 
     expect(created).toEqual(PROJECT);
     expect(store.error()).toBeNull();
+    const reload = handle.requests.find((request) => request.method === 'get');
+    expect(reload?.params).toEqual({ includeIndicators: true });
+  });
+
+  it('deja de estar escribiendo cuando la respuesta llega', async () => {
+    const { store } = configure([
+      { method: 'put', url: `${BASE}/projects/1`, status: 200, data: PROJECT },
+      { method: 'get', url: `${BASE}/projects`, status: 200, data: [] },
+    ]);
+
+    const pending = store.update(1, REQUEST);
+    expect(store.isMutating()).toBe(true);
+    await pending;
+
+    expect(store.isMutating()).toBe(false);
   });
 
   it('no propaga el rechazo de una escritura: lo publica como error', async () => {
-    const store = configure([
-      { method: 'get', url: `${BASE}/projects`, status: 200, data: [] },
+    const { store } = configure([
       {
         method: 'post',
         url: `${BASE}/projects`,
@@ -107,9 +85,8 @@ describe('ProjectsStore', () => {
         },
       },
     ]);
-    await settle();
 
-    const created = await store.create({ name: '', description: null });
+    const created = await store.create({ ...REQUEST, name: '' });
 
     expect(created).toBeNull();
     expect(store.error()?.kind).toBe('validation');
@@ -117,8 +94,7 @@ describe('ProjectsStore', () => {
   });
 
   it('devuelve false cuando el borrado falla', async () => {
-    const store = configure([
-      { method: 'get', url: `${BASE}/projects`, status: 200, data: [PROJECT] },
+    const { store } = configure([
       {
         method: 'delete',
         url: `${BASE}/projects/1`,
@@ -126,19 +102,16 @@ describe('ProjectsStore', () => {
         data: { status: 404, detail: 'El proyecto 1 no existe' },
       },
     ]);
-    await settle();
 
     expect(await store.remove(1)).toBe(false);
     expect(store.error()?.kind).toBe('not-found');
   });
 
   it('limpia el error cuando se le pide', async () => {
-    const store = configure([
-      { method: 'get', url: `${BASE}/projects`, status: 200, data: [] },
+    const { store } = configure([
       { method: 'post', url: `${BASE}/projects`, status: 500, data: {} },
     ]);
-    await settle();
-    await store.create({ name: 'x', description: null });
+    await store.create(REQUEST);
 
     store.clearError();
 

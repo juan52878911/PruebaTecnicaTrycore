@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import type { AxiosInstance } from 'axios';
 
 import { AXIOS_INSTANCE } from './axios-instance';
-import { Project, ProjectRequest } from './models/project';
+import { Project, ProjectRequest, ProjectSummary } from './models/project';
 import { ProjectEvmSummary } from './models/activity';
 import { EvmRequestOptions, RequestOptions } from './request-options';
 
@@ -15,6 +15,20 @@ export class ProjectsApi {
 
   async list(options?: RequestOptions): Promise<Project[]> {
     const response = await this.http.get<Project[]>(ProjectsApi.PATH, options);
+    return response.data;
+  }
+
+  /**
+   * Lista con el consolidado de cada proyecto en una sola petición.
+   *
+   * Sustituye a pedir `/projects/{id}/evm` por cada fila: con el parámetro el servidor adjunta
+   * `activityCount`, `totals` e `indicators` calculados con el mismo servicio que el detalle.
+   */
+  async listWithIndicators(options?: RequestOptions): Promise<ProjectSummary[]> {
+    const response = await this.http.get<ProjectSummary[]>(ProjectsApi.PATH, {
+      signal: options?.signal,
+      params: { includeIndicators: true },
+    });
     return response.data;
   }
 
