@@ -2340,3 +2340,9 @@ La flecha esta supremamente alejada del texto solapando con el boton de el usuar
 ```text
 El boton cancelar esta escondido y no alineado correctamente, el scroll no genera el efecto correcto en mobile, ademas hay dos scrolls cuando estamos con cualquier modal. Esto no deberia pasar, solo funciona el scroll del modal mientras sea visible sin combinar con el scroll del fondo
 ```
+
+### 2026-09-05 17:45 -05 - Claude Code
+
+```text
+al scrollear hacia arriba el navbar se oculta sutilmente, has que sea fijo en mobile
+```
