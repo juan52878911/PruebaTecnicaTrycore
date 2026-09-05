@@ -2320,3 +2320,11 @@ La tabla de actividades no tiene la alineacion correcta, ademas los botones apar
 ```text
 Analiza a fondo el modo mobile ya que esta roto, el navbar aparece en frente de los modales, los anchos de los modales no estan bien, se salen del borde, todos los comportamientos del diseño deben ser tal cual en la pagina final, verifica y genera pruebas de comportamiento con playwright y corrige todos los bugs visuales
 ```
+
+### 2026-09-05 17:05 -05 - Claude Code
+
+```text
+Apegate al diseño el boton de mas no esta en la posicion, la tipografia de titulos y dropdowns no son iguales y no sirven igual, ten en cuenta el diseño al 100%
+
+https://claude.ai/code/artifact/0bdd87dc-f617-4f1e-993f-ea29fb6a6ebd
+```
