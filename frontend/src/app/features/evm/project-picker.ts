@@ -1,8 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 
 import { Project } from '../../core/api/models/project';
 import { UndefinedIndicator } from '../../core/api/models/evm';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { ScrollLock } from '../../core/layout/scroll-lock';
 import { Tone } from '../../core/status/status-tone';
 import { IndexValue } from '../../shared/ui/index-value';
 
@@ -108,6 +116,7 @@ export interface PickerOption {
       max-width: none;
       max-height: calc(100vh - 48px);
       overflow-y: auto;
+      overscroll-behavior: contain;
       border-radius: 28px 28px 0 0;
       padding: 10px 12px calc(16px + env(safe-area-inset-bottom, 0px));
       animation: vSheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
@@ -158,11 +167,14 @@ export interface PickerOption {
     :host(.sheet) .meta {
       font-size: 11.5px;
     }
+    /* display: block y no el flex de las opciones: el texto va centrado, como en el diseño. */
     .cancel {
+      display: block;
       width: 100%;
       border: none;
+      border-radius: var(--radius-input);
       background: none;
-      padding: 16px 4px 2px;
+      padding: 14px 4px 6px;
       font-size: 13.5px;
       font-weight: 600;
       color: var(--text-muted);
@@ -253,6 +265,15 @@ export interface PickerOption {
 })
 export class ProjectPicker {
   protected readonly isDesktop = inject(BreakpointService).isDesktop;
+  private readonly scrollLock = inject(ScrollLock);
+
+  constructor() {
+    // Solo la hoja tapa la pantalla; el desplegable de escritorio deja el fondo como está.
+    if (!this.isDesktop()) {
+      this.scrollLock.lock();
+      inject(DestroyRef).onDestroy(() => this.scrollLock.unlock());
+    }
+  }
 
   readonly options = input.required<readonly PickerOption[]>();
   readonly selectedId = input<number | undefined>(undefined);

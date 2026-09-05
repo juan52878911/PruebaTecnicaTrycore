@@ -6,6 +6,9 @@ export const UNDEFINED_INDICATOR_LABEL = 'N/A';
 
 const INDEX_PRECISE_DECIMALS = 4;
 const INDEX_DECIMALS = 2;
+/* Como en el diseño: a partir de 10 un índice pierde un decimal para no partir la tarjeta. */
+const LARGE_INDEX_THRESHOLD = 10;
+const LARGE_INDEX_DECIMALS = 1;
 const MONEY_DECIMALS = 2;
 const GROUP_SIZE = 3;
 const THOUSAND_SEPARATOR = ' ';
@@ -80,9 +83,11 @@ export function formatMoneyRounded(value: UndefinedIndicator): string {
  * incurrido, el CPI vale cero y el estado es de sobrecosto. Solo `null` se convierte en `N/A`.
  */
 export function formatIndex(value: UndefinedIndicator): string {
-  return isDefinedIndicator(value)
-    ? formatNumber(value, INDEX_DECIMALS)
-    : UNDEFINED_INDICATOR_LABEL;
+  if (!isDefinedIndicator(value)) {
+    return UNDEFINED_INDICATOR_LABEL;
+  }
+  const decimals = Math.abs(value) < LARGE_INDEX_THRESHOLD ? INDEX_DECIMALS : LARGE_INDEX_DECIMALS;
+  return formatNumber(value, decimals);
 }
 
 /** Índice con los cuatro decimales que devuelve el backend, para la vista de detalle. */

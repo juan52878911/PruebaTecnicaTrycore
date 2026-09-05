@@ -78,6 +78,11 @@
   box-sizing: border-box;
 }
 
+/* Con una capa modal abierta solo se desplaza la capa; ver ScrollLock. */
+body.scroll-locked {
+  overflow: hidden;
+}
+
 html {
   /* Reserva siempre el hueco de la barra de desplazamiento. Sin esto, una vista que cabe en la
      ventana no la muestra y otra más alta sí, de modo que el ancho disponible cambia en 15 px al

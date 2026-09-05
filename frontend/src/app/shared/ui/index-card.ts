@@ -52,12 +52,20 @@ const FULL_PERCENT = 100;
     </article>
   `,
   styles: `
+    /* Columna con la barra anclada al pie: dos tarjetas vecinas alinean sus barras aunque una
+       cifra sea más larga o el texto de lectura ocupe más líneas. */
     .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
       background: var(--card);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-card);
       padding: var(--pad-card);
       transition: border-color var(--motion-border);
+    }
+    :host {
+      display: block;
     }
     .card.tone-danger {
       background: linear-gradient(150deg, #1c1418, var(--card) 62%);
@@ -99,6 +107,10 @@ const FULL_PERCENT = 100;
       font-weight: 700;
       letter-spacing: -0.045em;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .track {
+      margin-top: auto;
     }
     .track {
       position: relative;

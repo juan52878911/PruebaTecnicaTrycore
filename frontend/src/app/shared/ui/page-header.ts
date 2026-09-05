@@ -125,6 +125,7 @@ const MEDIUM_TITLE = 26;
     .stack {
       display: flex;
       flex-direction: column;
+      align-items: flex-start;
       gap: 3px;
       min-width: 0;
       flex: 1;
@@ -134,8 +135,10 @@ const MEDIUM_TITLE = 26;
       font-weight: 600;
       color: var(--text-dim);
     }
+    /* Sin el flex: 1 de escritorio, el chevron queda pegado al texto y no en el borde. */
     header.mobile h1 {
       margin: 0;
+      flex: 0 1 auto;
       min-width: 0;
       font-size: 22px;
       line-height: 1.15;

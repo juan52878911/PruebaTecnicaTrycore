@@ -2,12 +2,14 @@ import {
   booleanAttribute,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
   input,
   output,
 } from '@angular/core';
 
 import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { ScrollLock } from '../../core/layout/scroll-lock';
 
 /**
  * Diálogo modal en escritorio y hoja inferior en móvil.
@@ -81,6 +83,7 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
       width: min(460px, calc(100vw - 32px));
       max-height: calc(100vh - 48px);
       overflow-y: auto;
+      overscroll-behavior: contain;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 24px;
@@ -98,7 +101,7 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
       border: none;
       border-top: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 28px 28px 0 0;
-      padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+      padding: 10px 20px calc(26px + env(safe-area-inset-bottom, 0px));
       animation: vSheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
     }
     .grabber {
@@ -206,12 +209,14 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
       background: none;
       border-color: transparent;
       font-size: 13.5px;
-      padding: 8px 4px 2px;
+      padding: 12px 4px 6px;
+      text-align: center;
     }
   `,
 })
 export class Dialog {
   private readonly breakpoint = inject(BreakpointService);
+  private readonly scrollLock = inject(ScrollLock);
 
   readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
@@ -223,4 +228,9 @@ export class Dialog {
   readonly confirm = output<void>();
 
   protected readonly isDesktop = this.breakpoint.isDesktop;
+
+  constructor() {
+    this.scrollLock.lock();
+    inject(DestroyRef).onDestroy(() => this.scrollLock.unlock());
+  }
 }
