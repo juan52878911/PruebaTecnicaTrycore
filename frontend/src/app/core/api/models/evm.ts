@@ -3,10 +3,48 @@ export type CostStatusCode = 'UNDER_BUDGET' | 'ON_BUDGET' | 'OVER_BUDGET' | 'NOT
 export type ScheduleStatusCode =
   'AHEAD_OF_SCHEDULE' | 'ON_SCHEDULE' | 'BEHIND_SCHEDULE' | 'NOT_APPLICABLE';
 
-/** Estado de un índice con el motivo que lo explica, ya redactado en español por el backend. */
+/**
+ * Gravedad de la desviación, medida contra los umbrales de tolerancia del servidor.
+ *
+ * Es distinta del estado: el estado es un hecho aritmético y la severidad una política. Un CPI de
+ * 0,9857 está `OVER_BUDGET` porque se gastó más de lo que se ganó, y su severidad es `WARNING`
+ * porque la desviación cabe dentro de lo admitido.
+ */
+export type Severity = 'NONE' | 'WARNING' | 'CRITICAL' | 'NOT_APPLICABLE';
+
+/**
+ * Estado de un índice con su gravedad y el motivo, ya redactado en español por el backend.
+ *
+ * Regla del contrato: quien pinta un color usa `severity`; quien muestra un texto, `status`.
+ */
 export interface IndexInterpretation<TStatus extends string> {
   readonly status: TStatus;
+  readonly severity: Severity;
   readonly message: string;
+}
+
+/** Umbrales con los que el servidor clasificó la severidad. Bandas cerradas por abajo. */
+export interface PerformanceThresholds {
+  readonly warning: number;
+  readonly critical: number;
+}
+
+/** Las tres fórmulas estándar de estimación del costo final. */
+export type EstimateFormula =
+  'BAC_OVER_CPI' | 'AC_PLUS_REMAINING' | 'AC_PLUS_REMAINING_OVER_CPI_SPI';
+
+/**
+ * Una estimación del costo final con su supuesto.
+ *
+ * Una fórmula que no se puede calcular devuelve `null` con `applicable: false`, y no se sustituye
+ * por otra que sí aplique: cada una responde a una pregunta distinta sobre el futuro.
+ */
+export interface CompletionEstimate {
+  readonly formula: EstimateFormula;
+  readonly estimateAtCompletion: UndefinedIndicator;
+  readonly varianceAtCompletion: UndefinedIndicator;
+  readonly applicable: boolean;
+  readonly assumption: string;
 }
 
 /**
@@ -35,6 +73,11 @@ export interface EvmIndicators {
   readonly varianceAtCompletion: UndefinedIndicator;
   readonly costStatus: IndexInterpretation<CostStatusCode>;
   readonly scheduleStatus: IndexInterpretation<ScheduleStatusCode>;
+  /** Fórmula con la que se calcularon el EAC y el VAC de este nivel. */
+  readonly estimateFormula: EstimateFormula;
+  /** Las tres estimaciones sobre estas mismas cifras. */
+  readonly estimates: readonly CompletionEstimate[];
+  readonly thresholds: PerformanceThresholds;
 }
 
 /** Las cuatro cifras base en dinero, de las que se derivan todos los indicadores. */

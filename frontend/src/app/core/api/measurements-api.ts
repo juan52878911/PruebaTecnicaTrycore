@@ -3,7 +3,7 @@ import type { AxiosInstance } from 'axios';
 
 import { AXIOS_INSTANCE } from './axios-instance';
 import { Measurement, MeasurementRequest, ProjectTimeline } from './models/measurement';
-import { RequestOptions } from './request-options';
+import { EvmRequestOptions, RequestOptions } from './request-options';
 
 /**
  * Acceso al histórico de cortes y a la serie temporal que alimenta la curva S.
@@ -57,11 +57,11 @@ export class MeasurementsApi {
   }
 
   /** Serie de puntos por corte, en orden cronológico ascendente. */
-  async timeline(projectId: number, options?: RequestOptions): Promise<ProjectTimeline> {
-    const response = await this.http.get<ProjectTimeline>(
-      `/projects/${projectId}/timeline`,
-      options,
-    );
+  async timeline(projectId: number, options?: EvmRequestOptions): Promise<ProjectTimeline> {
+    const response = await this.http.get<ProjectTimeline>(`/projects/${projectId}/timeline`, {
+      signal: options?.signal,
+      ...(options?.eacFormula === undefined ? {} : { params: { eacFormula: options.eacFormula } }),
+    });
     return response.data;
   }
 }

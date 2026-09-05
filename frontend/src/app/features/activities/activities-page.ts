@@ -613,8 +613,8 @@ export class ActivitiesPage {
     return this.evm.activityList().map((activity) => ({
       activity,
       dates: formatDateRange(activity.plannedStartDate, activity.plannedEndDate, dateFormat),
-      costTone: costTone(activity.indicators.costStatus.status),
-      scheduleTone: scheduleTone(activity.indicators.scheduleStatus.status),
+      costTone: costTone(activity.indicators),
+      scheduleTone: scheduleTone(activity.indicators),
       statusLabel: combinedStatusLabel(activity.indicators),
       tone: overallTone(activity.indicators),
     }));

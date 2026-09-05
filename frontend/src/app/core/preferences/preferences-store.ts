@@ -25,6 +25,7 @@ export class PreferencesStore {
   readonly showInterpretation = computed(() => this.state().showInterpretation);
   readonly autoRefreshAfterSave = computed(() => this.state().autoRefreshAfterSave);
   readonly currencyCode = computed(() => this.state().currencyCode);
+  readonly eacFormula = computed(() => this.state().eacFormula);
 
   /** Aplica y persiste un cambio parcial. */
   update(changes: Partial<Preferences>): void {

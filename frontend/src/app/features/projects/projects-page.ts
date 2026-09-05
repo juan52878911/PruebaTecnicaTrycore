@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { Project, ProjectRequest } from '../../core/api/models/project';
@@ -13,13 +6,6 @@ import { ProjectsApi } from '../../core/api/projects-api';
 import { formatMoneyRounded } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { SelectedProjectStore } from '../../core/selection/selected-project-store';
-import {
-  combinedStatusLabel,
-  costTone,
-  overallTone,
-  scheduleTone,
-  Tone,
-} from '../../core/status/status-tone';
 import { ChipButton } from '../../shared/ui/chip-button';
 import { ChipOption } from '../../shared/ui/chip-group';
 import { EmptyState } from '../../shared/ui/empty-state';
@@ -30,22 +16,8 @@ import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ProjectFormDialog } from './project-form-dialog';
+import { ProjectSummariesStore } from './project-summaries-store';
 import { ProjectsStore } from './projects-store';
-
-interface ProjectRow {
-  readonly project: Project;
-  readonly meta: string;
-  readonly budgetAtCompletion: string;
-  readonly earnedValue: string;
-  readonly actualCost: string;
-  readonly costPerformanceIndex: number | null;
-  readonly schedulePerformanceIndex: number | null;
-  readonly costTone: Tone;
-  readonly scheduleTone: Tone;
-  readonly statusLabel: string;
-  readonly statusTone: Tone;
-  readonly hasData: boolean;
-}
 
 type ProjectFilter = 'todos' | 'riesgo' | 'al-dia';
 
@@ -168,9 +140,9 @@ const EMPTY_CELL = '—';
               <span class="title">{{ row.project.name }}</span>
               <span class="meta">{{ row.meta }}</span>
             </button>
-            <span class="tabular" role="cell">{{ row.budgetAtCompletion }}</span>
-            <span class="tabular" role="cell">{{ row.earnedValue }}</span>
-            <span class="tabular" role="cell">{{ row.actualCost }}</span>
+            <span class="tabular" role="cell">{{ row.budgetLabel }}</span>
+            <span class="tabular" role="cell">{{ row.earnedLabel }}</span>
+            <span class="tabular" role="cell">{{ row.costLabel }}</span>
             <span role="cell">
               @if (row.hasData) {
                 <app-index-value [value]="row.costPerformanceIndex" [tone]="row.costTone" />
@@ -431,7 +403,7 @@ export class ProjectsPage {
   protected readonly emptyCell = EMPTY_CELL;
   protected readonly placeholders = [0, 1, 2, 3];
 
-  private readonly summaries = signal<ReadonlyMap<number, ProjectRow>>(new Map());
+  private readonly summaries = inject(ProjectSummariesStore);
   protected readonly formOpen = signal(false);
   protected readonly editing = signal<Project | null>(null);
 
@@ -449,10 +421,19 @@ export class ProjectsPage {
       'Todos los estados',
   );
 
+  /**
+   * Filas del listado.
+   *
+   * Salen del store compartido, que pide el consolidado de cada proyecto una sola vez. Antes esta
+   * página tenía su propia ráfaga y el perfil otra, para los mismos datos.
+   */
   protected readonly rows = computed(() =>
-    this.store
-      .projects()
-      .map((project) => this.summaries().get(project.id) ?? this.pendingRow(project)),
+    this.summaries.rows().map((row) => ({
+      ...row,
+      budgetLabel: row.hasData ? formatMoneyRounded(row.budgetAtCompletion) : EMPTY_CELL,
+      earnedLabel: row.hasData ? formatMoneyRounded(row.earnedValue) : EMPTY_CELL,
+      costLabel: row.hasData ? formatMoneyRounded(row.actualCost) : EMPTY_CELL,
+    })),
   );
 
   /**
@@ -492,15 +473,6 @@ export class ProjectsPage {
     return total === 1 ? '1 activo' : `${total} activos`;
   });
 
-  constructor() {
-    // La lista llega de forma asíncrona, así que el consolidado se pide cuando cambia, no una
-    // sola vez en el constructor: ahí todavía está vacía.
-    effect(() => {
-      const projects = this.store.projects();
-      void this.loadSummaries(projects);
-    });
-  }
-
   protected openCreate(): void {
     this.store.clearError();
     this.editing.set(null);
@@ -539,7 +511,7 @@ export class ProjectsPage {
       existing === null ? 'Proyecto creado' : 'Proyecto actualizado',
       `${saved.name}. Los indicadores se recalculan al leerlos.`,
     );
-    await this.loadSummaries(this.store.projects());
+    this.summaries.reload();
   }
 
   protected async confirmRemove(project: Project): Promise<void> {
@@ -553,66 +525,7 @@ export class ProjectsPage {
     }
     if (await this.store.remove(project.id)) {
       this.toasts.info('Proyecto borrado', `${project.name} ya no aparece en el listado.`);
-      await this.loadSummaries(this.store.projects());
+      this.summaries.reload();
     }
-  }
-
-  private pendingRow(project: Project): ProjectRow {
-    return {
-      project,
-      meta: project.description ?? 'Sin descripción',
-      budgetAtCompletion: EMPTY_CELL,
-      earnedValue: EMPTY_CELL,
-      actualCost: EMPTY_CELL,
-      costPerformanceIndex: null,
-      schedulePerformanceIndex: null,
-      costTone: 'neutral',
-      scheduleTone: 'neutral',
-      statusLabel: 'Sin datos',
-      statusTone: 'neutral',
-      hasData: false,
-    };
-  }
-
-  private async loadSummaries(projects: readonly Project[]): Promise<void> {
-    if (projects.length === 0) {
-      this.summaries.set(new Map());
-      return;
-    }
-    const entries = await Promise.all(
-      projects.map(async (project): Promise<[number, ProjectRow] | null> => {
-        try {
-          const summary = await this.projectsApi.evmSummary(project.id);
-          const indicators = summary.indicators;
-          const hasData = summary.activities.length > 0;
-          return [
-            project.id,
-            {
-              project,
-              meta: `${summary.activities.length} actividades`,
-              budgetAtCompletion: hasData
-                ? formatMoneyRounded(summary.budgetAtCompletion)
-                : EMPTY_CELL,
-              earnedValue: hasData ? formatMoneyRounded(indicators.earnedValue) : EMPTY_CELL,
-              actualCost: hasData ? formatMoneyRounded(indicators.actualCost) : EMPTY_CELL,
-              costPerformanceIndex: indicators.costPerformanceIndex,
-              schedulePerformanceIndex: indicators.schedulePerformanceIndex,
-              costTone: costTone(indicators.costStatus.status),
-              scheduleTone: scheduleTone(indicators.scheduleStatus.status),
-              statusLabel: hasData ? combinedStatusLabel(indicators) : 'Sin datos',
-              statusTone: hasData ? overallTone(indicators) : 'neutral',
-              hasData,
-            },
-          ];
-        } catch {
-          // Un proyecto cuyo consolidado falla no debe tumbar la tabla entera: se queda con la
-          // fila a la espera y el resto se pinta.
-          return null;
-        }
-      }),
-    );
-    this.summaries.set(
-      new Map(entries.filter((entry): entry is [number, ProjectRow] => entry !== null)),
-    );
   }
 }

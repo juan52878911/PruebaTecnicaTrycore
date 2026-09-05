@@ -15,8 +15,11 @@ const INDICATORS: EvmIndicators = {
   schedulePerformanceIndex: null,
   estimateAtCompletion: null,
   varianceAtCompletion: null,
-  costStatus: { status: 'NOT_APPLICABLE', message: '' },
-  scheduleStatus: { status: 'NOT_APPLICABLE', message: '' },
+  estimateFormula: 'BAC_OVER_CPI',
+  estimates: [],
+  thresholds: { warning: 1, critical: 0.95 },
+  costStatus: { status: 'NOT_APPLICABLE', severity: 'NOT_APPLICABLE', message: '' },
+  scheduleStatus: { status: 'NOT_APPLICABLE', severity: 'NOT_APPLICABLE', message: '' },
 };
 
 function point(cutoffDate: string, pv: number, ev: number, ac: number): MeasurementPoint {

@@ -13,6 +13,7 @@ import {
   ACTIVITY_NAME_MAX_LENGTH,
   Activity,
   ActivityRequest,
+  MeasurementMethod,
   MONEY_DECIMAL_PLACES,
   PERCENT_DECIMAL_PLACES,
   PERCENT_MAX,
@@ -104,6 +105,14 @@ function decimalsOf(value: number): number {
           />
         </app-form-field>
       </div>
+
+      <app-form-field label="Regla de medición" fieldId="activity-method" [hint]="methodHint()">
+        <select id="activity-method" name="measurementMethod" [(ngModel)]="measurementMethod">
+          @for (option of methodOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </app-form-field>
 
       <app-form-field
         [label]="'Costo real incurrido · ' + labels.inline('AC')"
@@ -305,6 +314,35 @@ export class ActivityFormDialog {
   protected readonly plannedEndDate = linkedSignal(() => this.activity()?.plannedEndDate ?? '');
   protected readonly actualStartDate = linkedSignal(() => this.activity()?.actualStartDate ?? '');
   protected readonly actualEndDate = linkedSignal(() => this.activity()?.actualEndDate ?? '');
+  protected readonly measurementMethod = linkedSignal<MeasurementMethod>(
+    () => this.activity()?.measurementMethod ?? 'PERCENT_COMPLETE',
+  );
+
+  /**
+   * Las cuatro reglas del contrato.
+   *
+   * La regla se aplica al valor planificado y al ganado a la vez: restar dos cifras medidas con
+   * varas distintas fabricaría atrasos que no existen.
+   */
+  protected readonly methodOptions: readonly { value: MeasurementMethod; label: string }[] = [
+    { value: 'PERCENT_COMPLETE', label: 'Porcentaje completado' },
+    { value: 'FIXED_0_100', label: '0 / 100 — nada hasta cerrar' },
+    { value: 'FIXED_50_50', label: '50 / 50 — mitad al iniciar' },
+    { value: 'WEIGHTED_MILESTONES', label: 'Hitos ponderados' },
+  ];
+
+  protected readonly methodHint = computed(() => {
+    switch (this.measurementMethod()) {
+      case 'FIXED_0_100':
+        return 'No reconoce valor hasta llegar al 100 %, y entonces todo.';
+      case 'FIXED_50_50':
+        return 'Reconoce la mitad al iniciar y el resto al cerrar. Una actividad se considera iniciada si tiene fecha real de inicio o avance declarado.';
+      case 'WEIGHTED_MILESTONES':
+        return 'Deriva el avance de los hitos cumplidos y sus pesos.';
+      default:
+        return 'Reconoce el porcentaje declarado tal cual.';
+    }
+  });
 
   protected readonly isEdit = computed(() => this.activity() !== null);
 
@@ -387,6 +425,7 @@ export class ActivityFormDialog {
       plannedEndDate: this.orNull(this.plannedEndDate()),
       actualStartDate: this.orNull(this.actualStartDate()),
       actualEndDate: this.orNull(this.actualEndDate()),
+      measurementMethod: this.measurementMethod(),
     });
   }
 

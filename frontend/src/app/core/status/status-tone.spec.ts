@@ -1,15 +1,19 @@
-import { EvmIndicators } from '../api/models/evm';
+import { EvmIndicators, Severity } from '../api/models/evm';
 import {
   combinedStatusLabel,
   costLabel,
   costTone,
+  isAtRisk,
   overallTone,
-  riskLevel,
   scheduleLabel,
   scheduleTone,
+  severityTone,
 } from './status-tone';
 
-function indicators(overrides: Partial<EvmIndicators>): EvmIndicators {
+function indicators(overrides: {
+  readonly costStatus?: EvmIndicators['costStatus'];
+  readonly scheduleStatus?: EvmIndicators['scheduleStatus'];
+}): EvmIndicators {
   return {
     plannedValue: 0,
     earnedValue: 0,
@@ -18,46 +22,76 @@ function indicators(overrides: Partial<EvmIndicators>): EvmIndicators {
     scheduleVariance: 0,
     costPerformanceIndex: null,
     schedulePerformanceIndex: null,
-    costStatus: { status: 'NOT_APPLICABLE', message: 'No aplica' },
-    scheduleStatus: { status: 'NOT_APPLICABLE', message: 'No aplica' },
     estimateAtCompletion: null,
     varianceAtCompletion: null,
+    estimateFormula: 'BAC_OVER_CPI',
+    estimates: [],
+    thresholds: { warning: 1, critical: 0.95 },
+    costStatus: { status: 'NOT_APPLICABLE', severity: 'NOT_APPLICABLE', message: 'No aplica' },
+    scheduleStatus: { status: 'NOT_APPLICABLE', severity: 'NOT_APPLICABLE', message: 'No aplica' },
     ...overrides,
   };
 }
 
-describe('tono derivado del estado del servidor', () => {
-  it('pinta en verde lo que está en presupuesto o por debajo', () => {
-    expect(costTone('UNDER_BUDGET')).toBe('success');
-    expect(costTone('ON_BUDGET')).toBe('success');
+function cost(status: EvmIndicators['costStatus']['status'], severity: Severity) {
+  return { status, severity, message: '' };
+}
+
+function schedule(status: EvmIndicators['scheduleStatus']['status'], severity: Severity) {
+  return { status, severity, message: '' };
+}
+
+describe('tono derivado de la severidad del servidor', () => {
+  it('traduce las cuatro severidades a los colores del diseño', () => {
+    expect(severityTone('NONE')).toBe('success');
+    expect(severityTone('WARNING')).toBe('warning');
+    expect(severityTone('CRITICAL')).toBe('danger');
+    expect(severityTone('NOT_APPLICABLE')).toBe('neutral');
   });
 
-  it('pinta el sobrecosto en coral y el atraso en oliva, como el diseño', () => {
-    expect(costTone('OVER_BUDGET')).toBe('danger');
-    expect(scheduleTone('BEHIND_SCHEDULE')).toBe('warning');
+  /**
+   * El caso que motivó el cambio: un CPI de 0,9857 está sobre presupuesto, pero dentro de la
+   * tolerancia. Antes el color salía del estado y lo pintaba de rojo, contradiciendo al servidor.
+   */
+  it('pinta en oliva una desviación que el servidor admite, aunque el estado sea desfavorable', () => {
+    const value = indicators({ costStatus: cost('OVER_BUDGET', 'WARNING') });
+
+    expect(costTone(value)).toBe('warning');
+    expect(costLabel(value.costStatus.status)).toBe('Sobre presupuesto');
   });
 
-  it('deja en gris lo que el servidor declara no aplicable', () => {
-    expect(costTone('NOT_APPLICABLE')).toBe('neutral');
-    expect(scheduleTone('NOT_APPLICABLE')).toBe('neutral');
+  it('pinta en coral la desviación que el servidor considera crítica', () => {
+    expect(costTone(indicators({ costStatus: cost('OVER_BUDGET', 'CRITICAL') }))).toBe('danger');
   });
 
-  it('toma el tono más grave de los dos estados para la fila', () => {
-    const overCostAndLate = indicators({
-      costStatus: { status: 'OVER_BUDGET', message: '' },
-      scheduleStatus: { status: 'BEHIND_SCHEDULE', message: '' },
+  it('pinta en verde lo que el servidor no señala', () => {
+    expect(costTone(indicators({ costStatus: cost('UNDER_BUDGET', 'NONE') }))).toBe('success');
+    expect(scheduleTone(indicators({ scheduleStatus: schedule('ON_SCHEDULE', 'NONE') }))).toBe(
+      'success',
+    );
+  });
+
+  it('deja en gris lo que no aplica', () => {
+    expect(costTone(indicators({}))).toBe('neutral');
+    expect(scheduleTone(indicators({}))).toBe('neutral');
+  });
+
+  it('toma el tono más grave de los dos para la fila', () => {
+    const worst = indicators({
+      costStatus: cost('OVER_BUDGET', 'WARNING'),
+      scheduleStatus: schedule('BEHIND_SCHEDULE', 'CRITICAL'),
     });
-    const onlyLate = indicators({
-      costStatus: { status: 'ON_BUDGET', message: '' },
-      scheduleStatus: { status: 'BEHIND_SCHEDULE', message: '' },
+    const onlyWarning = indicators({
+      costStatus: cost('ON_BUDGET', 'NONE'),
+      scheduleStatus: schedule('BEHIND_SCHEDULE', 'WARNING'),
     });
     const healthy = indicators({
-      costStatus: { status: 'UNDER_BUDGET', message: '' },
-      scheduleStatus: { status: 'AHEAD_OF_SCHEDULE', message: '' },
+      costStatus: cost('UNDER_BUDGET', 'NONE'),
+      scheduleStatus: schedule('AHEAD_OF_SCHEDULE', 'NONE'),
     });
 
-    expect(overallTone(overCostAndLate)).toBe('danger');
-    expect(overallTone(onlyLate)).toBe('warning');
+    expect(overallTone(worst)).toBe('danger');
+    expect(overallTone(onlyWarning)).toBe('warning');
     expect(overallTone(healthy)).toBe('success');
     expect(overallTone(indicators({}))).toBe('neutral');
   });
@@ -71,74 +105,38 @@ describe('rótulos de estado', () => {
 
   it('combina los dos estados en una sola línea', () => {
     const value = indicators({
-      costStatus: { status: 'OVER_BUDGET', message: '' },
-      scheduleStatus: { status: 'BEHIND_SCHEDULE', message: '' },
+      costStatus: cost('OVER_BUDGET', 'CRITICAL'),
+      scheduleStatus: schedule('BEHIND_SCHEDULE', 'CRITICAL'),
     });
 
     expect(combinedStatusLabel(value)).toBe('Sobre presupuesto · atrasado');
   });
 
   it('no combina cuando uno de los dos no aplica', () => {
-    const value = indicators({
-      costStatus: { status: 'NOT_APPLICABLE', message: '' },
-      scheduleStatus: { status: 'BEHIND_SCHEDULE', message: '' },
-    });
+    const value = indicators({ scheduleStatus: schedule('BEHIND_SCHEDULE', 'CRITICAL') });
 
     expect(combinedStatusLabel(value)).toBe('Sin costo registrado');
   });
 });
 
-describe('resalte de riesgo por umbral', () => {
-  const warning = 0.95;
-  const critical = 0.8;
-
-  it('marca como crítica la actividad cuyo peor índice cae bajo el umbral crítico', () => {
-    const value = indicators({ costPerformanceIndex: 0.6, schedulePerformanceIndex: 0.64 });
-
-    expect(riskLevel(value, warning, critical)).toBe('critical');
+describe('señalado de riesgo', () => {
+  it('señala lo que el servidor marca con aviso o con criticidad', () => {
+    expect(isAtRisk(indicators({ costStatus: cost('OVER_BUDGET', 'WARNING') }))).toBe(true);
+    expect(isAtRisk(indicators({ scheduleStatus: schedule('BEHIND_SCHEDULE', 'CRITICAL') }))).toBe(
+      true,
+    );
   });
 
-  it('marca en riesgo la que queda entre los dos umbrales', () => {
-    const value = indicators({ costPerformanceIndex: 1.03, schedulePerformanceIndex: 0.92 });
+  it('no señala lo que va bien', () => {
+    const value = indicators({
+      costStatus: cost('UNDER_BUDGET', 'NONE'),
+      scheduleStatus: schedule('AHEAD_OF_SCHEDULE', 'NONE'),
+    });
 
-    expect(riskLevel(value, warning, critical)).toBe('warning');
-  });
-
-  it('no marca nada cuando los dos índices superan el umbral de aviso', () => {
-    const value = indicators({ costPerformanceIndex: 1.05, schedulePerformanceIndex: 1.02 });
-
-    expect(riskLevel(value, warning, critical)).toBe('none');
-  });
-
-  it('trata el umbral como estrictamente menor: 0,95 exacto no es riesgo', () => {
-    const value = indicators({ costPerformanceIndex: 0.95, schedulePerformanceIndex: 1 });
-
-    expect(riskLevel(value, warning, critical)).toBe('none');
+    expect(isAtRisk(value)).toBe(false);
   });
 
   it('no inventa riesgo donde solo falta el dato', () => {
-    const value = indicators({ costPerformanceIndex: null, schedulePerformanceIndex: null });
-
-    expect(riskLevel(value, warning, critical)).toBe('none');
-  });
-
-  it('evalúa el índice que sí existe cuando el otro es nulo', () => {
-    const value = indicators({ costPerformanceIndex: null, schedulePerformanceIndex: 0.4 });
-
-    expect(riskLevel(value, warning, critical)).toBe('critical');
-  });
-
-  it('un índice de cero sí es un riesgo crítico, porque el índice está definido', () => {
-    const value = indicators({ costPerformanceIndex: 0, schedulePerformanceIndex: 1 });
-
-    expect(riskLevel(value, warning, critical)).toBe('critical');
-  });
-
-  it('respeta los umbrales que el usuario configure', () => {
-    const value = indicators({ costPerformanceIndex: 0.9, schedulePerformanceIndex: 1 });
-
-    expect(riskLevel(value, 0.95, 0.8)).toBe('warning');
-    expect(riskLevel(value, 0.95, 0.92)).toBe('critical');
-    expect(riskLevel(value, 0.85, 0.8)).toBe('none');
+    expect(isAtRisk(indicators({}))).toBe(false);
   });
 });

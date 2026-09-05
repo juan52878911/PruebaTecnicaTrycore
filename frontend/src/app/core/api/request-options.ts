@@ -8,3 +8,8 @@
 export interface RequestOptions {
   readonly signal?: AbortSignal;
 }
+
+/** Opciones de los recursos que aceptan elegir la fórmula titular del costo al cierre. */
+export interface EvmRequestOptions extends RequestOptions {
+  readonly eacFormula?: string;
+}

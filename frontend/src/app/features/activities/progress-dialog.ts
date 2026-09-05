@@ -294,6 +294,8 @@ export class ProgressDialog {
       plannedEndDate: activity.plannedEndDate,
       actualStartDate: activity.actualStartDate,
       actualEndDate: activity.actualEndDate,
+      // Registrar avance no cambia la regla de medición: se reenvía la que ya tenía.
+      measurementMethod: activity.measurementMethod,
     });
   }
 }

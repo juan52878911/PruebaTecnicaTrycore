@@ -5,6 +5,9 @@ export type CurrencyCode = 'USD' | 'COP' | 'EUR';
 
 export type DateFormat = 'DD MMM AAAA' | 'AAAA-MM-DD';
 
+/** Fórmula titular con la que se piden el EAC y el VAC al servidor. */
+export type EacFormula = 'BAC_OVER_CPI' | 'AC_PLUS_REMAINING' | 'AC_PLUS_REMAINING_OVER_CPI_SPI';
+
 /**
  * Preferencias del usuario.
  *
@@ -18,10 +21,11 @@ export interface Preferences {
   readonly showInterpretation: boolean;
   /** Tras guardar, recarga el consolidado; si está apagado aparece un botón de recálculo. */
   readonly autoRefreshAfterSave: boolean;
-  /** Índice por debajo del cual una actividad se resalta como en riesgo. */
-  readonly warningThreshold: number;
-  /** Índice por debajo del cual una actividad se resalta como crítica. */
-  readonly criticalThreshold: number;
+  /**
+   * Fórmula titular del costo al cierre. Viaja al servidor como parámetro de consulta: el cálculo
+   * lo sigue haciendo él, aquí solo se elige cuál de los tres supuestos se muestra en primer plano.
+   */
+  readonly eacFormula: EacFormula;
   /** Rótulo de moneda. No convierte importes: el backend guarda decimales sin divisa. */
   readonly currencyCode: CurrencyCode;
   readonly dateFormat: DateFormat;
@@ -31,8 +35,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   indicatorNaming: 'siglas',
   showInterpretation: true,
   autoRefreshAfterSave: true,
-  warningThreshold: 0.95,
-  criticalThreshold: 0.8,
+  eacFormula: 'BAC_OVER_CPI',
   currencyCode: 'USD',
   dateFormat: 'DD MMM AAAA',
 };
@@ -40,15 +43,17 @@ export const DEFAULT_PREFERENCES: Preferences = {
 export const INDICATOR_NAMING_VALUES: readonly IndicatorNaming[] = ['siglas', 'claro'];
 export const CURRENCY_VALUES: readonly CurrencyCode[] = ['USD', 'COP', 'EUR'];
 export const DATE_FORMAT_VALUES: readonly DateFormat[] = ['DD MMM AAAA', 'AAAA-MM-DD'];
-
-/** Un índice de desempeño por debajo de 0 no significa nada y por encima de 2 no resalta nada. */
-export const THRESHOLD_MIN = 0;
-export const THRESHOLD_MAX = 2;
+export const EAC_FORMULA_VALUES: readonly EacFormula[] = [
+  'BAC_OVER_CPI',
+  'AC_PLUS_REMAINING',
+  'AC_PLUS_REMAINING_OVER_CPI_SPI',
+];
 
 /**
  * Clave del almacenamiento, con versión.
  *
- * Si el día de mañana cambia la forma de las preferencias, se sube la versión y las guardadas con
- * la forma antigua se ignoran en bloque en lugar de interpretarse mal.
+ * Sube a v2 porque los umbrales de tolerancia dejaron de ser una preferencia del cliente: ahora los
+ * fija el servidor y viajan en cada respuesta. Lo guardado con la forma antigua se ignora en bloque
+ * en lugar de interpretarse mal.
  */
-export const PREFERENCES_STORAGE_KEY = 'valora.preferences.v1';
+export const PREFERENCES_STORAGE_KEY = 'valora.preferences.v2';

@@ -18,8 +18,11 @@ function indicators(overrides: Partial<EvmIndicators> = {}): EvmIndicators {
     schedulePerformanceIndex: 0.9012,
     estimateAtCompletion: 1_913_768.99,
     varianceAtCompletion: -213_768.99,
-    costStatus: { status: 'OVER_BUDGET', message: 'Sobre presupuesto' },
-    scheduleStatus: { status: 'BEHIND_SCHEDULE', message: 'Atrasado' },
+    estimateFormula: 'BAC_OVER_CPI',
+    estimates: [],
+    thresholds: { warning: 1, critical: 0.95 },
+    costStatus: { status: 'OVER_BUDGET', severity: 'WARNING', message: 'Sobre presupuesto' },
+    scheduleStatus: { status: 'BEHIND_SCHEDULE', severity: 'WARNING', message: 'Atrasado' },
     ...overrides,
   };
 }
@@ -37,6 +40,10 @@ function activity(id: number, name: string, overrides: Partial<EvmIndicators> = 
     plannedEndDate: '2026-11-30',
     actualStartDate: null,
     actualEndDate: null,
+    measurementMethod: 'PERCENT_COMPLETE',
+    measurementMethodDescription: 'Porcentaje completado',
+    effectivePlannedProgressPercent: 45,
+    effectiveActualProgressPercent: 29,
     indicators: indicators(overrides),
   };
 }
@@ -52,9 +59,18 @@ const SUMMARY = {
   budgetAtCompletion: 1_700_000,
   indicators: indicators(),
   activities: [
-    activity(10, 'Obra civil', { costPerformanceIndex: 0.85, schedulePerformanceIndex: 0.95 }),
-    activity(11, 'Pruebas', { costPerformanceIndex: 0.6, schedulePerformanceIndex: 0.64 }),
-    activity(12, 'Montaje', { costPerformanceIndex: 1.03, schedulePerformanceIndex: 1.02 }),
+    activity(10, 'Obra civil', {
+      costStatus: { status: 'OVER_BUDGET', severity: 'WARNING', message: '' },
+      scheduleStatus: { status: 'BEHIND_SCHEDULE', severity: 'WARNING', message: '' },
+    }),
+    activity(11, 'Pruebas', {
+      costStatus: { status: 'OVER_BUDGET', severity: 'CRITICAL', message: '' },
+      scheduleStatus: { status: 'BEHIND_SCHEDULE', severity: 'CRITICAL', message: '' },
+    }),
+    activity(12, 'Montaje', {
+      costStatus: { status: 'UNDER_BUDGET', severity: 'NONE', message: '' },
+      scheduleStatus: { status: 'AHEAD_OF_SCHEDULE', severity: 'NONE', message: '' },
+    }),
   ],
 };
 
@@ -138,16 +154,19 @@ describe('ProjectEvmStore', () => {
     expect(last?.totals.actualCost).toBe(store.indicators()?.actualCost);
   });
 
-  it('marca como en riesgo solo las actividades bajo los umbrales configurados', async () => {
+  it('señala solo las actividades que el servidor marca con desviación', async () => {
     const store = configure(HAPPY_ROUTES);
     store.select(1);
     await settle();
 
     const atRisk = store.activitiesAtRisk();
 
+    // El nivel no se calcula aquí: sale de la severidad que trae cada índice.
     expect(atRisk.map((entry) => entry.activity.name)).toEqual(['Obra civil', 'Pruebas']);
-    expect(atRisk.find((entry) => entry.activity.name === 'Pruebas')?.risk).toBe('critical');
-    expect(atRisk.find((entry) => entry.activity.name === 'Obra civil')?.risk).toBe('warning');
+    expect(atRisk.find((entry) => entry.activity.name === 'Pruebas')?.critical).toBe(true);
+    expect(atRisk.find((entry) => entry.activity.name === 'Pruebas')?.tone).toBe('danger');
+    expect(atRisk.find((entry) => entry.activity.name === 'Obra civil')?.critical).toBe(false);
+    expect(atRisk.find((entry) => entry.activity.name === 'Obra civil')?.tone).toBe('warning');
   });
 
   it('reconoce el proyecto sin actividades y sin cortes', async () => {
@@ -243,6 +262,7 @@ describe('ProjectEvmStore', () => {
       plannedEndDate: null,
       actualStartDate: null,
       actualEndDate: null,
+      measurementMethod: null,
     });
 
     expect(created).toBeNull();

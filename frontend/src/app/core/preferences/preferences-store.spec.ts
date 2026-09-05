@@ -75,7 +75,7 @@ describe('PreferencesStore', () => {
 
   it('vuelve a los valores por defecto al restablecer', () => {
     const store = storeWith(memoryStorage());
-    store.update({ indicatorNaming: 'claro', criticalThreshold: 0.5 });
+    store.update({ indicatorNaming: 'claro', eacFormula: 'AC_PLUS_REMAINING' });
 
     store.reset();
 
@@ -96,6 +96,6 @@ describe('PreferencesStore', () => {
   });
 
   it('usa una clave con versión, para poder descartar formas antiguas de golpe', () => {
-    expect(PREFERENCES_STORAGE_KEY).toBe('valora.preferences.v1');
+    expect(PREFERENCES_STORAGE_KEY).toBe('valora.preferences.v2');
   });
 });
