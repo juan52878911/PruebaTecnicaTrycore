@@ -21,6 +21,7 @@ import {
 } from '../../core/status/status-tone';
 import { DualProgress } from '../../shared/ui/dual-progress';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { GroupedBars } from '../../shared/ui/grouped-bars';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
@@ -37,6 +38,7 @@ import { ActivityFormDialog } from './activity-form-dialog';
     ActivityFormDialog,
     DualProgress,
     EmptyState,
+    GroupedBars,
     IndexValue,
     RouterLink,
     Skeleton,
@@ -78,6 +80,24 @@ import { ActivityFormDialog } from './activity-form-dialog';
           </p>
         </div>
       </div>
+    }
+
+    @if (evm.hasTimeline()) {
+      <section class="card comparison">
+        <h2>
+          {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }} por corte
+        </h2>
+        <p class="lead">
+          La curva del panel muestra la tendencia acumulada; esta comparativa deja ver la distancia
+          entre las tres series en cada corte.
+        </p>
+        <app-grouped-bars
+          [points]="evm.timeline()"
+          [plannedLabel]="labels.short('PV')"
+          [earnedLabel]="labels.short('EV')"
+          [actualCostLabel]="labels.short('AC')"
+        />
+      </section>
     }
 
     @if (evm.isLoading() && rows().length === 0) {
@@ -224,6 +244,24 @@ import { ActivityFormDialog } from './activity-form-dialog';
       padding: 18px 20px;
       overflow: visible;
     }
+    .comparison {
+      padding: var(--pad-card);
+      overflow: visible;
+      margin-bottom: var(--gap-grid);
+    }
+    .comparison h2 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-strong);
+    }
+    .comparison .lead {
+      margin: 0 0 18px;
+      max-width: 620px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text-dim);
+    }
     .label {
       font-size: 11.5px;
       font-weight: 600;
@@ -369,6 +407,10 @@ export class ActivitiesPage {
     const projectId = this.projectId();
     if (projectId !== undefined) {
       this.selection.select(projectId);
+    }
+    // El botón "+" de la barra superior abre el alta desde cualquier vista pasando ?nueva=1.
+    if (this.route.snapshot.queryParamMap.has('nueva')) {
+      this.formOpen.set(true);
     }
     effect(() => this.evm.select(this.projectId()));
   }

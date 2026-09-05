@@ -69,10 +69,29 @@ describe('SCurve', () => {
       point('2026-08-31', 1_240_000, 1_117_500, 1_258_000),
     ]);
 
+    // El trazo se suaviza con curvas: un arranque y un tramo por cada corte posterior.
     const first = element.querySelector('path[stroke]');
-    const commands = first?.getAttribute('d')?.match(/[ML]/g) ?? [];
+    const path = first?.getAttribute('d') ?? '';
 
-    expect(commands).toHaveLength(3);
+    expect(path.match(/M/g)).toHaveLength(1);
+    expect(path.match(/C/g)).toHaveLength(2);
+  });
+
+  it('hace pasar la curva exactamente por cada corte, sin desplazar el dato', () => {
+    const element = render([
+      point('2026-07-31', 990_000, 920_000, 984_000),
+      point('2026-08-31', 1_240_000, 1_117_500, 1_258_000),
+    ]);
+    const paths = [...element.querySelectorAll('path[stroke]')].map(
+      (node) => node.getAttribute('d') ?? '',
+    );
+
+    // Toda serie termina en la x del último corte, no en un punto de control intermedio.
+    for (const path of paths) {
+      expect(path).toMatch(/ 600 [\d.]+$/);
+    }
+    // Y la serie más alta (AC, 1 258 000) toca el borde superior útil del lienzo.
+    expect(paths.at(-1)?.split(' ').at(-1)).toBe('12');
   });
 
   it('centra el único punto cuando solo hay un corte, en vez de pegarlo al borde', () => {
@@ -83,7 +102,7 @@ describe('SCurve', () => {
     expect(path.startsWith('M300 ')).toBe(true);
   });
 
-  it('etiqueta el eje con las fechas de corte abreviadas', () => {
+  it('etiqueta el eje con el mes de cada corte, como el diseño', () => {
     const element = render([
       point('2026-07-31', 990_000, 920_000, 984_000),
       point('2026-08-31', 1_240_000, 1_117_500, 1_258_000),
@@ -91,7 +110,26 @@ describe('SCurve', () => {
 
     const labels = [...element.querySelectorAll('.axis span')].map((node) => node.textContent);
 
-    expect(labels).toEqual(['31 jul', '31 ago']);
+    expect(labels).toEqual(['Jul', 'Ago']);
+  });
+
+  it('muestra el globo del último corte por defecto, sin necesidad de apuntar', () => {
+    const element = render([
+      point('2026-07-31', 990_000, 920_000, 984_000),
+      point('2026-08-31', 1_240_000, 1_117_500, 1_258_000),
+    ]);
+
+    const tooltip = element.querySelector('.tooltip');
+
+    expect(tooltip?.querySelector('.tip-label')?.textContent).toContain('AGO');
+    expect(tooltip?.querySelector('.tip-value')?.textContent?.trim()).toBe('1,12 M');
+  });
+
+  it('encabeza la tarjeta con el valor ganado acumulado', () => {
+    const element = render([point('2026-08-31', 1_240_000, 1_117_500, 1_258_000)]);
+
+    expect(element.querySelector('.total')?.textContent?.trim()).toBe('1,12 M');
+    expect(element.querySelector('.caption')?.textContent).toContain('acumulado');
   });
 
   it('describe la gráfica para quien no puede verla', () => {
