@@ -232,9 +232,61 @@ anotación habría acabado allí: es lo que hace todo el mundo por costumbre.
 con su linter y su proxy configurados, y nada más. Permitió que el contrato del API se cerrara y se probara
 antes de tener una sola pantalla que dependiera de él.
 
+**Candidato E: confinar Axios a un solo fichero.** El requisito era usar Axios con un singleton configurable
+entre entornos. La forma cómoda es un `export const api = axios.create(...)` que cada servicio importa. En su
+lugar, la instancia se construye desde un token de inyección y `axios` se importa en un único fichero, con una
+regla de ESLint que lo impone. Cambiar de cliente HTTP significa reescribir ese fichero y sus dos
+interceptores, sin tocar ninguna vista ni ningún test de store: el mismo principio hexagonal del backend,
+aplicado al adaptador de salida del navegador.
+
 **Candidato D: registrar los prompts con un hook, no a mano.** Un `UserPromptSubmit` añade cada prompt al final
 de este documento en el momento en que se envía. El enunciado pide los prompts textuales y en orden, y ese es
 justo el tipo de cosa que, hecha al final de memoria, sale falseada sin querer.
+
+## 5b. Decisiones de la fase de frontend
+
+Registro de las decisiones de diseño de la fase del tablero, con su porqué. La reflexión personal sigue siendo
+de Juan; esto es material de apoyo, marcado como tal.
+
+**El color de estado lo decide el servidor, no un umbral del cliente.** El prototipo coloreaba por umbral
+numérico: verde a partir de 1, oliva a partir de 0,95, coral por debajo. El backend, en cambio, devuelve
+`costStatus` y `scheduleStatus` ya interpretados. Se usa el estado del servidor: pintar un CPI de 0,98 en oliva
+mientras el distintivo dice "Sobre presupuesto" sería contradecir el texto con el color. Los umbrales
+configurables en Ajustes existen, pero alimentan otra cosa: el resalte de "actividades en riesgo" del panel,
+que es una capa de atención, no un veredicto sobre el proyecto.
+
+**Un indicador nulo se rotula `N/A` y jamás como cero, pero un índice de cero sí se pinta como cero.** Son dos
+casos distintos y el contrato los distingue: con AC = 0 el CPI no existe; con avance real 0 y costo incurrido
+el CPI vale cero y el estado es de sobrecosto, aunque el EAC siga sin existir. La única vía que compila para
+pintar un índice es `formatIndex`, y para que eso signifique algo hubo que activar `strict` en el tsconfig del
+frontend, que venía sin `strictNullChecks`: sin él, `cpi.toFixed(4)` compilaba y reventaba en ejecución.
+
+**La curva S se dibuja con los cortes registrados, sin interpolar.** La decisión original de esta fase fue
+sustituir la curva por barras comparativas, porque el backend no guardaba histórico. Mientras se planificaba,
+`develop` incorporó las mediciones y `GET /projects/{id}/timeline`, así que la curva se implementó de verdad.
+Si un proyecto tiene dos cortes, la gráfica tiene dos puntos: un tramo que nadie ha medido no se dibuja.
+
+**Los ajustes que el cliente no puede honrar no se ponen como controles.** Sin backend de configuración, las
+preferencias viven en `localStorage`. Todo lo que aparece como control cambia algo de verdad y se conserva
+entre sesiones. La medición del avance y la fórmula del EAC las decide el servidor, así que se muestran como
+valor fijo con su fórmula visible, no como interruptor deshabilitado que aparente ser configurable.
+
+**La vista previa del cálculo se rotula como estimación.** Los formularios calculan EV, CPI y SPI en el
+navegador mientras se escribe, en coma flotante. El servidor calcula en `BigDecimal` y es su respuesta la que
+queda en pantalla al guardar. Decirlo en la propia tarjeta evita que alguien tome la estimación por el dato.
+
+**Limitación conocida: el listado de proyectos hace N+1.** `GET /projects` no devuelve cifras, así que la tabla
+pide el consolidado de cada proyecto en paralelo. Con la cantidad que maneja esta herramienta es irrelevante;
+si la lista creciera, el arreglo correcto es un endpoint consolidado en el backend, no multiplicar peticiones
+desde el navegador. Se deja anotado en lugar de resolverlo fuera de alcance.
+
+**Hallazgo que costó un test:** en Angular 22, un `resource()` en estado de error **lanza** al leer su
+`value()`, incluso habiendo declarado `defaultValue`. Leerlo a pelo hacía que cualquier fallo del API rompiera
+la plantilla en vez de mostrar el aviso. Los stores leen a través de `hasValue()` y hay un test que lo fija.
+
+**Se eliminó el proxy de `ng serve`.** Con CORS configurado en el backend habría dos mecanismos para lo mismo y
+solo uno se ejercitaría. Ahora el frontend habla con `http://localhost:8080/api/v1` en los tres entornos, de
+modo que el camino que se prueba en local es el mismo que en producción, con su preflight y sus cabeceras.
 
 ## 6. Qué haría diferente
 
@@ -1506,5 +1558,42 @@ continua con la oleada 5 y la release
 
 El backend cumple el enunciado con holgura y resiste el escrutinio (los 32 indicadores que calculé a mano coinciden al céntimo, los casos borde están bien resueltos y el 98,87 % de cobertura sobre negocio es real), pero la entrega **no cumple el enunciado en conjunto**: falta por completo el frontend que se pide, y el documento de proceso, que es el entregable de mayor peso, llega a medio redactar con cuatro de sus seis puntos como borrador con notas visibles al autor.</result>
 <usage><subagent_tokens>166976</subagent_tokens><tool_uses>55</tool_uses><duration_ms>630942</duration_ms></usage>
+</task-notification>
+```
+
+### 2026-09-04 13:50 -05 - Claude Code (Claude Fable 5.1)
+
+```text
+@"/Users/juanbedoya/Downloads/Valora Design System.dc.html" @"/Users/juanbedoya/Downloads/Valora Prototipo.dc.html" @"/Users/juanbedoya/Downloads/EVM Dashboard Mockups.dc.html"
+Cree este diseño con Claude design, implementalo en el frontend respetando las tecnologias y conectalo con el backend a travez de Axios con un singleton que podamos configurar entre produccion, dev y testing. Por ahora el proyecto es una practica, un ejercicio de seleccion tecnica. Te paso el Design System, prototipo funcional y los mockups del proyecto
+```
+
+### 2026-09-04 14:35 -05 - Claude Code (Claude Fable 5.1)
+
+```text
+no existe backend para la configuración, así que quiero que los ajustes que podamos los agreguemos con uso del local storage como preferencias 
+```
+
+### 2026-09-04 20:40 -05 - Claude Code
+
+```text
+<task-notification>
+<task-id>b294f29pk</task-id>
+<tool-use-id>toolu_01CLtm3RCnhhQYD2rhv4yRiz</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-juanbedoya-Documents-GitHub-PruebaTecnicaTrycore--claude-worktrees-valora-dashboard-frontend-caaa0a/db433c8d-5420-43bf-9109-89ad9cb6ff0e/tasks/b294f29pk.output</output-file>
+<status>completed</status>
+<summary>Background command "Run backend test suite" completed (exit code 0)</summary>
+</task-notification>
+```
+
+### 2026-09-04 21:10 -05 - Claude Code
+
+```text
+<task-notification>
+<task-id>bot6tn6vc</task-id>
+<tool-use-id>toolu_01NF4JSBodiEbcaNZvoAZH8B</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-juanbedoya-Documents-GitHub-PruebaTecnicaTrycore--claude-worktrees-valora-dashboard-frontend-caaa0a/db433c8d-5420-43bf-9109-89ad9cb6ff0e/tasks/bot6tn6vc.output</output-file>
+<status>failed</status>
+<summary>Background command "Start backend in dev mode" failed with exit code 1</summary>
 </task-notification>
 ```

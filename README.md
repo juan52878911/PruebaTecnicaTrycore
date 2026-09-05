@@ -3,8 +3,8 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.0.0. El backend está completo y verificado. El frontend es por ahora un esqueleto de Angular: la
-fase de dashboard se aborda después, y así se declara en el documento de proceso.
+Versión 1.1.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
 
@@ -31,7 +31,7 @@ funciona igual sobre el cronograma.
 | --- | --- |
 | Backend | Java 21, Spring Boot 4.1, Maven, arquitectura hexagonal |
 | Base de datos | PostgreSQL 16 en `docker-compose`, migraciones con Flyway |
-| Frontend | Angular 22 (esqueleto en esta fase) |
+| Frontend | Angular 22 sin zone.js, componentes standalone, signals y Axios |
 | Pruebas | JUnit 5, AssertJ, Mockito, ArchUnit, Testcontainers, JaCoCo |
 | Documentación del API | OpenAPI 3 con springdoc, en `/api-docs` y `/swagger-ui` |
 | Calidad | Checkstyle bloqueante en los tres perfiles, ESLint y Prettier en el frontend |
@@ -87,13 +87,65 @@ el PostgreSQL local con el perfil `prod`, que toma su configuración de las vari
 ### Frontend
 
 ```bash
-cd frontend
-npm ci
-npm start
+./scripts/run-frontend.sh
 ```
 
-Arranca en el puerto 4200 con un proxy que envía `/api` al backend. Por ahora solo muestra una página vacía:
-la estructura está lista y la funcionalidad llega en la fase siguiente.
+Arranca en <http://localhost:4200>. Necesita el backend en marcha: le habla directamente a
+<http://localhost:8080/api/v1> por CORS, no por proxy. El origen está declarado en
+`evm.cors.allowed-origins` del perfil `dev`.
+
+Para verificarlo entero (formato, lint, pruebas y build de producción):
+
+```bash
+./scripts/run-frontend-tests.sh
+```
+
+Y para servir el build de producción desde su propio origen, en el puerto 4300, que es lo que ejercita
+CORS de verdad:
+
+```bash
+./scripts/run-frontend-prod.sh
+```
+
+#### Configuración por entorno
+
+El cliente HTTP es una única instancia de Axios construida a partir de `API_CONFIG`, un token de
+inyección. Los valores por entorno viven en `frontend/src/environments/` y Angular sustituye el fichero en
+tiempo de compilación:
+
+| Entorno | Fichero | Raíz del API | Espera máxima |
+| --- | --- | --- | --- |
+| Desarrollo | `environment.ts` | `http://localhost:8080/api/v1` | 10 s |
+| Producción | `environment.production.ts` | `http://localhost:8080/api/v1` | 15 s |
+| Pruebas | `environment.testing.ts` | `http://localhost/api/v1` | 100 ms |
+
+En las pruebas la configuración se sustituye por inyector, que es lo que hace falta la mayor parte de las
+veces: `TestBed.configureTestingModule({ providers: provideApiTesting({ routes }) })` monta la instancia
+real, con sus interceptores, sobre un transporte falso.
+
+`axios` se importa en un solo fichero, `core/api/axios-instance.ts`, y una regla de ESLint lo impone.
+Cambiar de cliente HTTP sería reescribir ese fichero y sus dos interceptores, sin tocar ninguna vista.
+
+## Arquitectura del frontend
+
+```
+frontend/src/app/
+  core/api/        Cliente Axios, modelos del contrato, normalización de errores RFC 7807
+  core/preferences Preferencias del usuario, persistidas en el navegador
+  core/format      Formato de dinero, índices, porcentajes y fechas
+  core/labels      Siglas del estándar o español claro, conmutables en Ajustes
+  core/status      Traducción del estado del servidor a color y a nivel de riesgo
+  shared/ui        Componentes presentacionales: tarjetas, curva S, diálogos, avisos
+  features/        Una carpeta por vista, con su store
+  layout/          Marco y navegación
+```
+
+Sin zone.js: la detección de cambios la dispara la escritura de un signal, no la resolución de una
+promesa. Las lecturas usan `resource()` y las escrituras métodos `async` que escriben signals; ni una
+promesa cruza hacia el componente.
+
+Un indicador que el servidor devuelve como `null` se pinta siempre como `N/A`, nunca como cero. Un índice
+que vale cero sí se pinta como cero, porque ese índice existe.
 
 ## Perfiles Maven
 
@@ -227,18 +279,25 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-129 tests: 95 unitarios y 34 de integración. Los valores esperados de cada cálculo EVM están derivados a mano
-de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
+254 tests: 135 en el backend (97 unitarios y 38 de integración) y 119 en el frontend. Los valores esperados de
+cada cálculo EVM están derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la
+salida del código.
 
 | Tipo | Dónde | Qué cubre |
 | --- | --- | --- |
 | Unitarios | `backend/src/test/java` | Cálculo EVM con sus casos borde, invariantes del modelo, casos de uso con dobles de los puertos |
 | Arquitectura | `backend/src/test-integration/java` | Reglas de dependencia entre capas con ArchUnit |
-| Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real |
+| Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real, incluida la política CORS |
+| Frontend | `frontend/src/app/**/*.spec.ts` | Normalización de errores, cliente Axios, servicios del API, stores, formato, umbrales y componentes |
+
+Los tests del frontend no simulan el módulo de axios: sustituyen su adaptador de transporte, de modo que la
+petición recorre la tubería real, interceptores incluidos, sin levantar ningún servidor y sin añadir
+dependencias.
 
 Casos borde cubiertos: AC = 0, PV = 0, avance real 0, BAC = 0, proyecto sin actividades, proyecto sin cortes,
-fecha de corte futura o repetida, porcentajes fuera de rango, precisión mayor que la almacenable e importes que
-no caben en la columna.
+fecha de corte futura o repetida, porcentajes fuera de rango, precisión mayor que la almacenable, importes que
+no caben en la columna, almacenamiento del navegador bloqueado o con datos corruptos, y respuesta de error que
+no tiene forma de RFC 7807.
 
 ## Documento de proceso
 
