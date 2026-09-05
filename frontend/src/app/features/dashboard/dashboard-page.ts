@@ -43,6 +43,8 @@ const PERCENT_BASE = 100;
 @Component({
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   providers: [ProjectEvmStore],
   imports: [
     ChipButton,

@@ -22,6 +22,7 @@ import {
 } from '../../core/status/status-tone';
 import { ChipGroup, ChipOption } from '../../shared/ui/chip-group';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { PageHeader } from '../../shared/ui/page-header';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -60,6 +61,8 @@ const EMPTY_CELL = '—';
 @Component({
   selector: 'app-projects-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   imports: [
     ChipGroup,
     EmptyState,
@@ -103,6 +106,37 @@ const EMPTY_CELL = '—';
         actionLabel="Nuevo proyecto"
         (action)="openCreate()"
       />
+    } @else if (!isDesktop()) {
+      <!-- En móvil la tabla se convierte en una lista de tarjetas: siete columnas no caben en
+           390 px sin obligar a desplazar en horizontal. -->
+      <ul class="cards">
+        @for (row of visibleRows(); track row.project.id) {
+          <li>
+            <button type="button" (click)="openActivities(row.project.id)">
+              <span class="card-head">
+                <span class="card-text">
+                  <span class="title">{{ row.project.name }}</span>
+                  <span class="meta">{{ row.meta }}</span>
+                </span>
+                <app-status-badge [label]="row.statusLabel" [tone]="row.statusTone" />
+              </span>
+              <span class="card-indices">
+                <span class="pair">
+                  {{ labels.short('CPI') }}
+                  <app-index-value [value]="row.costPerformanceIndex" [tone]="row.costTone" />
+                </span>
+                <span class="pair">
+                  {{ labels.short('SPI') }}
+                  <app-index-value
+                    [value]="row.schedulePerformanceIndex"
+                    [tone]="row.scheduleTone"
+                  />
+                </span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
     } @else {
       <div class="card table" role="table" aria-label="Proyectos con sus indicadores">
         <div class="row head" role="row">
@@ -264,6 +298,55 @@ const EMPTY_CELL = '—';
       color: var(--danger);
       border-color: rgba(255, 138, 107, 0.4);
     }
+    .cards {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .cards button {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 12px;
+      text-align: left;
+      transition: border-color var(--motion-border);
+    }
+    .cards button:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .card-head .title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .card-indices {
+      display: flex;
+      gap: 26px;
+    }
+    .pair {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
     .skeleton-row {
       display: flex;
       flex-direction: column;
@@ -275,6 +358,7 @@ const EMPTY_CELL = '—';
 export class ProjectsPage {
   protected readonly store = inject(ProjectsStore);
   protected readonly labels = inject(IndicatorLabels);
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
   private readonly projectsApi = inject(ProjectsApi);
   private readonly selection = inject(SelectedProjectStore);
   private readonly router = inject(Router);

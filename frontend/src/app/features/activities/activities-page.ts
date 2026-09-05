@@ -30,6 +30,7 @@ import { EmptyState } from '../../shared/ui/empty-state';
 import { GroupedBars } from '../../shared/ui/grouped-bars';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
+import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { PageHeader } from '../../shared/ui/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
@@ -42,6 +43,8 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
 @Component({
   selector: 'app-activities-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   providers: [ProjectEvmStore],
   imports: [
     ActivityFormDialog,
@@ -129,6 +132,41 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
         actionLabel="+ Nueva actividad"
         (action)="openCreate()"
       />
+    } @else if (!isDesktop()) {
+      <!-- Lista de tarjetas: la tabla de siete columnas no cabe en una pantalla estrecha. -->
+      <div class="mobile-bar">
+        <span class="count">{{ countLabel() }}</span>
+        <button type="button" class="primary" (click)="openCreate()">+ Nueva</button>
+      </div>
+      <ul class="cards">
+        @for (row of rows(); track row.activity.id) {
+          <li>
+            <button type="button" (click)="openDetail(row.activity.id)">
+              <span class="card-head">
+                <span class="title">{{ row.activity.name }}</span>
+                <span class="badges">
+                  <span class="badge" [class]="'tone-' + row.costTone">
+                    <app-index-value
+                      [value]="row.activity.indicators.costPerformanceIndex"
+                      [tone]="row.costTone"
+                    />
+                  </span>
+                  <span class="badge" [class]="'tone-' + row.scheduleTone">
+                    <app-index-value
+                      [value]="row.activity.indicators.schedulePerformanceIndex"
+                      [tone]="row.scheduleTone"
+                    />
+                  </span>
+                </span>
+              </span>
+              <app-dual-progress
+                [planned]="row.activity.plannedProgressPercent"
+                [actual]="row.activity.actualProgressPercent"
+              />
+            </button>
+          </li>
+        }
+      </ul>
     } @else {
       <div class="card table">
         <div class="table-bar">
@@ -442,6 +480,66 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
       color: var(--danger);
       border-color: rgba(255, 138, 107, 0.4);
     }
+    .mobile-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .cards {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .cards > li > button {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 12px;
+      text-align: left;
+      transition: border-color var(--motion-border);
+    }
+    .cards > li > button:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-head .title {
+      font-size: 14.5px;
+      font-weight: 700;
+    }
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex: none;
+    }
+    .badge {
+      border-radius: 9px;
+      padding: 5px 9px;
+      font-size: 13px;
+    }
+    .badge.tone-success {
+      background: var(--ok-soft);
+    }
+    .badge.tone-warning {
+      background: var(--warning-soft);
+    }
+    .badge.tone-danger {
+      background: var(--danger-soft);
+    }
+    .badge.tone-neutral {
+      background: var(--neutral-soft);
+    }
     .skeleton-row {
       display: flex;
       flex-direction: column;
@@ -461,6 +559,7 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
 export class ActivitiesPage {
   protected readonly evm = inject(ProjectEvmStore);
   protected readonly labels = inject(IndicatorLabels);
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
   private readonly preferences = inject(PreferencesStore);
   private readonly selection = inject(SelectedProjectStore);
   private readonly route = inject(ActivatedRoute);

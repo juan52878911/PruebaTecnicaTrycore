@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+
+import { BreakpointService } from '../../core/layout/breakpoint.service';
 
 /**
  * Encabezado común a todas las vistas.
@@ -7,17 +9,29 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
  * declaraba su propio tamaño de titular y navegar entre ellas desplazaba el contenido de golpe.
  * El segundo término va atenuado, como en el diseño.
  */
+const LONG_TITLE = 34;
+const MEDIUM_TITLE = 26;
+
 @Component({
   selector: 'app-page-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header>
-      <h1>
-        {{ title() }}
-        @if (subtitle()) {
-          <span>{{ subtitle() }}</span>
-        }
-      </h1>
+    <header [class.mobile]="!isDesktop()">
+      @if (isDesktop()) {
+        <h1 [style.font-size.px]="titleSize()">
+          {{ title() }}
+          @if (subtitle()) {
+            <span>{{ subtitle() }}</span>
+          }
+        </h1>
+      } @else {
+        <div class="stack">
+          @if (subtitle()) {
+            <span class="kicker">{{ subtitle() }}</span>
+          }
+          <h1>{{ title() }}</h1>
+        </div>
+      }
       <div class="actions">
         <ng-content />
       </div>
@@ -38,12 +52,15 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       margin-bottom: 8px;
     }
     h1 {
-      margin: 0;
-      font-size: 48px;
-      line-height: 1.1;
+      margin: -0.14em 0 -0.16em;
+      min-width: 0;
+      flex: 1;
+      line-height: 1.3;
       font-weight: 800;
-      letter-spacing: -0.04em;
-      overflow-wrap: anywhere;
+      letter-spacing: -0.035em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     h1 span {
       color: rgba(255, 255, 255, 0.32);
@@ -59,25 +76,56 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       font-size: 13px;
       color: var(--text-dim);
     }
-    @media (max-width: 900px) {
-      h1 {
-        font-size: 32px;
-      }
-      header {
-        min-height: 0;
-      }
+    header.mobile {
+      align-items: flex-start;
+      min-height: 0;
+      margin-bottom: 16px;
     }
-    @media (max-width: 767px) {
-      h1 {
-        font-size: 24px;
-      }
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      flex: 1;
+    }
+    .kicker {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    header.mobile h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      white-space: normal;
+    }
+    header.mobile .actions {
+      flex-wrap: nowrap;
+      overflow-x: auto;
     }
   `,
 })
 export class PageHeader {
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
+
   readonly title = input.required<string>();
   /** Segundo término, atenuado. */
   readonly subtitle = input<string | null>(null);
   /** Línea de contexto bajo el titular. */
   readonly lead = input<string | null>(null);
+
+  /**
+   * Tamaño del titular según su longitud, con la escala del diseño.
+   *
+   * No es una inconsistencia entre vistas: es un ajuste para que un nombre largo de proyecto quepa
+   * en una sola línea en lugar de partirse o recortarse. El alto de la cabecera no cambia.
+   */
+  protected readonly titleSize = computed(() => {
+    const length = `${this.title()} ${this.subtitle() ?? ''}`.trim().length;
+    if (length > LONG_TITLE) {
+      return 38;
+    }
+    return length > MEDIUM_TITLE ? 44 : 54;
+  });
 }

@@ -9,13 +9,16 @@ import {
 import { UndefinedIndicator } from '../../core/api/models/evm';
 import { formatCompact, formatMoneyRounded } from '../../core/format/evm-format';
 import { Tone } from '../../core/status/status-tone';
+import { CopyValue } from './copy-value';
+import { RollingNumber } from './rolling-number';
 
 /** Tarjeta de cifra: rótulo, sigla, valor grande, unidad y pie explicativo. */
 @Component({
   selector: 'app-kpi-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CopyValue, RollingNumber],
   template: `
-    <article class="card">
+    <article class="card reveal-on-hover">
       <header>
         <h3>{{ title() }}</h3>
         @if (acronym()) {
@@ -23,10 +26,15 @@ import { Tone } from '../../core/status/status-tone';
         }
       </header>
       <p class="figure" [class]="'tone-' + tone()">
-        <span class="tabular">{{ text() }}</span>
+        @if (compact()) {
+          <app-rolling-number [short]="text()" [exact]="exactText()" />
+        } @else {
+          <span class="tabular">{{ text() }}</span>
+        }
         @if (unit()) {
           <span class="unit">{{ unit() }}</span>
         }
+        <app-copy-value [value]="exactText()" [label]="title()" [unit]="unit()" />
       </p>
       @if (footnote()) {
         <p class="footnote" [class]="'tone-' + footnoteTone()">{{ footnote() }}</p>
@@ -63,6 +71,9 @@ import { Tone } from '../../core/status/status-tone';
       color: var(--text-faint);
     }
     .figure {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin: 16px 0 0;
       font-size: 40px;
       line-height: 1;
@@ -112,4 +123,6 @@ export class KpiCard {
   protected readonly text = computed(() =>
     this.compact() ? formatCompact(this.value()) : formatMoneyRounded(this.value()),
   );
+  /** El valor al peso: lo que se copia y a lo que rueda la cifra abreviada. */
+  protected readonly exactText = computed(() => formatMoneyRounded(this.value()));
 }

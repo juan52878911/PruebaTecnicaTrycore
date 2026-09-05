@@ -35,6 +35,8 @@ import { ProgressDialog } from './progress-dialog';
 @Component({
   selector: 'app-activity-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   providers: [ProjectEvmStore],
   imports: [EmptyState, MetricBars, PageHeader, ProgressDialog, RouterLink, Skeleton, StatusBadge],
   template: `

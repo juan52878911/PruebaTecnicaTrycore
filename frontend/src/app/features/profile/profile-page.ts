@@ -25,6 +25,8 @@ import { ProjectsStore } from '../projects/projects-store';
 @Component({
   selector: 'app-profile-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   imports: [PageHeader, RouterLink],
   template: `
     <app-page-header title="Perfil" subtitle="del administrador" />

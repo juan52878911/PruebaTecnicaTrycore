@@ -27,6 +27,8 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 @Component({
   selector: 'app-settings-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   imports: [ChipGroup, FormField, FormsModule, PageHeader, ToggleSwitch],
   template: `
     <app-page-header
