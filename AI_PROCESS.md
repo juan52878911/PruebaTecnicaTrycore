@@ -2004,3 +2004,28 @@ aplica la semilla
 ```text
 mergea el PR a develop
 ```
+
+### 2026-09-04 22:23 -05 - Claude Code
+
+```text
+Ayudame a implementar lo que necesito para que el front funcione perfectamente y tenga los datos necesarios. Crea tambien datos de ejemplo como los que se ven en el diseño Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
+https://claude.ai/design/p/fd9cb3bd-e12e-4610-a0f4-c36966108a24?file=Valora+Prototipo.dc.html
+
+Focus on these files (the whole project is readable):
+- `Valora Prototipo.dc.html`
+
+Also read these files the selection imports:
+- `support.js`
+
+Implement: `Valora Prototipo.dc.html`
+
+Nivel 1 — cosas que hoy funcionan a medias
+Estas son rodeos que ya están en el código y que un revisor va a ver.
+1. Un listado de proyectos con cifras. `GET /projects` devuelve solo id, nombre, descripción y fechas. Para pintar BAC/EV/AC/CPI/SPI por fila, el frontend hace `Promise.all` sobre `/projects/{id}/evm`: son 1+N peticiones, y el perfil hace 1+2N porque además cuenta cortes. Con cuatro proyectos da igual; es el primer olor a problema que salta en una revisión.
+
+```
+### 2026-09-04 22:22 -05 - Claude Code
+
+```text
+ya puedes acceder al diseño
+```
