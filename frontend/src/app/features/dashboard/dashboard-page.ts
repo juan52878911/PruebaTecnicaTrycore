@@ -14,6 +14,7 @@ import { ViewTransition } from '../../core/layout/view-transition';
 import {
   formatCompact,
   formatDate,
+  formatIndex,
   formatMoneyRounded,
   formatPercent,
   formatShortDate,
@@ -30,8 +31,6 @@ import { KpiSkeleton } from '../../shared/ui/kpi-skeleton';
 import { PageHeader } from '../../shared/ui/page-header';
 import { OverallStatus } from '../../shared/ui/overall-status';
 import { SCurve } from '../../shared/ui/s-curve';
-import { Skeleton } from '../../shared/ui/skeleton';
-import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { MeasurementDialog } from '../evm/measurement-dialog';
 import { ProjectEvmStore } from '../evm/project-evm-store';
@@ -58,8 +57,6 @@ const PERCENT_BASE = 100;
     PageHeader,
     ProjectPicker,
     SCurve,
-    Skeleton,
-    StatusBadge,
   ],
   template: `
     <app-page-header
@@ -142,13 +139,13 @@ const PERCENT_BASE = 100;
               [title]="labels.short('CPI')"
               [value]="indicators.costPerformanceIndex"
               [message]="indicators.costStatus.message"
-              [tone]="costTone(indicators.costStatus.status)"
+              [tone]="costTone(indicators)"
             />
             <app-index-card
               [title]="labels.short('SPI')"
               [value]="indicators.schedulePerformanceIndex"
               [message]="indicators.scheduleStatus.message"
-              [tone]="scheduleTone(indicators.scheduleStatus.status)"
+              [tone]="scheduleTone(indicators)"
             />
           </div>
 
@@ -235,14 +232,14 @@ const PERCENT_BASE = 100;
               [acronym]="labels.showAcronymBadge() ? 'CPI' : null"
               [value]="indicators.costPerformanceIndex"
               [message]="indicators.costStatus.message"
-              [tone]="costTone(indicators.costStatus.status)"
+              [tone]="costTone(indicators)"
             />
             <app-index-card
               [title]="labels.title('SPI')"
               [acronym]="labels.showAcronymBadge() ? 'SPI' : null"
               [value]="indicators.schedulePerformanceIndex"
               [message]="indicators.scheduleStatus.message"
-              [tone]="scheduleTone(indicators.scheduleStatus.status)"
+              [tone]="scheduleTone(indicators)"
             />
             <div class="card variances">
               <div>
@@ -657,11 +654,12 @@ export class DashboardPage {
     return total === 1 ? '1 corte registrado.' : `${total} cortes registrados.`;
   });
 
+  /** Umbrales con los que el servidor clasificó estas cifras; no se reproducen en el cliente. */
   protected readonly warningLabel = computed(() =>
-    this.preferences.preferences().warningThreshold.toFixed(2).replace('.', ','),
+    formatIndex(this.evm.indicators()?.thresholds.warning ?? null),
   );
   protected readonly criticalLabel = computed(() =>
-    this.preferences.preferences().criticalThreshold.toFixed(2).replace('.', ','),
+    formatIndex(this.evm.indicators()?.thresholds.critical ?? null),
   );
 
   constructor() {

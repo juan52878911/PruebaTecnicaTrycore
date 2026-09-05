@@ -8,12 +8,13 @@ import { EvmIndicators } from '../../core/api/models/evm';
 import { MeasurementPoint, MeasurementRequest } from '../../core/api/models/measurement';
 import { ProjectsApi } from '../../core/api/projects-api';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
-import { riskLevel, RiskLevel } from '../../core/status/status-tone';
+import { isAtRisk, severityTone, Tone } from '../../core/status/status-tone';
 
-/** Actividad con su nivel de riesgo ya resuelto según los umbrales configurados. */
+/** Actividad señalada por el servidor, con el tono de su severidad. */
 export interface ActivityWithRisk {
   readonly activity: Activity;
-  readonly risk: RiskLevel;
+  readonly tone: Tone;
+  readonly critical: boolean;
 }
 
 /**
@@ -36,15 +37,40 @@ export class ProjectEvmStore {
   // El parámetro incluye `undefined` a propósito: `resource()` interpreta unos parámetros
   // indefinidos como "todavía no cargues", que es el estado inicial sin proyecto seleccionado.
   // Dentro del cargador, en cambio, ya llega como número.
-  private readonly summaryResource = resource<ProjectEvmSummary, number | undefined>({
-    params: () => this.selectedId(),
-    loader: ({ params, abortSignal }) => this.projects.evmSummary(params, { signal: abortSignal }),
+  private readonly summaryResource = resource<
+    ProjectEvmSummary,
+    { readonly projectId: number; readonly eacFormula: string } | undefined
+  >({
+    // La fórmula entra en los parámetros, no solo en la petición: cambiarla en Ajustes tiene que
+    // volver a pedir el consolidado, porque el EAC titular lo decide el servidor.
+    params: () => {
+      const projectId = this.selectedId();
+      return projectId === undefined
+        ? undefined
+        : { projectId, eacFormula: this.preferences.eacFormula() };
+    },
+    loader: ({ params, abortSignal }) =>
+      this.projects.evmSummary(params.projectId, {
+        signal: abortSignal,
+        eacFormula: params.eacFormula,
+      }),
   });
 
-  private readonly timelineResource = resource<readonly MeasurementPoint[], number | undefined>({
-    params: () => this.selectedId(),
+  private readonly timelineResource = resource<
+    readonly MeasurementPoint[],
+    { readonly projectId: number; readonly eacFormula: string } | undefined
+  >({
+    params: () => {
+      const projectId = this.selectedId();
+      return projectId === undefined
+        ? undefined
+        : { projectId, eacFormula: this.preferences.eacFormula() };
+    },
     loader: async ({ params, abortSignal }) => {
-      const timeline = await this.measurements.timeline(params, { signal: abortSignal });
+      const timeline = await this.measurements.timeline(params.projectId, {
+        signal: abortSignal,
+        eacFormula: params.eacFormula,
+      });
       return timeline.points;
     },
     defaultValue: [],
@@ -84,16 +110,29 @@ export class ProjectEvmStore {
   readonly hasActivities = computed(() => this.activityList().length > 0);
   readonly hasTimeline = computed(() => this.timeline().length > 0);
 
-  /** Actividades ordenadas de peor a mejor desempeño, con su nivel de riesgo. */
-  readonly activitiesAtRisk: Signal<readonly ActivityWithRisk[]> = computed(() => {
-    const { warningThreshold, criticalThreshold } = this.preferences.preferences();
-    return this.activityList()
-      .map((activity) => ({
-        activity,
-        risk: riskLevel(activity.indicators, warningThreshold, criticalThreshold),
-      }))
-      .filter((entry) => entry.risk !== 'none');
-  });
+  /**
+   * Actividades que el servidor marcó con desviación relevante.
+   *
+   * El nivel de riesgo ya no se calcula aquí: viene en la severidad de cada índice, medida contra
+   * los umbrales de tolerancia del backend. Repetirlos en el cliente abría la puerta a que el
+   * color dijera una cosa y el texto otra.
+   */
+  readonly activitiesAtRisk: Signal<readonly ActivityWithRisk[]> = computed(() =>
+    this.activityList()
+      .filter((activity) => isAtRisk(activity.indicators))
+      .map((activity) => {
+        const worst = [
+          activity.indicators.costStatus.severity,
+          activity.indicators.scheduleStatus.severity,
+        ];
+        const critical = worst.includes('CRITICAL');
+        return {
+          activity,
+          tone: severityTone(critical ? 'CRITICAL' : 'WARNING'),
+          critical,
+        };
+      }),
+  );
 
   select(projectId: number | undefined): void {
     this.selectedId.set(projectId);

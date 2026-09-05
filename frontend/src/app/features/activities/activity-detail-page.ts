@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { ActivityRequest } from '../../core/api/models/activity';
+import { Activity, ActivityRequest } from '../../core/api/models/activity';
 import {
   formatDateRange,
   formatIndex,
@@ -133,6 +133,17 @@ import { ProgressDialog } from './progress-dialog';
               <dd>{{ money(current.actualCost) }}</dd>
             </div>
           </dl>
+          <!--
+            Con las reglas de umbral lo reconocido no es lo declarado: sin este dato, un valor
+            ganado de cero sobre un avance del 65 % parecería un error del sistema.
+          -->
+          <p class="rule">
+            Regla de medición: {{ current.measurementMethodDescription }}.
+            @if (recognisesLessThanDeclared(current)) {
+              Reconoce {{ percent(current.effectivePlannedProgressPercent) }} del avance planificado
+              y {{ percent(current.effectiveActualProgressPercent) }} del real.
+            }
+          </p>
         </section>
 
         <section class="card">
@@ -289,6 +300,14 @@ import { ProgressDialog } from './progress-dialog';
       font-size: 15px;
       font-weight: 600;
       color: var(--text-strong);
+    }
+    .rule {
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--divider);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
     }
     .records {
       margin: 0;
@@ -476,6 +495,13 @@ export class ActivityDetailPage {
     this.toasts.success(
       'Avance registrado',
       `${saved.name} al ${formatPercent(saved.actualProgressPercent)}. Indicadores recalculados por el servidor.`,
+    );
+  }
+
+  protected recognisesLessThanDeclared(activity: Activity): boolean {
+    return (
+      activity.effectivePlannedProgressPercent !== activity.plannedProgressPercent ||
+      activity.effectiveActualProgressPercent !== activity.actualProgressPercent
     );
   }
 

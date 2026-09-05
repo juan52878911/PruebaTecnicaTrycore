@@ -2,10 +2,9 @@ import {
   CURRENCY_VALUES,
   DATE_FORMAT_VALUES,
   DEFAULT_PREFERENCES,
+  EAC_FORMULA_VALUES,
   INDICATOR_NAMING_VALUES,
   Preferences,
-  THRESHOLD_MAX,
-  THRESHOLD_MIN,
 } from './preferences.model';
 
 function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -16,13 +15,6 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
 
 function boolean(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback;
-}
-
-function threshold(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return fallback;
-  }
-  return value >= THRESHOLD_MIN && value <= THRESHOLD_MAX ? value : fallback;
 }
 
 /**
@@ -63,11 +55,7 @@ export function parsePreferences(raw: string | null): Preferences {
       stored['autoRefreshAfterSave'],
       DEFAULT_PREFERENCES.autoRefreshAfterSave,
     ),
-    warningThreshold: threshold(stored['warningThreshold'], DEFAULT_PREFERENCES.warningThreshold),
-    criticalThreshold: threshold(
-      stored['criticalThreshold'],
-      DEFAULT_PREFERENCES.criticalThreshold,
-    ),
+    eacFormula: oneOf(stored['eacFormula'], EAC_FORMULA_VALUES, DEFAULT_PREFERENCES.eacFormula),
     currencyCode: oneOf(stored['currencyCode'], CURRENCY_VALUES, DEFAULT_PREFERENCES.currencyCode),
     dateFormat: oneOf(stored['dateFormat'], DATE_FORMAT_VALUES, DEFAULT_PREFERENCES.dateFormat),
   };

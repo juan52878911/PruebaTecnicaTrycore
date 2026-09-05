@@ -38,26 +38,19 @@ describe('parsePreferences', () => {
     expect(parsed.currencyCode).toBe(DEFAULT_PREFERENCES.currencyCode);
   });
 
-  it('rechaza un umbral fuera del rango razonable de un índice de desempeño', () => {
-    const parsed = parsePreferences(
-      JSON.stringify({ warningThreshold: 42, criticalThreshold: -1 }),
+  it('acepta cualquiera de las tres fórmulas estándar de costo al cierre', () => {
+    expect(parsePreferences(JSON.stringify({ eacFormula: 'AC_PLUS_REMAINING' })).eacFormula).toBe(
+      'AC_PLUS_REMAINING',
     );
-
-    expect(parsed.warningThreshold).toBe(DEFAULT_PREFERENCES.warningThreshold);
-    expect(parsed.criticalThreshold).toBe(DEFAULT_PREFERENCES.criticalThreshold);
+    expect(
+      parsePreferences(JSON.stringify({ eacFormula: 'AC_PLUS_REMAINING_OVER_CPI_SPI' })).eacFormula,
+    ).toBe('AC_PLUS_REMAINING_OVER_CPI_SPI');
   });
 
-  it('acepta un umbral dentro de rango, incluidos los extremos', () => {
-    const parsed = parsePreferences(JSON.stringify({ warningThreshold: 0, criticalThreshold: 2 }));
+  it('rechaza una fórmula que el servidor no reconoce', () => {
+    const parsed = parsePreferences(JSON.stringify({ eacFormula: 'BAC_POR_LA_CARA' }));
 
-    expect(parsed.warningThreshold).toBe(0);
-    expect(parsed.criticalThreshold).toBe(2);
-  });
-
-  it('rechaza umbrales que no son números finitos', () => {
-    const parsed = parsePreferences(JSON.stringify({ warningThreshold: 'alto' }));
-
-    expect(parsed.warningThreshold).toBe(DEFAULT_PREFERENCES.warningThreshold);
+    expect(parsed.eacFormula).toBe(DEFAULT_PREFERENCES.eacFormula);
   });
 
   it('conserva un objeto completo y válido tal cual', () => {
@@ -67,7 +60,7 @@ describe('parsePreferences', () => {
       showInterpretation: false,
       currencyCode: 'COP' as const,
       dateFormat: 'AAAA-MM-DD' as const,
-      warningThreshold: 0.9,
+      eacFormula: 'AC_PLUS_REMAINING' as const,
     };
 
     expect(parsePreferences(JSON.stringify(stored))).toEqual(stored);

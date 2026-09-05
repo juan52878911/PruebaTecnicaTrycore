@@ -15,8 +15,15 @@ function indicators(overrides: Partial<EvmIndicators> = {}): EvmIndicators {
     schedulePerformanceIndex: 0.9012,
     estimateAtCompletion: null,
     varianceAtCompletion: null,
-    costStatus: { status: 'OVER_BUDGET', message: 'Sobre presupuesto' },
-    scheduleStatus: { status: 'BEHIND_SCHEDULE', message: 'Atrasado' },
+    estimateFormula: 'BAC_OVER_CPI',
+    estimates: [],
+    thresholds: { warning: 1, critical: 0.95 },
+    costStatus: {
+      status: 'OVER_BUDGET',
+      severity: 'CRITICAL',
+      message: 'Sobre presupuesto',
+    },
+    scheduleStatus: { status: 'BEHIND_SCHEDULE', severity: 'CRITICAL', message: 'Atrasado' },
     ...overrides,
   };
 }
@@ -60,7 +67,7 @@ describe('OverallStatus', () => {
       indicators({
         costPerformanceIndex: 0.9,
         schedulePerformanceIndex: 1.05,
-        scheduleStatus: { status: 'AHEAD_OF_SCHEDULE', message: '' },
+        scheduleStatus: { status: 'AHEAD_OF_SCHEDULE', severity: 'CRITICAL', message: '' },
       }),
     ).querySelector('.reading')?.textContent;
 
@@ -71,7 +78,7 @@ describe('OverallStatus', () => {
     const reading = render(
       indicators({
         costPerformanceIndex: 1.05,
-        costStatus: { status: 'UNDER_BUDGET', message: '' },
+        costStatus: { status: 'UNDER_BUDGET', severity: 'CRITICAL', message: '' },
       }),
     ).querySelector('.reading')?.textContent;
 
@@ -83,8 +90,8 @@ describe('OverallStatus', () => {
       indicators({
         costPerformanceIndex: 1.05,
         schedulePerformanceIndex: 1.02,
-        costStatus: { status: 'UNDER_BUDGET', message: '' },
-        scheduleStatus: { status: 'AHEAD_OF_SCHEDULE', message: '' },
+        costStatus: { status: 'UNDER_BUDGET', severity: 'CRITICAL', message: '' },
+        scheduleStatus: { status: 'AHEAD_OF_SCHEDULE', severity: 'CRITICAL', message: '' },
       }),
     ).querySelector('.reading')?.textContent;
 
@@ -96,8 +103,8 @@ describe('OverallStatus', () => {
       indicators({
         costPerformanceIndex: null,
         schedulePerformanceIndex: null,
-        costStatus: { status: 'NOT_APPLICABLE', message: '' },
-        scheduleStatus: { status: 'NOT_APPLICABLE', message: '' },
+        costStatus: { status: 'NOT_APPLICABLE', severity: 'CRITICAL', message: '' },
+        scheduleStatus: { status: 'NOT_APPLICABLE', severity: 'CRITICAL', message: '' },
       }),
     ).querySelector('.reading')?.textContent;
 
@@ -108,7 +115,7 @@ describe('OverallStatus', () => {
     const reading = render(
       indicators({
         costPerformanceIndex: null,
-        costStatus: { status: 'NOT_APPLICABLE', message: '' },
+        costStatus: { status: 'NOT_APPLICABLE', severity: 'CRITICAL', message: '' },
       }),
     ).querySelector('.reading')?.textContent;
 

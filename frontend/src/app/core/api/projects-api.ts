@@ -4,7 +4,7 @@ import type { AxiosInstance } from 'axios';
 import { AXIOS_INSTANCE } from './axios-instance';
 import { Project, ProjectRequest } from './models/project';
 import { ProjectEvmSummary } from './models/activity';
-import { RequestOptions } from './request-options';
+import { EvmRequestOptions, RequestOptions } from './request-options';
 
 /** Acceso a los recursos de proyecto. Sin estado: solo traduce endpoints a promesas tipadas. */
 @Injectable({ providedIn: 'root' })
@@ -37,12 +37,17 @@ export class ProjectsApi {
     await this.http.delete<void>(`${ProjectsApi.PATH}/${id}`, options);
   }
 
-  /** Resumen consolidado con los indicadores del proyecto y de cada una de sus actividades. */
-  async evmSummary(id: number, options?: RequestOptions): Promise<ProjectEvmSummary> {
-    const response = await this.http.get<ProjectEvmSummary>(
-      `${ProjectsApi.PATH}/${id}/evm`,
-      options,
-    );
+  /**
+   * Resumen consolidado con los indicadores del proyecto y de cada una de sus actividades.
+   *
+   * `eacFormula` elige cuál de las tres estimaciones va como titular; las otras dos vienen igual
+   * en `indicators.estimates`. Un valor que el servidor no reconozca responde 400.
+   */
+  async evmSummary(id: number, options?: EvmRequestOptions): Promise<ProjectEvmSummary> {
+    const response = await this.http.get<ProjectEvmSummary>(`${ProjectsApi.PATH}/${id}/evm`, {
+      signal: options?.signal,
+      ...(options?.eacFormula === undefined ? {} : { params: { eacFormula: options.eacFormula } }),
+    });
     return response.data;
   }
 }

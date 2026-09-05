@@ -1,17 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { PreferencesStore } from '../../core/preferences/preferences-store';
 import {
   CurrencyCode,
   DateFormat,
+  EacFormula,
   IndicatorNaming,
-  THRESHOLD_MAX,
-  THRESHOLD_MIN,
 } from '../../core/preferences/preferences.model';
 import { ChipGroup, ChipOption } from '../../shared/ui/chip-group';
+import { formatIndex } from '../../core/format/evm-format';
+import { SelectedProjectStore } from '../../core/selection/selected-project-store';
+import { ProjectEvmStore } from '../evm/project-evm-store';
 import { PageHeader } from '../../shared/ui/page-header';
-import { FormField } from '../../shared/ui/form-field';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 
@@ -27,9 +28,10 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 @Component({
   selector: 'app-settings-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [ProjectEvmStore],
   // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
   host: { class: 'v-rise' },
-  imports: [ChipGroup, FormField, FormsModule, PageHeader, ToggleSwitch],
+  imports: [ChipGroup, FormsModule, PageHeader, ToggleSwitch],
   template: `
     <app-page-header
       title="Ajustes"
@@ -45,6 +47,7 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
           <li><a href="#presentacion" class="active">Presentación</a></li>
           <li><a href="#umbrales">Umbrales</a></li>
           <li><a href="#formato">Formato</a></li>
+          <li><a href="#cierre">Costo al cierre</a></li>
           <li><a href="#servidor">Cálculo del servidor</a></li>
         </ul>
       </nav>
@@ -94,43 +97,30 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
         </section>
 
         <section class="card" id="umbrales">
-          <h2>Umbrales de resalte</h2>
+          <h2>Umbrales de tolerancia</h2>
           <p class="hint">
-            Marcan qué actividades aparecen en riesgo en el panel. No cambian el estado que devuelve
-            el servidor: eso lo decide el cálculo, no la presentación.
+            No son un ajuste del navegador: los fija el servidor y viajan en cada respuesta, junto
+            con la severidad ya clasificada. Repetirlos aquí abriría la puerta a que el color de una
+            tarjeta dijera una cosa y su texto otra.
           </p>
-          <div class="pair">
-            <app-form-field
-              label="En riesgo cuando el índice baja de"
-              fieldId="warning-threshold"
-              [error]="warningError()"
-            >
-              <input
-                id="warning-threshold"
-                type="number"
-                [min]="thresholdMin"
-                [max]="thresholdMax"
-                step="0.01"
-                [ngModel]="warningThreshold()"
-                (ngModelChange)="setWarning($event)"
-              />
-            </app-form-field>
-            <app-form-field
-              label="Crítica cuando el índice baja de"
-              fieldId="critical-threshold"
-              [error]="criticalError()"
-            >
-              <input
-                id="critical-threshold"
-                type="number"
-                [min]="thresholdMin"
-                [max]="thresholdMax"
-                step="0.01"
-                [ngModel]="criticalThreshold()"
-                (ngModelChange)="setCritical($event)"
-              />
-            </app-form-field>
-          </div>
+          @if (thresholds(); as limits) {
+            <dl class="fixed-list">
+              <div>
+                <dt>Sin desviación relevante</dt>
+                <dd>índice ≥ {{ index(limits.warning) }}</dd>
+              </div>
+              <div>
+                <dt>Desviación admitida</dt>
+                <dd>{{ index(limits.critical) }} ≤ índice &lt; {{ index(limits.warning) }}</dd>
+              </div>
+              <div>
+                <dt>Desviación crítica</dt>
+                <dd>índice &lt; {{ index(limits.critical) }}</dd>
+              </div>
+            </dl>
+          } @else {
+            <p class="hint">Se leen del proyecto activo. Abre el panel para consultarlos.</p>
+          }
         </section>
 
         <section class="card" id="formato">
@@ -161,6 +151,33 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
           </div>
         </section>
 
+        <section class="card" id="cierre">
+          <h2>Costo al cierre</h2>
+          <p class="hint">
+            Las tres fórmulas estándar se calculan siempre sobre las mismas cifras; aquí se elige
+            cuál va en primer plano. El cálculo lo hace el servidor: la elección viaja con la
+            petición, no se reproduce en el navegador.
+          </p>
+          <div class="radios" role="radiogroup" aria-label="Fórmula del costo al cierre">
+            @for (option of eacOptions; track option.value) {
+              <button
+                type="button"
+                role="radio"
+                class="radio-card"
+                [class.selected]="option.value === eacFormula()"
+                [attr.aria-checked]="option.value === eacFormula()"
+                (click)="setEacFormula(option.value)"
+              >
+                <span class="radio" aria-hidden="true"></span>
+                <span class="radio-text">
+                  <span class="radio-title">{{ option.label }}</span>
+                  <span class="radio-note">{{ option.assumption }}</span>
+                </span>
+              </button>
+            }
+          </div>
+        </section>
+
         <section class="card fixed" id="servidor">
           <h2>Cálculo del servidor</h2>
           <p class="hint">
@@ -170,11 +187,7 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
           <dl>
             <div>
               <dt>Medición del avance</dt>
-              <dd>Porcentaje completado</dd>
-            </div>
-            <div>
-              <dt>Estimación al cierre</dt>
-              <dd>EAC = BAC / CPI</dd>
+              <dd>Se elige por actividad, en su formulario</dd>
             </div>
             <div>
               <dt>Redondeo</dt>
@@ -311,6 +324,87 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
       font-weight: 600;
       color: var(--text-muted);
     }
+    .radios {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .radio-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      background: var(--card-nested);
+      padding: 15px 18px;
+      text-align: left;
+      transition:
+        background var(--motion-veil),
+        border-color var(--motion-veil);
+    }
+    .radio-card:hover {
+      background: var(--control-active);
+    }
+    .radio-card.selected {
+      border-color: rgba(169, 139, 255, 0.35);
+    }
+    .radio {
+      flex: none;
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+    .radio-card.selected .radio {
+      border: 5px solid var(--accent-light);
+      background: var(--screen);
+    }
+    .radio-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .radio-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .radio-note {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-dim);
+    }
+    .fixed-list {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .fixed-list > div {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .fixed-list > div:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .fixed-list dt {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .fixed-list dd {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
     .fixed dl {
       margin: 0;
       display: flex;
@@ -354,10 +448,21 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 })
 export class SettingsPage {
   protected readonly preferences = inject(PreferencesStore);
-  private readonly toasts = inject(ToastService);
+  /**
+   * Store del proyecto activo, solo para leer los umbrales con los que el servidor clasificó su
+   * última respuesta. Se provee a nivel de esta ruta: no se comparte con el panel.
+   */
+  protected readonly evm = inject(ProjectEvmStore);
+  protected readonly index = formatIndex;
 
-  protected readonly thresholdMin = THRESHOLD_MIN;
-  protected readonly thresholdMax = THRESHOLD_MAX;
+  private readonly selection = inject(SelectedProjectStore);
+
+  constructor() {
+    // Los umbrales llegan con el análisis del proyecto activo; sin seleccionarlo no habría nada
+    // que leer y la tarjeta se quedaría en su mensaje de reserva.
+    effect(() => this.evm.select(this.selection.projectId()));
+  }
+  private readonly toasts = inject(ToastService);
 
   protected readonly namingOptions: readonly ChipOption<IndicatorNaming>[] = [
     { value: 'siglas', label: 'Siglas · CPI, SPI' },
@@ -370,6 +475,29 @@ export class SettingsPage {
     { value: 'EUR', label: 'EUR — Euro' },
   ];
 
+  /** Las tres fórmulas del contrato, con el supuesto que hace válida cada una. */
+  protected readonly eacOptions: readonly {
+    value: EacFormula;
+    label: string;
+    assumption: string;
+  }[] = [
+    {
+      value: 'BAC_OVER_CPI',
+      label: 'EAC = BAC / CPI',
+      assumption: 'El desempeño de costo observado se mantiene hasta el final.',
+    },
+    {
+      value: 'AC_PLUS_REMAINING',
+      label: 'EAC = AC + (BAC − EV)',
+      assumption: 'La desviación fue puntual; lo que queda se ejecuta según lo presupuestado.',
+    },
+    {
+      value: 'AC_PLUS_REMAINING_OVER_CPI_SPI',
+      label: 'EAC = AC + (BAC − EV) / (CPI × SPI)',
+      assumption: 'Hay que recuperar el atraso sin ampliar el plazo.',
+    },
+  ];
+
   protected readonly dateFormatOptions: readonly ChipOption<DateFormat>[] = [
     { value: 'DD MMM AAAA', label: '31 ago 2026' },
     { value: 'AAAA-MM-DD', label: '2026-08-31' },
@@ -380,30 +508,21 @@ export class SettingsPage {
   protected readonly autoRefresh = this.preferences.autoRefreshAfterSave;
   protected readonly currency = this.preferences.currencyCode;
   protected readonly dateFormat = computed(() => this.preferences.preferences().dateFormat);
-  protected readonly warningThreshold = computed(
-    () => this.preferences.preferences().warningThreshold,
-  );
-  protected readonly criticalThreshold = computed(
-    () => this.preferences.preferences().criticalThreshold,
-  );
+  protected readonly eacFormula = this.preferences.eacFormula;
+
+  /**
+   * Umbrales con los que el servidor clasificó la última respuesta consultada.
+   *
+   * Se leen del proyecto activo en lugar de guardarse: son política del backend y pueden cambiar
+   * sin que el navegador se entere.
+   */
+  protected readonly thresholds = computed(() => this.evm.indicators()?.thresholds);
 
   protected readonly namingNote = computed(() =>
     this.naming() === 'siglas'
       ? 'Siglas del estándar PMI. Compactas, pero exigen conocer el vocabulario del Valor Ganado.'
       : 'Texto en español. Ocupa más, y quien no conoce el estándar entiende el tablero sin glosario.',
   );
-
-  protected readonly warningError = computed(() => this.thresholdError(this.warningThreshold()));
-  protected readonly criticalError = computed(() => {
-    const invalid = this.thresholdError(this.criticalThreshold());
-    if (invalid !== null) {
-      return invalid;
-    }
-    // Un umbral crítico por encima del de aviso dejaría el nivel intermedio sin ningún caso.
-    return this.criticalThreshold() > this.warningThreshold()
-      ? 'Debe ser menor o igual que el umbral de riesgo'
-      : null;
-  });
 
   protected setNaming(value: IndicatorNaming): void {
     this.preferences.update({ indicatorNaming: value });
@@ -417,28 +536,12 @@ export class SettingsPage {
     this.preferences.update({ dateFormat: value });
   }
 
-  protected setWarning(value: number): void {
-    if (this.thresholdError(value) === null) {
-      this.preferences.update({ warningThreshold: Number(value) });
-    }
-  }
-
-  protected setCritical(value: number): void {
-    if (this.thresholdError(value) === null) {
-      this.preferences.update({ criticalThreshold: Number(value) });
-    }
+  protected setEacFormula(value: EacFormula): void {
+    this.preferences.update({ eacFormula: value });
   }
 
   protected restore(): void {
     this.preferences.reset();
     this.toasts.info('Ajustes restablecidos', 'Se recuperaron los valores por defecto.');
-  }
-
-  private thresholdError(value: number): string | null {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed < THRESHOLD_MIN || parsed > THRESHOLD_MAX) {
-      return `Debe estar entre ${THRESHOLD_MIN} y ${THRESHOLD_MAX}`;
-    }
-    return null;
   }
 }
