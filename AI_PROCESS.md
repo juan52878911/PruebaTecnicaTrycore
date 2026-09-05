@@ -2346,3 +2346,9 @@ El boton cancelar esta escondido y no alineado correctamente, el scroll no gener
 ```text
 al scrollear hacia arriba el navbar se oculta sutilmente, has que sea fijo en mobile
 ```
+
+### 2026-09-05 17:49 -05 - Claude Code
+
+```text
+Ahoira hay 2 scroll, uno fuera del contenido y otro del contenido, el de fuera del contenido oculta o la barra superior con el perfil y demas y si subes el navbar se oculta
+```
