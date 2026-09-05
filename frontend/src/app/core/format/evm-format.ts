@@ -136,6 +136,16 @@ export function formatDate(value: string | null, format: DateFormat = 'DD MMM AA
   return `${day} ${monthName} ${year}`;
 }
 
+/** Solo el mes, para el eje de la curva: `ago`. */
+export function formatMonth(value: string): string {
+  const [, month] = value.slice(0, 10).split('-');
+  if (month === undefined) {
+    return value;
+  }
+  const name = MONTH_ABBREVIATIONS[Number(month) - 1] ?? month;
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+}
+
 /** Fecha corta para los ejes de la gráfica: `31 ago`. */
 export function formatShortDate(value: string): string {
   const [, month, day] = value.slice(0, 10).split('-');

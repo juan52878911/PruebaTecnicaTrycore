@@ -114,7 +114,17 @@ const MAX_GROUPS = 8;
       flex: 1;
       border-radius: 8px 8px 3px 3px;
       min-height: 2px;
+      transform-origin: bottom center;
       transition: height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+      animation: valora-grow 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    @keyframes valora-grow {
+      from {
+        transform: scaleY(0);
+      }
+      to {
+        transform: scaleY(1);
+      }
     }
     .tick {
       font-size: 11.5px;

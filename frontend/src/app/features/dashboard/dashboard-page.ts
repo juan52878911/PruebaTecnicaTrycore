@@ -10,15 +10,21 @@ import { Router } from '@angular/router';
 
 import { MeasurementRequest } from '../../core/api/models/measurement';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
-import { formatDate, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
+import {
+  formatCompact,
+  formatDate,
+  formatMoneyRounded,
+  formatPercent,
+  formatShortDate,
+} from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
 import { SelectedProjectStore } from '../../core/selection/selected-project-store';
 import { costTone, scheduleTone } from '../../core/status/status-tone';
 import { EmptyState } from '../../shared/ui/empty-state';
-import { GroupedBars } from '../../shared/ui/grouped-bars';
 import { IndexCard } from '../../shared/ui/index-card';
 import { KpiCard } from '../../shared/ui/kpi-card';
+import { KpiSkeleton } from '../../shared/ui/kpi-skeleton';
 import { OverallStatus } from '../../shared/ui/overall-status';
 import { SCurve } from '../../shared/ui/s-curve';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -40,9 +46,9 @@ const PERCENT_BASE = 100;
   imports: [
     Dialog,
     EmptyState,
-    GroupedBars,
     IndexCard,
     KpiCard,
+    KpiSkeleton,
     MeasurementDialog,
     OverallStatus,
     ProjectPicker,
@@ -53,16 +59,24 @@ const PERCENT_BASE = 100;
   template: `
     <header class="page-header">
       <div>
-        <h1>
-          {{ projectName() }}
-        </h1>
+        <h1>Hola de nuevo <span>Alicia</span></h1>
         <p class="lead">Análisis de Valor Ganado a la fecha del último corte.</p>
       </div>
       <div class="header-actions">
         <button type="button" class="chip" (click)="pickerOpen.set(true)">
-          Cambiar de proyecto
+          {{ projectName() }}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+          </svg>
         </button>
-        @if (selectedId()) {
+        @if (selectedId() && lastCutoffShort()) {
+          <button type="button" class="chip" (click)="measurementOpen.set(true)">
+            Corte: {{ lastCutoffShort() }}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+            </svg>
+          </button>
+        } @else if (selectedId()) {
           <button type="button" class="chip" (click)="measurementOpen.set(true)">
             Registrar corte
           </button>
@@ -82,14 +96,27 @@ const PERCENT_BASE = 100;
         (action)="pickerOpen.set(true)"
       />
     } @else if (evm.isLoading() && !evm.summary()) {
+      <!-- El esqueleto reproduce la misma retícula y la forma de cada tarjeta, para que el
+           contenido no salte al llegar. -->
       <div class="grid">
-        @for (placeholder of placeholders; track placeholder) {
-          <div class="card">
-            <app-skeleton width="46%" [height]="13" />
-            <app-skeleton width="70%" [height]="34" />
-            <app-skeleton width="38%" [height]="11" />
+        <div class="column">
+          <app-kpi-skeleton shape="kpi" />
+          <app-kpi-skeleton shape="kpi" />
+          <app-kpi-skeleton shape="kpi" />
+        </div>
+        <div class="column">
+          <app-kpi-skeleton shape="index" />
+          <app-kpi-skeleton shape="index" />
+          <app-kpi-skeleton shape="kpi" />
+        </div>
+        <div class="column wide">
+          <app-kpi-skeleton shape="chart" />
+          <div class="closing">
+            <app-kpi-skeleton shape="kpi" />
+            <app-kpi-skeleton shape="kpi" />
+            <app-kpi-skeleton shape="kpi" />
           </div>
-        }
+        </div>
       </div>
     } @else if (!evm.hasActivities()) {
       <app-empty-state
@@ -173,6 +200,7 @@ const PERCENT_BASE = 100;
               [acronym]="labels.showAcronymBadge() ? 'PV' : null"
               [value]="indicators.plannedValue"
               unit="USD"
+              compact
               [footnote]="plannedShare()"
             />
             <app-kpi-card
@@ -180,6 +208,7 @@ const PERCENT_BASE = 100;
               [acronym]="labels.showAcronymBadge() ? 'EV' : null"
               [value]="indicators.earnedValue"
               unit="USD"
+              compact
               [footnote]="earnedShare()"
             />
             <app-kpi-card
@@ -187,6 +216,7 @@ const PERCENT_BASE = 100;
               [acronym]="labels.showAcronymBadge() ? 'AC' : null"
               [value]="indicators.actualCost"
               unit="USD"
+              compact
               [footnote]="costGap()"
               [footnoteTone]="indicators.costVariance < 0 ? 'danger' : 'success'"
             />
@@ -229,18 +259,15 @@ const PERCENT_BASE = 100;
 
           <div class="column wide">
             <section class="card chart">
-              <header class="chart-head">
-                <div>
-                  <h2>Curva S del proyecto</h2>
-                  <p class="chart-lead">{{ timelineLead() }}</p>
-                </div>
-              </header>
+              <h2 class="chart-title">Curva S del proyecto</h2>
               @if (evm.hasTimeline()) {
                 <app-s-curve
                   [points]="evm.timeline()"
                   [plannedLabel]="labels.short('PV')"
                   [earnedLabel]="labels.short('EV')"
                   [actualCostLabel]="labels.short('AC')"
+                  [costLabel]="labels.short('CPI')"
+                  [scheduleLabel]="labels.short('SPI')"
                 />
               } @else {
                 <app-empty-state
@@ -255,7 +282,7 @@ const PERCENT_BASE = 100;
             <div class="closing">
               <div class="card small">
                 <span class="label">{{ labels.short('EAC') }}</span>
-                <p class="figure">{{ money(indicators.estimateAtCompletion) }}</p>
+                <p class="figure">{{ compact(indicators.estimateAtCompletion) }}</p>
               </div>
               <div class="card small">
                 <span class="label">{{ labels.short('VAC') }}</span>
@@ -270,56 +297,11 @@ const PERCENT_BASE = 100;
               </div>
               <div class="card small">
                 <span class="label">{{ labels.short('BAC') }}</span>
-                <p class="figure">{{ money(evm.budgetAtCompletion()) }}</p>
+                <p class="figure">{{ compact(evm.budgetAtCompletion()) }}</p>
               </div>
             </div>
           </div>
         </div>
-
-        @if (evm.hasTimeline()) {
-          <section class="card comparison">
-            <header class="chart-head">
-              <div>
-                <h2>
-                  {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }}
-                  por corte
-                </h2>
-                <p class="chart-lead">
-                  La curva muestra la tendencia; esta comparativa, la distancia entre las tres
-                  series en cada corte.
-                </p>
-              </div>
-            </header>
-            <app-grouped-bars
-              [points]="evm.timeline()"
-              [plannedLabel]="labels.short('PV')"
-              [earnedLabel]="labels.short('EV')"
-              [actualCostLabel]="labels.short('AC')"
-            />
-          </section>
-        }
-      }
-
-      @if (evm.activitiesAtRisk().length > 0) {
-        <section class="card risk">
-          <h2>Actividades en riesgo</h2>
-          <p class="chart-lead">
-            Índice por debajo de {{ warningLabel() }}; crítica por debajo de {{ criticalLabel() }}.
-          </p>
-          <ul>
-            @for (entry of evm.activitiesAtRisk(); track entry.activity.id) {
-              <li>
-                <button type="button" (click)="goToActivity(entry.activity.id)">
-                  <span class="risk-name">{{ entry.activity.name }}</span>
-                  <app-status-badge
-                    [label]="entry.risk === 'critical' ? 'Crítica' : 'En riesgo'"
-                    [tone]="entry.risk === 'critical' ? 'danger' : 'warning'"
-                  />
-                </button>
-              </li>
-            }
-          </ul>
-        </section>
       }
     }
 
@@ -359,10 +341,13 @@ const PERCENT_BASE = 100;
     }
     h1 {
       margin: 0;
-      font-size: 46px;
-      line-height: 1.15;
+      font-size: 54px;
+      line-height: 1.1;
       font-weight: 800;
-      letter-spacing: -0.035em;
+      letter-spacing: -0.04em;
+    }
+    h1 span {
+      color: rgba(255, 255, 255, 0.32);
     }
     .lead {
       margin: 10px 0 0;
@@ -383,9 +368,25 @@ const PERCENT_BASE = 100;
       font-weight: 600;
       padding: 11px 18px;
     }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chip svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-dim);
+    }
     .chip:hover {
       background: var(--control-hover);
       color: var(--text);
+    }
+    .chart-title {
+      margin: 0 0 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-strong);
     }
     .banner {
       margin: 0 0 18px;
@@ -402,6 +403,19 @@ const PERCENT_BASE = 100;
       grid-template-columns: 1fr 1fr 1.72fr;
       gap: var(--gap-grid);
       align-items: start;
+    }
+    /*
+     * Entrada escalonada, columna a columna. El retraso es corto a propósito: marca el orden de
+     * lectura sin hacer esperar a quien ya sabe lo que viene a mirar.
+     */
+    .grid > .column {
+      animation: valora-rise 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    }
+    .grid > .column:nth-child(2) {
+      animation-delay: 60ms;
+    }
+    .grid > .column:nth-child(3) {
+      animation-delay: 120ms;
     }
     .column {
       display: flex;
@@ -501,9 +515,6 @@ const PERCENT_BASE = 100;
       font-size: 12px;
       color: var(--text-dim);
     }
-    .comparison {
-      margin-top: var(--gap-grid);
-    }
     .risk {
       margin-top: var(--gap-grid);
     }
@@ -577,12 +588,19 @@ export class DashboardPage {
   protected readonly costTone = costTone;
   protected readonly scheduleTone = scheduleTone;
   protected readonly money = formatMoneyRounded;
+  protected readonly compact = formatCompact;
 
   protected readonly pickerOpen = signal(false);
   protected readonly measurementOpen = signal(false);
 
   protected readonly isDesktop = inject(BreakpointService).isDesktop;
   protected readonly selectedId = this.selection.projectId;
+
+  /** Fecha abreviada del último corte, para el distintivo de la cabecera. */
+  protected readonly lastCutoffShort = computed(() => {
+    const last = this.evm.timeline().at(-1);
+    return last === undefined ? null : formatShortDate(last.cutoffDate);
+  });
 
   /** Fecha del último corte, que es a la que se refieren las cifras del panel. */
   protected readonly lastCutoffLabel = computed(() => {

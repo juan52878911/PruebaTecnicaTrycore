@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 
 import { UndefinedIndicator } from '../../core/api/models/evm';
 import { formatCompact, formatMoneyRounded } from '../../core/format/evm-format';
@@ -95,8 +101,13 @@ export class KpiCard {
   readonly footnote = input<string | null>(null);
   readonly tone = input<Tone>('neutral');
   readonly footnoteTone = input<Tone>('neutral');
-  /** Abrevia las cifras que no caben: `1 117 500` pasa a `1,12 M`. */
-  readonly compact = input(false);
+  /**
+   * Abrevia las cifras que no caben: `1 117 500` pasa a `1,12 M`.
+   *
+   * Con `booleanAttribute` el atributo suelto (`compact`) vale por `true`, como en los atributos
+   * booleanos de HTML; sin la transformación se enlazaría la cadena vacía y no compilaría.
+   */
+  readonly compact = input(false, { transform: booleanAttribute });
 
   protected readonly text = computed(() =>
     this.compact() ? formatCompact(this.value()) : formatMoneyRounded(this.value()),
