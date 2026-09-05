@@ -31,6 +31,9 @@ public class ProjectJpaEntity {
     @Column(name = "description", length = Project.DESCRIPTION_MAX_LENGTH)
     private String description;
 
+    @Column(name = "manager", length = Project.MANAGER_MAX_LENGTH)
+    private String manager;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -71,6 +74,14 @@ public class ProjectJpaEntity {
 
     public void setDescription(final String description) {
         this.description = description;
+    }
+
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(final String manager) {
+        this.manager = manager;
     }
 
     public Instant getCreatedAt() {

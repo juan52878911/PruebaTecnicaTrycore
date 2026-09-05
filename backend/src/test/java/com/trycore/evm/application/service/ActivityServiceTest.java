@@ -19,6 +19,8 @@ import com.trycore.evm.domain.exception.ProjectNotFoundException;
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.ProgressMeasurement;
 import com.trycore.evm.domain.service.EvmCalculator;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,7 +63,8 @@ class ActivityServiceTest {
     }
 
     private static Activity existingActivity(final String name) {
-        return new Activity(ACTIVITY_ID, PROJECT_ID, name, figures(), Instant.now(), Instant.now());
+        return new Activity(
+                ACTIVITY_ID, PROJECT_ID, name, figures(), ActivitySchedule.empty(), Instant.now(), Instant.now());
     }
 
     @Test
@@ -71,7 +74,8 @@ class ActivityServiceTest {
         final Activity saved = existingActivity(NAME);
         when(activityRepository.save(any(Activity.class))).thenReturn(saved);
 
-        final ActivityEvm result = activityService.create(PROJECT_ID, NAME, figures());
+        final ActivityEvm result = activityService.create(
+                PROJECT_ID, NAME, figures(), ActivitySchedule.empty(), ProgressMeasurement.percentComplete());
 
         assertThat(result.activity()).isEqualTo(saved);
         // PV = 0,50 x 100.000 = 50.000: los indicadores llegan calculados desde el caso de uso
@@ -83,7 +87,9 @@ class ActivityServiceTest {
     void createInMissingProjectThrows() {
         when(projectRepository.existsById(MISSING_PROJECT_ID)).thenReturn(false);
 
-        assertThatThrownBy(() -> activityService.create(MISSING_PROJECT_ID, NAME, figures()))
+        assertThatThrownBy(() -> activityService.create(
+                        MISSING_PROJECT_ID, NAME, figures(), ActivitySchedule.empty(),
+                        ProgressMeasurement.percentComplete()))
                 .isInstanceOf(ProjectNotFoundException.class);
         verify(activityRepository, never()).save(any());
     }
@@ -96,7 +102,10 @@ class ActivityServiceTest {
         when(activityRepository.findByIdAndProjectId(ACTIVITY_ID, PROJECT_ID)).thenReturn(Optional.of(existing));
         when(activityRepository.save(any(Activity.class))).thenReturn(updated);
 
-        final ActivityEvm result = activityService.update(PROJECT_ID, ACTIVITY_ID, NEW_NAME, figures());
+        final ActivityEvm result =
+                activityService.update(
+                        PROJECT_ID, ACTIVITY_ID, NEW_NAME, figures(), ActivitySchedule.empty(),
+                        ProgressMeasurement.percentComplete());
 
         assertThat(result.activity()).isEqualTo(updated);
         assertThat(result.indicators().costPerformanceIndex()).isEqualByComparingTo("0.6667");
@@ -107,7 +116,9 @@ class ActivityServiceTest {
     void updateMissingActivityThrows() {
         when(activityRepository.findByIdAndProjectId(MISSING_ACTIVITY_ID, PROJECT_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> activityService.update(PROJECT_ID, MISSING_ACTIVITY_ID, NEW_NAME, figures()))
+        assertThatThrownBy(() -> activityService.update(
+                        PROJECT_ID, MISSING_ACTIVITY_ID, NEW_NAME, figures(), ActivitySchedule.empty(),
+                        ProgressMeasurement.percentComplete()))
                 .isInstanceOf(ActivityNotFoundException.class);
         verify(activityRepository, never()).save(any());
     }
@@ -131,6 +142,29 @@ class ActivityServiceTest {
         assertThatThrownBy(() -> activityService.delete(PROJECT_ID, MISSING_ACTIVITY_ID))
                 .isInstanceOf(ActivityNotFoundException.class);
         verify(activityRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("get devuelve la actividad del proyecto con sus indicadores")
+    void getReturnsActivityWithIndicators() {
+        final Activity existing = existingActivity(NAME);
+        when(activityRepository.findByIdAndProjectId(ACTIVITY_ID, PROJECT_ID)).thenReturn(Optional.of(existing));
+
+        final ActivityEvm result = activityService.get(PROJECT_ID, ACTIVITY_ID);
+
+        assertThat(result.activity()).isEqualTo(existing);
+        // EV = 0,40 x 100.000 = 40.000, la misma cifra que da el listado del proyecto
+        assertThat(result.indicators().earnedValue()).isEqualByComparingTo("40000.00");
+    }
+
+    @Test
+    @DisplayName("get de una actividad que no es de ese proyecto lanza ActivityNotFoundException")
+    void getActivityOfAnotherProjectThrows() {
+        when(activityRepository.findByIdAndProjectId(ACTIVITY_ID, MISSING_PROJECT_ID))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> activityService.get(MISSING_PROJECT_ID, ACTIVITY_ID))
+                .isInstanceOf(ActivityNotFoundException.class);
     }
 
     @Test

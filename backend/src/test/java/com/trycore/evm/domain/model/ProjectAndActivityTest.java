@@ -22,6 +22,7 @@ class ProjectAndActivityTest {
     private static final Instant UPDATED_AT = Instant.parse("2026-09-02T10:00:00Z");
     private static final ActivityFigures FIGURES = new ActivityFigures(
             new BigDecimal("1000"), new BigDecimal("50"), new BigDecimal("40"), new BigDecimal("600"));
+    private static final ActivitySchedule SCHEDULE = ActivitySchedule.empty();
 
     @Nested
     class ProjectInvariants {
@@ -91,7 +92,7 @@ class ProjectAndActivityTest {
 
         @Test
         void createsNewActivityWithoutIdentityNorDates() {
-            final Activity activity = Activity.create(PROJECT_ID, "Diseño", FIGURES);
+            final Activity activity = Activity.create(PROJECT_ID, "Diseño", FIGURES, SCHEDULE);
 
             assertThat(activity.id()).isNull();
             assertThat(activity.projectId()).isEqualTo(PROJECT_ID);
@@ -100,11 +101,12 @@ class ProjectAndActivityTest {
 
         @Test
         void updateKeepsIdentityProjectAndDates() {
-            final Activity stored = new Activity(ACTIVITY_ID, PROJECT_ID, "Antigua", FIGURES, CREATED_AT, UPDATED_AT);
+            final Activity stored =
+                    new Activity(ACTIVITY_ID, PROJECT_ID, "Antigua", FIGURES, SCHEDULE, CREATED_AT, UPDATED_AT);
             final ActivityFigures newFigures = new ActivityFigures(
                     new BigDecimal("2000"), new BigDecimal("10"), new BigDecimal("20"), new BigDecimal("300"));
 
-            final Activity updated = stored.update("Nueva", newFigures);
+            final Activity updated = stored.update("Nueva", newFigures, SCHEDULE);
 
             assertThat(updated.id()).isEqualTo(ACTIVITY_ID);
             assertThat(updated.projectId()).isEqualTo(PROJECT_ID);
@@ -115,7 +117,7 @@ class ProjectAndActivityTest {
 
         @Test
         void rejectsBlankName() {
-            assertThatThrownBy(() -> Activity.create(PROJECT_ID, " ", FIGURES))
+            assertThatThrownBy(() -> Activity.create(PROJECT_ID, " ", FIGURES, SCHEDULE))
                     .isInstanceOf(InvalidActivityException.class)
                     .hasMessageContaining("obligatorio");
         }
@@ -124,7 +126,7 @@ class ProjectAndActivityTest {
         void rejectsNameLongerThanLimit() {
             final String tooLong = "x".repeat(Activity.NAME_MAX_LENGTH + 1);
 
-            assertThatThrownBy(() -> Activity.create(PROJECT_ID, tooLong, FIGURES))
+            assertThatThrownBy(() -> Activity.create(PROJECT_ID, tooLong, FIGURES, SCHEDULE))
                     .isInstanceOf(InvalidActivityException.class)
                     .hasMessageContaining(String.valueOf(Activity.NAME_MAX_LENGTH));
         }
@@ -133,10 +135,10 @@ class ProjectAndActivityTest {
         void rejectsMissingProjectOrFigures() {
             // Toda invariante del dominio viaja como DomainException: el manejador REST la traduce
             // a un 400 con formato RFC 7807, cosa que no puede hacer con una NullPointerException.
-            assertThatThrownBy(() -> Activity.create(null, "Diseño", FIGURES))
+            assertThatThrownBy(() -> Activity.create(null, "Diseño", FIGURES, SCHEDULE))
                     .isInstanceOf(InvalidActivityException.class)
                     .hasMessageContaining("proyecto");
-            assertThatThrownBy(() -> Activity.create(PROJECT_ID, "Diseño", null))
+            assertThatThrownBy(() -> Activity.create(PROJECT_ID, "Diseño", null, SCHEDULE))
                     .isInstanceOf(InvalidActivityException.class)
                     .hasMessageContaining("cifras");
         }
@@ -147,9 +149,11 @@ class ProjectAndActivityTest {
 
         @Test
         void ofUsesTheStatusDescription() {
-            final IndexInterpretation interpretation = IndexInterpretation.of(PerformanceStatus.ON_SCHEDULE);
+            final IndexInterpretation interpretation =
+                    IndexInterpretation.of(PerformanceStatus.ON_SCHEDULE, DeviationSeverity.NONE);
 
             assertThat(interpretation.status()).isEqualTo(PerformanceStatus.ON_SCHEDULE);
+            assertThat(interpretation.severity()).isEqualTo(DeviationSeverity.NONE);
             assertThat(interpretation.message()).isEqualTo(PerformanceStatus.ON_SCHEDULE.description());
         }
 
@@ -158,14 +162,30 @@ class ProjectAndActivityTest {
             final IndexInterpretation interpretation = IndexInterpretation.notApplicable("sin divisor");
 
             assertThat(interpretation.status()).isEqualTo(PerformanceStatus.NOT_APPLICABLE);
+            assertThat(interpretation.severity()).isEqualTo(DeviationSeverity.NOT_APPLICABLE);
             assertThat(interpretation.message()).isEqualTo("sin divisor");
         }
 
         @Test
         void rejectsNullStatusOrMessage() {
-            assertThatThrownBy(() -> new IndexInterpretation(null, "m"))
+            assertThatThrownBy(() -> new IndexInterpretation(null, DeviationSeverity.NONE, "m"))
                     .isInstanceOf(InvalidIndicatorException.class);
-            assertThatThrownBy(() -> new IndexInterpretation(PerformanceStatus.ON_BUDGET, null))
+            assertThatThrownBy(() -> new IndexInterpretation(PerformanceStatus.ON_BUDGET, null, "m"))
+                    .isInstanceOf(InvalidIndicatorException.class);
+            assertThatThrownBy(() -> new IndexInterpretation(
+                    PerformanceStatus.ON_BUDGET, DeviationSeverity.NONE, null))
+                    .isInstanceOf(InvalidIndicatorException.class);
+        }
+
+        @Test
+        @DisplayName("un índice no aplicable exige severidad no aplicable, y al revés")
+        void notApplicableStatusAndSeverityGoTogether() {
+            assertThatThrownBy(() -> new IndexInterpretation(
+                    PerformanceStatus.NOT_APPLICABLE, DeviationSeverity.NONE, "m"))
+                    .isInstanceOf(InvalidIndicatorException.class)
+                    .hasMessageContaining("no aplicable");
+            assertThatThrownBy(() -> new IndexInterpretation(
+                    PerformanceStatus.ON_BUDGET, DeviationSeverity.NOT_APPLICABLE, "m"))
                     .isInstanceOf(InvalidIndicatorException.class);
         }
     }

@@ -1,6 +1,7 @@
 package com.trycore.evm.adapter.in.rest.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -55,5 +56,16 @@ public record EvmIndicatorsResponse(
         IndexInterpretationResponse costStatus,
 
         @Schema(description = "Interpretación del índice de desempeño de cronograma (SPI)")
-        IndexInterpretationResponse scheduleStatus) {
+        IndexInterpretationResponse scheduleStatus,
+
+        @Schema(
+                description = "Fórmula con la que se calcularon los campos de EAC y VAC de este nivel",
+                example = "BAC_OVER_CPI")
+        String estimateFormula,
+
+        @Schema(description = "Las tres estimaciones estándar del costo final sobre estas mismas cifras")
+        List<CompletionEstimateResponse> estimates,
+
+        @Schema(description = "Umbrales con los que se clasificó la severidad de las desviaciones")
+        PerformanceThresholdsResponse thresholds) {
 }

@@ -3,6 +3,12 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    /* Obligatorio para que la semántica de nulos del contrato signifique algo: el API devuelve
+       costPerformanceIndex, estimateAtCompletion y varianceAtCompletion como null cuando el
+       indicador no está definido. Sin strictNullChecks el compilador aceptaría cpi.toFixed(4) y
+       la aplicación reventaría en tiempo de ejecución con una actividad de costo real cero. */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
@@ -15,6 +21,7 @@
     "module": "preserve"
   },
   "angularCompilerOptions": {
+    "strictTemplates": true,
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true

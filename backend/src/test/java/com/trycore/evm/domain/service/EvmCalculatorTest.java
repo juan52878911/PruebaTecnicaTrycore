@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
 import com.trycore.evm.domain.model.EvmIndicators;
 import com.trycore.evm.domain.model.PerformanceStatus;
 import com.trycore.evm.domain.model.Project;
@@ -33,7 +34,7 @@ class EvmCalculatorTest {
     }
 
     private static Activity activity(final Long id, final String name, final ActivityFigures figures) {
-        return new Activity(id, PROJECT_ID, name, figures, null, null);
+        return new Activity(id, PROJECT_ID, name, figures, ActivitySchedule.empty(), null, null);
     }
 
     @Nested

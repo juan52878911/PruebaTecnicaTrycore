@@ -28,3 +28,8 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+evm:
+  cors:
+    # Orígenes del frontend en local: ng serve (4200) y el build de producción servido aparte (4300).
+    allowed-origins: http://localhost:4200,http://localhost:4300

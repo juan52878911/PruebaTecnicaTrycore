@@ -17,6 +17,7 @@ import com.trycore.evm.application.port.out.ProjectRepositoryPort;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
 import com.trycore.evm.domain.model.PerformanceStatus;
 import com.trycore.evm.domain.model.Project;
 import com.trycore.evm.domain.model.ProjectEvmSummary;
@@ -63,7 +64,7 @@ class ProjectEvmServiceTest {
             final String actual, final String cost) {
         final ActivityFigures figures = new ActivityFigures(
                 new BigDecimal(budget), new BigDecimal(planned), new BigDecimal(actual), new BigDecimal(cost));
-        return new Activity(id, PROJECT_ID, name, figures, Instant.now(), Instant.now());
+        return new Activity(id, PROJECT_ID, name, figures, ActivitySchedule.empty(), Instant.now(), Instant.now());
     }
 
     @Test

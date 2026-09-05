@@ -3,8 +3,8 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.0.0. El backend está completo y verificado. El frontend es por ahora un esqueleto de Angular: la
-fase de dashboard se aborda después, y así se declara en el documento de proceso.
+Versión 1.1.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
 
@@ -31,7 +31,7 @@ funciona igual sobre el cronograma.
 | --- | --- |
 | Backend | Java 21, Spring Boot 4.1, Maven, arquitectura hexagonal |
 | Base de datos | PostgreSQL 16 en `docker-compose`, migraciones con Flyway |
-| Frontend | Angular 22 (esqueleto en esta fase) |
+| Frontend | Angular 22 sin zone.js, componentes standalone, signals y Axios |
 | Pruebas | JUnit 5, AssertJ, Mockito, ArchUnit, Testcontainers, JaCoCo |
 | Documentación del API | OpenAPI 3 con springdoc, en `/api-docs` y `/swagger-ui` |
 | Calidad | Checkstyle bloqueante en los tres perfiles, ESLint y Prettier en el frontend |
@@ -87,13 +87,65 @@ el PostgreSQL local con el perfil `prod`, que toma su configuración de las vari
 ### Frontend
 
 ```bash
-cd frontend
-npm ci
-npm start
+./scripts/run-frontend.sh
 ```
 
-Arranca en el puerto 4200 con un proxy que envía `/api` al backend. Por ahora solo muestra una página vacía:
-la estructura está lista y la funcionalidad llega en la fase siguiente.
+Arranca en <http://localhost:4200>. Necesita el backend en marcha: le habla directamente a
+<http://localhost:8080/api/v1> por CORS, no por proxy. El origen está declarado en
+`evm.cors.allowed-origins` del perfil `dev`.
+
+Para verificarlo entero (formato, lint, pruebas y build de producción):
+
+```bash
+./scripts/run-frontend-tests.sh
+```
+
+Y para servir el build de producción desde su propio origen, en el puerto 4300, que es lo que ejercita
+CORS de verdad:
+
+```bash
+./scripts/run-frontend-prod.sh
+```
+
+#### Configuración por entorno
+
+El cliente HTTP es una única instancia de Axios construida a partir de `API_CONFIG`, un token de
+inyección. Los valores por entorno viven en `frontend/src/environments/` y Angular sustituye el fichero en
+tiempo de compilación:
+
+| Entorno | Fichero | Raíz del API | Espera máxima |
+| --- | --- | --- | --- |
+| Desarrollo | `environment.ts` | `http://localhost:8080/api/v1` | 10 s |
+| Producción | `environment.production.ts` | `http://localhost:8080/api/v1` | 15 s |
+| Pruebas | `environment.testing.ts` | `http://localhost/api/v1` | 100 ms |
+
+En las pruebas la configuración se sustituye por inyector, que es lo que hace falta la mayor parte de las
+veces: `TestBed.configureTestingModule({ providers: provideApiTesting({ routes }) })` monta la instancia
+real, con sus interceptores, sobre un transporte falso.
+
+`axios` se importa en un solo fichero, `core/api/axios-instance.ts`, y una regla de ESLint lo impone.
+Cambiar de cliente HTTP sería reescribir ese fichero y sus dos interceptores, sin tocar ninguna vista.
+
+## Arquitectura del frontend
+
+```
+frontend/src/app/
+  core/api/        Cliente Axios, modelos del contrato, normalización de errores RFC 7807
+  core/preferences Preferencias del usuario, persistidas en el navegador
+  core/format      Formato de dinero, índices, porcentajes y fechas
+  core/labels      Siglas del estándar o español claro, conmutables en Ajustes
+  core/status      Traducción del estado del servidor a color y a nivel de riesgo
+  shared/ui        Componentes presentacionales: tarjetas, curva S, diálogos, avisos
+  features/        Una carpeta por vista, con su store
+  layout/          Marco y navegación
+```
+
+Sin zone.js: la detección de cambios la dispara la escritura de un signal, no la resolución de una
+promesa. Las lecturas usan `resource()` y las escrituras métodos `async` que escriben signals; ni una
+promesa cruza hacia el componente.
+
+Un indicador que el servidor devuelve como `null` se pinta siempre como `N/A`, nunca como cero. Un índice
+que vale cero sí se pinta como cero, porque ese índice existe.
 
 ## Perfiles Maven
 
@@ -112,9 +164,10 @@ La única fuente del esquema es Flyway, en `backend/src/main/resources/db/migrat
 `docker-compose` arranca vacío y la aplicación crea las tablas al iniciarse. Los datos de demostración son una
 migración repetible que solo carga el perfil `dev`.
 
-`db/init.sql` es el script de inicialización que pide el enunciado: crea el mismo esquema y los mismos datos
-para quien prefiera preparar la base a mano, por ejemplo con `psql -U evm -d evm -f db/init.sql`. No lo monta
-`docker-compose` a propósito, para que no existan dos caminos que puedan divergir en silencio.
+`db/init.sql` es el script de inicialización que pide el enunciado, para quien prefiera preparar la base a
+mano con `psql -U evm -d evm -f db/init.sql`. No se edita: lo genera `./scripts/build-init-sql.sh`
+concatenando las migraciones y la semilla, de modo que no pueda divergir del esquema real. `docker-compose`
+no lo monta a propósito, para que exista un solo camino de inicialización efectivo.
 
 ## API
 
@@ -124,11 +177,14 @@ especificación OpenAPI.
 
 | Método | Ruta | Respuesta |
 | --- | --- | --- |
-| GET, POST | `/projects` | 200, 201 |
+| GET, POST | `/projects` | 200, 201. `?includeIndicators=true` añade contador, cifras e indicadores por proyecto |
 | GET, PUT, DELETE | `/projects/{id}` | 200, 200, 204 |
-| GET | `/projects/{id}/evm` | 200, análisis consolidado con cada actividad |
+| GET | `/projects/{id}/evm` | 200, análisis consolidado con cada actividad. `?eacFormula=` elige la fórmula titular |
 | GET, POST | `/projects/{id}/activities` | 200, 201 |
-| PUT, DELETE | `/projects/{id}/activities/{activityId}` | 200, 204 |
+| GET, PUT, DELETE | `/projects/{id}/activities/{activityId}` | 200, 200, 204 |
+| GET, POST | `/projects/{id}/measurements` | 200, 201 |
+| GET, DELETE | `/projects/{id}/measurements/{measurementId}` | 200, 204 |
+| GET | `/projects/{id}/timeline` | 200, serie temporal lista para graficar |
 
 Ejemplo con el proyecto de demostración:
 
@@ -155,6 +211,34 @@ curl -s http://localhost:8080/api/v1/projects/1/evm
 }
 ```
 
+## Histórico y series temporales
+
+Un **corte** (`measurement`) es la fotografía de un proyecto en una fecha: las cuatro cifras base (BAC, PV, EV
+y AC) del proyecto y de cada una de sus actividades, con el nombre que cada actividad tenía entonces. No se
+envían cifras al crearlo, se toman de las actividades tal como están en ese momento, y la fecha no puede ser
+futura: un corte documenta lo que ya ocurrió, no una previsión.
+
+**Los índices no se guardan.** Un corte almacena solo cifras; el CPI, el SPI, el EAC y sus interpretaciones se
+calculan al leer, con el mismo `EvmCalculator` que usa el análisis en vivo. Así el histórico no puede
+desincronizarse del cálculo vigente: si mañana se corrige una fórmula, las mediciones ya tomadas se leen con la
+fórmula corregida en lugar de arrastrar un número obsoleto que nadie podría reproducir.
+
+Un corte es inmutable: no hay operación de actualización. Para rectificarlo se borra y se vuelve a tomar. Dos
+cortes del mismo proyecto en la misma fecha se rechazan con 409, porque romperían el orden de la gráfica. Las
+líneas por actividad no tienen clave foránea hacia `activities` a propósito: la actividad puede eliminarse
+después y el registro histórico debe sobrevivir.
+
+Uso típico: se registra un corte al cierre de cada semana y se pide `GET /projects/{id}/timeline`, que devuelve
+un punto por corte, ordenado cronológicamente y con los indicadores ya calculados e interpretados. Es la
+respuesta que consume directamente una gráfica de líneas, sin que el cliente reimplemente ninguna fórmula.
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/projects/1/measurements \
+  -H 'Content-Type: application/json' \
+  -d '{"cutoffDate":"2026-08-31","notes":"Cierre de la semana 1"}'
+curl -s http://localhost:8080/api/v1/projects/1/timeline
+```
+
 ## Decisiones de cálculo
 
 - Todo se calcula con `BigDecimal`. Los importes tienen escala 2, los índices escala 4, redondeo `HALF_UP`.
@@ -162,12 +246,45 @@ curl -s http://localhost:8080/api/v1/projects/1/evm
 - **Un índice cuyo divisor es cero no vale cero: no existe.** Con AC = 0 el CPI se devuelve como `null` con
   estado `NOT_APPLICABLE` y su motivo, en lugar de un cero que se leería como el peor desempeño posible.
   Lo mismo con el SPI cuando PV = 0. EAC y VAC heredan esa indefinición.
-- **EAC se calcula como BAC x AC / EV con precisión completa**, no dividiendo por el CPI ya redondeado. Es la
-  misma fórmula, pero usar el CPI a cuatro decimales daría 149.992,50 donde el resultado exacto es 150.000.
+- **El estado es un hecho y la severidad es una política.** Un CPI de 0,9857 está `OVER_BUDGET`, porque se
+  gastó más de lo que se ganó, y su severidad es `WARNING`, porque la desviación cabe dentro de la tolerancia.
+  Ensanchar el estado hasta cubrir la tolerancia diría algo falso y dejaría una variación de costo negativa
+  contradiciendo al propio estado. Los umbrales usados viajan en la respuesta para que ningún cliente los
+  repita por su cuenta.
+- **La regla de medición gobierna el valor planificado además del ganado.** SV = EV - PV y SPI = EV / PV solo
+  significan algo si ambos términos se miden con la misma vara. Un paquete de todo o nada que va al día pero no
+  ha cerrado, medido con la regla solo en el lado ganado, saldría con una desviación de -50.000 y un SPI de
+  cero: una alarma falsa fabricada por restar cifras que no son comparables.
+- **Se devuelven las tres fórmulas estándar del EAC**, cada una con su supuesto sobre el futuro, porque el
+  rango entre ellas informa más que una cifra suelta. La tercera se desarrolla algebraicamente en vez de
+  multiplicar índices ya redondeados, que darían 172.494,38 donde el resultado exacto es 172.500,00.
 - **El consolidado del proyecto suma BAC, PV, EV y AC y calcula los índices sobre las sumas.** No promedia los
   índices de las actividades: dos actividades con CPI 2,0 y 0,5 consolidan en 1,0, no en 1,25.
 - Las cifras se rechazan si exceden la precisión con la que el dominio trabaja, en vez de redondearse en
   silencio. Aceptar un 33,333 % y guardar 33,33 haría que el API confirmara datos que no almacenó.
+
+## Reglas de medición del avance
+
+Cada actividad declara cómo reconoce valor. Es un campo opcional: sin él se comporta como siempre.
+
+| Regla | Qué reconoce | Para qué sirve |
+| --- | --- | --- |
+| `PERCENT_COMPLETE` | El porcentaje declarado tal cual | Cuando el avance se puede estimar de forma continua |
+| `FIXED_0_100` | Nada hasta cerrar, y entonces todo | Actividades cortas donde un avance parcial no vale |
+| `FIXED_50_50` | La mitad al iniciar, el resto al cerrar | Cuando no se quiere estimar el avance intermedio |
+| `WEIGHTED_MILESTONES` | El avance derivado de los hitos cumplidos | Trabajo con entregables verificables |
+
+Una actividad se considera iniciada por su fecha real de inicio **o** por cualquier avance declarado. Esa
+primera señal es la que importa en la regla de mitad y mitad: quien la usa deja el porcentaje a cero hasta
+cerrar, así que deducir el arranque del porcentaje anularía el método justo en su escenario.
+
+En las actividades medidas por hitos, **el avance real es una proyección de los pesos cumplidos**, no un dato
+independiente. Los pesos deben sumar exactamente 100, y el conjunto viaja dentro de la petición de la actividad
+con semántica de reemplazo total: una invariante sobre una colección solo es exigible si la colección se
+escribe de forma atómica.
+
+La respuesta trae los porcentajes efectivos que la regla reconoció, para que un valor ganado de cero sobre un
+avance declarado del 65 % se lea como la regla actuando y no como un fallo.
 
 ## Arquitectura
 
@@ -176,7 +293,8 @@ Hexagonal, con las reglas de dependencia verificadas por un test de ArchUnit que
 ```
 com.trycore.evm
   domain/        modelo y cálculo EVM. Sin Spring, sin JPA, sin Jackson.
-    model/       Project, Activity, ActivityFigures, EvmIndicators, ProjectEvmSummary
+    model/       Project, Activity, ActivityFigures, EvmIndicators, ProjectEvmSummary,
+                 ProjectMeasurement, MeasurementPoint, ProjectTimeline
     service/     EvmCalculator
     exception/   excepciones de negocio
   application/   casos de uso. Tampoco depende de ningún framework.
@@ -194,17 +312,25 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-90 tests: 67 unitarios y 23 de integración. Los valores esperados de cada cálculo EVM están derivados a mano
-de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
+269 tests: 135 en el backend (97 unitarios y 38 de integración) y 134 en el frontend. Los valores esperados de
+cada cálculo EVM están derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la
+salida del código.
 
 | Tipo | Dónde | Qué cubre |
 | --- | --- | --- |
 | Unitarios | `backend/src/test/java` | Cálculo EVM con sus casos borde, invariantes del modelo, casos de uso con dobles de los puertos |
 | Arquitectura | `backend/src/test-integration/java` | Reglas de dependencia entre capas con ArchUnit |
-| Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real |
+| Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real, incluida la política CORS |
+| Frontend | `frontend/src/app/**/*.spec.ts` | Normalización de errores, cliente Axios, servicios del API, stores, formato, umbrales y componentes |
 
-Casos borde cubiertos: AC = 0, PV = 0, avance real 0, BAC = 0, proyecto sin actividades, porcentajes fuera de
-rango, precisión mayor que la almacenable e importes que no caben en la columna.
+Los tests del frontend no simulan el módulo de axios: sustituyen su adaptador de transporte, de modo que la
+petición recorre la tubería real, interceptores incluidos, sin levantar ningún servidor y sin añadir
+dependencias.
+
+Casos borde cubiertos: AC = 0, PV = 0, avance real 0, BAC = 0, proyecto sin actividades, proyecto sin cortes,
+fecha de corte futura o repetida, porcentajes fuera de rango, precisión mayor que la almacenable, importes que
+no caben en la columna, almacenamiento del navegador bloqueado o con datos corruptos, y respuesta de error que
+no tiene forma de RFC 7807.
 
 ## Documento de proceso
 

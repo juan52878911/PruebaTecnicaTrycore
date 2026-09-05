@@ -10,6 +10,8 @@ import com.trycore.evm.domain.exception.ProjectNotFoundException;
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
+import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.ProgressMeasurement;
 import com.trycore.evm.domain.service.EvmCalculator;
 
 /**
@@ -32,16 +34,27 @@ public final class ActivityService implements ActivityUseCases {
     }
 
     @Override
-    public ActivityEvm create(final Long projectId, final String name, final ActivityFigures figures) {
+    public ActivityEvm create(
+            final Long projectId,
+            final String name,
+            final ActivityFigures figures,
+            final ActivitySchedule schedule,
+            final ProgressMeasurement progress) {
         requireProjectExists(projectId);
-        return withIndicators(activityRepository.save(Activity.create(projectId, name, figures)));
+        return withIndicators(
+                activityRepository.save(Activity.create(projectId, name, figures, schedule, progress)));
     }
 
     @Override
     public ActivityEvm update(
-            final Long projectId, final Long activityId, final String name, final ActivityFigures figures) {
+            final Long projectId,
+            final Long activityId,
+            final String name,
+            final ActivityFigures figures,
+            final ActivitySchedule schedule,
+            final ProgressMeasurement progress) {
         final Activity existing = findActivity(projectId, activityId);
-        return withIndicators(activityRepository.save(existing.update(name, figures)));
+        return withIndicators(activityRepository.save(existing.update(name, figures, schedule, progress)));
     }
 
     @Override
@@ -51,13 +64,18 @@ public final class ActivityService implements ActivityUseCases {
     }
 
     @Override
+    public ActivityEvm get(final Long projectId, final Long activityId) {
+        return withIndicators(findActivity(projectId, activityId));
+    }
+
+    @Override
     public List<ActivityEvm> listByProject(final Long projectId) {
         requireProjectExists(projectId);
         return activityRepository.findAllByProjectId(projectId).stream().map(this::withIndicators).toList();
     }
 
     private ActivityEvm withIndicators(final Activity activity) {
-        return new ActivityEvm(activity, evmCalculator.calculate(activity.figures()));
+        return evmCalculator.evaluate(activity);
     }
 
     private void requireProjectExists(final Long projectId) {

@@ -62,8 +62,9 @@ class ApplicationStartsIT extends AbstractRestIntegrationTest {
     }
 
     @Test
-    void apiDocsDescribesTheTenContractOperations() throws Exception {
-        final int expectedOperationCount = 10;
+    void apiDocsDescribesEveryContractOperation() throws Exception {
+        // 5 de proyectos, 1 de análisis EVM, 5 de actividades, 4 del histórico y 1 de serie temporal.
+        final int expectedOperationCount = 16;
         final String body = restTemplate.getForEntity("/api-docs", String.class).getBody();
 
         final JsonNode paths = new ObjectMapper().readTree(body).path("paths");

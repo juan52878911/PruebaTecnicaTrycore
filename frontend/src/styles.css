@@ -1,1 +1,249 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Sistema visual de Valora.
+ *
+ * Los valores salen del Design System del producto. Se declaran como variables CSS en :root para
+ * que ningún componente repita un hexadecimal suelto: cambiar el acento es cambiar una línea.
+ */
+
+:root {
+  /* Superficies */
+  --canvas: #08080a;
+  --screen: #0b0b0c;
+  --card: #151517;
+  --card-nested: #1b1b1e;
+  --control: #161618;
+  --control-hover: #1e1e21;
+  --control-active: #26262b;
+  --nav-mobile: #101012;
+  --avatar: #2a2130;
+
+  /* Acento y series de dato, con significado fijo */
+  --accent: #8b6fe0;
+  --accent-light: #a98bff;
+  --accent-text: #c6aaff;
+  --pv: #61616d;
+  --ac: #c4bc72;
+
+  /* Estados semánticos */
+  --danger: #ff8a6b;
+  --warning: #e7e08a;
+  --ok: #7ee0a0;
+  --neutral: rgba(255, 255, 255, 0.45);
+
+  --danger-soft: rgba(255, 138, 107, 0.12);
+  --warning-soft: rgba(231, 224, 138, 0.12);
+  --ok-soft: rgba(126, 224, 160, 0.12);
+  --neutral-soft: rgba(255, 255, 255, 0.06);
+  --accent-soft: rgba(139, 111, 224, 0.14);
+
+  /* Texto */
+  --text: #ffffff;
+  --text-strong: rgba(255, 255, 255, 0.85);
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --text-dim: rgba(255, 255, 255, 0.42);
+  --text-faint: rgba(255, 255, 255, 0.3);
+
+  /* Bordes y separadores */
+  --border-card: rgba(255, 255, 255, 0.06);
+  --border-control: rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --divider: rgba(255, 255, 255, 0.05);
+  --focus-ring: rgba(139, 111, 224, 0.55);
+
+  /* Radios */
+  --radius-input: 12px;
+  --radius-tile: 16px;
+  --radius-card: 22px;
+  --radius-phone: 38px;
+  --radius-pill: 999px;
+
+  /* Ritmo */
+  --gap-inner: 12px;
+  --gap-grid: 18px;
+  --pad-card: 24px;
+  --gap-section: 34px;
+
+  /* Elevación */
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.6);
+
+  /* Movimiento */
+  --motion-veil: 160ms ease;
+  --motion-border: 220ms ease;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--screen);
+  color: var(--text);
+  font-family:
+    Manrope,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-light);
+}
+
+a:hover {
+  color: var(--accent-text);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* El foco debe verse siempre: la navegación por teclado es parte del contrato de accesibilidad. */
+:focus-visible {
+  outline: 2px solid var(--accent-light);
+  outline-offset: 2px;
+}
+
+/* Cifras alineadas en columna: sin esto las tablas de importes bailan. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.tone-success {
+  color: var(--ok);
+}
+.tone-warning {
+  color: var(--warning);
+}
+.tone-danger {
+  color: var(--danger);
+}
+.tone-neutral {
+  color: var(--neutral);
+}
+
+/*
+ * Movimiento. Los nombres y las curvas salen del diseño publicado: entrada de vista, aparición de
+ * modal, subida de hoja inferior, brillo de esqueleto y entrada de aviso.
+ */
+@keyframes vFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vPop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vPopOut {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@keyframes vSheet {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes vSheetOut {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes vShimmer {
+  0% {
+    background-position: -320px 0;
+  }
+  100% {
+    background-position: 320px 0;
+  }
+}
+
+@keyframes vToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Entrada de vista: la usa cada página al montarse, como en el diseño. */
+.v-rise {
+  animation: vRise 0.26s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* Quien pide menos movimiento no debería recibir ninguno. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
