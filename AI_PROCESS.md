@@ -2029,3 +2029,33 @@ Estas son rodeos que ya están en el código y que un revisor va a ver.
 ```text
 ya puedes acceder al diseño
 ```
+
+### 2026-09-04 22:49 -05 - Claude Code
+
+```text
+La alineación de los contenedores no es la correcta. Ademas añade la animación de el navbar que desplaza el fondo blanco a lo que seleccione, el Hola de nuevo no existe y los tamaños entre pantallas son diferentes haciendo que halla un efecto de movimiento extraño. Ademas el menu de seleccion de proyectos no es el mismo del diseño. No existe la vista de actividades ni los modales para crear nuevas actividades, avances en las mismas.
+```
+
+### 2026-09-04 23:08 -05 - Claude Code
+
+```text
+Ya publique el diseño en un artifact, acoplate al 100% a este sitio y su version mobile https://claude.ai/code/artifact/0bdd87dc-f617-4f1e-993f-ea29fb6a6ebd Pixel perfect y las animaciones que estan en el sitio
+```
+
+### 2026-09-04 23:15 -05 - Claude Code
+
+```text
+Deja de acabar con el proceso del navegador. Solo acaba el proceso del front
+```
+
+### 2026-09-04 23:24 -05 - Claude Code
+
+```text
+si, sigue con lo que falta
+```
+
+### 2026-09-04 23:36 -05 - Claude Code
+
+```text
+mergea el PR a develop
+```

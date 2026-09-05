@@ -23,5 +23,13 @@ public record ProjectRequest(
                 max = Project.DESCRIPTION_MAX_LENGTH,
                 message = "La descripción del proyecto no puede superar "
                         + Project.DESCRIPTION_MAX_LENGTH + " caracteres")
-        String description) {
+        String description,
+
+        @Schema(description = "Responsable del proyecto; se omite si todavía no hay ninguno asignado",
+                example = "Alicia Ramos")
+        @Size(
+                max = Project.MANAGER_MAX_LENGTH,
+                message = "El responsable del proyecto no puede superar "
+                        + Project.MANAGER_MAX_LENGTH + " caracteres")
+        String manager) {
 }

@@ -1,5 +1,6 @@
 package com.trycore.evm.adapter.out.persistence;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,4 +12,6 @@ interface ActivityJpaRepository extends JpaRepository<ActivityJpaEntity, Long> {
     Optional<ActivityJpaEntity> findByIdAndProjectId(Long id, Long projectId);
 
     List<ActivityJpaEntity> findAllByProjectId(Long projectId);
+
+    List<ActivityJpaEntity> findAllByProjectIdIn(Collection<Long> projectIds);
 }

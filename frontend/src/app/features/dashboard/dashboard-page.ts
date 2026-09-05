@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 
 import { MeasurementRequest } from '../../core/api/models/measurement';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { ViewTransition } from '../../core/layout/view-transition';
 import {
   formatCompact,
   formatDate,
@@ -24,17 +25,18 @@ import { costTone, scheduleTone } from '../../core/status/status-tone';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { IndexCard } from '../../shared/ui/index-card';
 import { KpiCard } from '../../shared/ui/kpi-card';
+import { ChipButton } from '../../shared/ui/chip-button';
 import { KpiSkeleton } from '../../shared/ui/kpi-skeleton';
+import { PageHeader } from '../../shared/ui/page-header';
 import { OverallStatus } from '../../shared/ui/overall-status';
 import { SCurve } from '../../shared/ui/s-curve';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
-import { Dialog } from '../../shared/ui/dialog';
 import { MeasurementDialog } from '../evm/measurement-dialog';
 import { ProjectEvmStore } from '../evm/project-evm-store';
-import { ProjectPicker } from '../evm/project-picker';
-import { ProjectsStore } from '../projects/projects-store';
+import { PickerOption, ProjectPicker } from '../evm/project-picker';
+import { ProjectSummariesStore } from '../projects/project-summaries-store';
 
 const PERCENT_BASE = 100;
 
@@ -42,47 +44,52 @@ const PERCENT_BASE = 100;
 @Component({
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   providers: [ProjectEvmStore],
   imports: [
-    Dialog,
+    ChipButton,
     EmptyState,
     IndexCard,
     KpiCard,
     KpiSkeleton,
     MeasurementDialog,
     OverallStatus,
+    PageHeader,
     ProjectPicker,
     SCurve,
     Skeleton,
     StatusBadge,
   ],
   template: `
-    <header class="page-header">
-      <div>
-        <h1>Hola de nuevo <span>Alicia</span></h1>
-        <p class="lead">Análisis de Valor Ganado a la fecha del último corte.</p>
-      </div>
-      <div class="header-actions">
-        <button type="button" class="chip" (click)="pickerOpen.set(true)">
-          {{ projectName() }}
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
-          </svg>
-        </button>
-        @if (selectedId() && lastCutoffShort()) {
-          <button type="button" class="chip" (click)="measurementOpen.set(true)">
-            Corte: {{ lastCutoffShort() }}
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
-            </svg>
-          </button>
-        } @else if (selectedId()) {
-          <button type="button" class="chip" (click)="measurementOpen.set(true)">
-            Registrar corte
-          </button>
+    <app-page-header
+      title="Hola de nuevo"
+      subtitle="Alicia"
+      lead="Análisis de Valor Ganado a la fecha del último corte."
+    >
+      <div class="anchor">
+        <app-chip-button
+          [label]="projectName()"
+          [open]="pickerOpen()"
+          (pressed)="pickerOpen.set(!pickerOpen())"
+        />
+        @if (pickerOpen()) {
+          <app-project-picker
+            [options]="pickerOptions()"
+            [selectedId]="selectedId()"
+            (choose)="choose($event)"
+            (dismissed)="pickerOpen.set(false)"
+          />
         }
       </div>
-    </header>
+      @if (selectedId()) {
+        <app-chip-button
+          [label]="lastCutoffShort() ? 'Corte: ' + lastCutoffShort() : 'Registrar corte'"
+          [expandable]="!!lastCutoffShort()"
+          (pressed)="measurementOpen.set(true)"
+        />
+      }
+    </app-page-header>
 
     @if (evm.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
@@ -95,7 +102,7 @@ const PERCENT_BASE = 100;
         actionLabel="Elegir proyecto"
         (action)="pickerOpen.set(true)"
       />
-    } @else if (evm.isLoading() && !evm.summary()) {
+    } @else if (showSkeleton()) {
       <!-- El esqueleto reproduce la misma retícula y la forma de cada tarjeta, para que el
            contenido no salte al llegar. -->
       <div class="grid">
@@ -305,23 +312,6 @@ const PERCENT_BASE = 100;
       }
     }
 
-    @if (pickerOpen()) {
-      <app-dialog
-        title="Cambiar de proyecto"
-        subtitle="El panel y las actividades se recalculan al elegir."
-        (dismiss)="pickerOpen.set(false)"
-      >
-        <app-project-picker
-          [projects]="projects.projects()"
-          [selectedId]="selectedId()"
-          (choose)="choose($event)"
-        />
-        <ng-container dialogActions>
-          <button type="button" class="secondary" (click)="pickerOpen.set(false)">Cancelar</button>
-        </ng-container>
-      </app-dialog>
-    }
-
     @if (measurementOpen()) {
       <app-measurement-dialog
         [serverError]="evm.error()"
@@ -331,13 +321,8 @@ const PERCENT_BASE = 100;
     }
   `,
   styles: `
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 26px;
-      flex-wrap: wrap;
+    .anchor {
+      position: relative;
     }
     h1 {
       margin: 0;
@@ -577,7 +562,7 @@ const PERCENT_BASE = 100;
 })
 export class DashboardPage {
   protected readonly evm = inject(ProjectEvmStore);
-  protected readonly projects = inject(ProjectsStore);
+  protected readonly projects = inject(ProjectSummariesStore);
   protected readonly labels = inject(IndicatorLabels);
   private readonly selection = inject(SelectedProjectStore);
   private readonly preferences = inject(PreferencesStore);
@@ -594,6 +579,15 @@ export class DashboardPage {
   protected readonly measurementOpen = signal(false);
 
   protected readonly isDesktop = inject(BreakpointService).isDesktop;
+  private readonly transition = inject(ViewTransition);
+
+  /**
+   * El esqueleto cubre dos casos: los datos que aún no han llegado y la transición entre vistas.
+   * Sin el segundo, cambiar de pestaña con los datos ya en caché no da ningún acuse de recibo.
+   */
+  protected readonly showSkeleton = computed(
+    () => this.transition.isTransitioning() || (this.evm.isLoading() && !this.evm.summary()),
+  );
   protected readonly selectedId = this.selection.projectId;
 
   /** Fecha abreviada del último corte, para el distintivo de la cabecera. */
@@ -611,7 +605,18 @@ export class DashboardPage {
     return formatDate(last.cutoffDate, this.preferences.preferences().dateFormat);
   });
   protected readonly projectName = computed(
-    () => this.evm.summary()?.project.name ?? 'Panel del proyecto',
+    () => this.evm.summary()?.project.name ?? 'Elegir proyecto',
+  );
+
+  protected readonly pickerOptions = computed<readonly PickerOption[]>(() =>
+    this.projects.rows().map((row) => ({
+      project: row.project,
+      meta: row.meta,
+      costPerformanceIndex: row.costPerformanceIndex,
+      schedulePerformanceIndex: row.schedulePerformanceIndex,
+      costTone: row.costTone,
+      scheduleTone: row.scheduleTone,
+    })),
   );
 
   protected readonly plannedShare = computed(() => {
@@ -662,7 +667,7 @@ export class DashboardPage {
   constructor() {
     effect(() => {
       // Si no había selección guardada, o el proyecto guardado ya no existe, se toma el primero.
-      this.selection.ensureSelection(this.projects.projects());
+      this.selection.ensureSelection(this.projects.rows().map((row) => row.project));
       this.evm.select(this.selection.projectId());
     });
   }

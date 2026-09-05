@@ -134,6 +134,48 @@ CREATE INDEX IF NOT EXISTS idx_project_measurement_activities_measurement_id
     ON project_measurement_activities(measurement_id);
 
 -- =============================================================================
+-- V4__add_activity_measurement_method.sql
+-- =============================================================================
+
+-- Regla con la que cada actividad reconoce valor a partir de su avance.
+--
+-- La columna es obligatoria con valor por defecto, de modo que las filas existentes conservan el
+-- comportamiento de siempre: reconocer el porcentaje declarado tal cual. Esto importa además porque
+-- el seed de demostración es una migración repetible, y una columna obligatoria sin valor por
+-- defecto impediría reejecutarlo.
+--
+-- La restricción de valores admitidos acopla el esquema al enumerado del dominio: añadir una quinta
+-- regla exigirá una migración que la amplíe. Se asume a cambio de que la base rechace un valor que
+-- la aplicación no sabría interpretar.
+
+ALTER TABLE activities
+    ADD COLUMN IF NOT EXISTS measurement_method VARCHAR(24) NOT NULL DEFAULT 'PERCENT_COMPLETE';
+
+ALTER TABLE activities DROP CONSTRAINT IF EXISTS chk_activities_measurement_method;
+ALTER TABLE activities ADD CONSTRAINT chk_activities_measurement_method
+    CHECK (measurement_method IN ('PERCENT_COMPLETE', 'FIXED_0_100', 'FIXED_50_50', 'WEIGHTED_MILESTONES'));
+
+-- =============================================================================
+-- V6__add_project_manager.sql
+-- =============================================================================
+
+-- Responsable del proyecto: la persona a cuyo cargo está.
+--
+-- El tablero muestra "24 actividades · Alicia Ramos" bajo el nombre del proyecto, y hoy esa
+-- segunda mitad no existe en ninguna parte.
+--
+-- Migración aditiva: la columna admite nulos, así que las filas existentes siguen siendo válidas
+-- y el contrato del API no cambia para quien no envíe responsable. Admite nulos a propósito y no
+-- por comodidad: un proyecto puede registrarse antes de que se designe a quien lo dirige, y una
+-- columna obligatoria obligaría a inventar un nombre para poder crearlo.
+--
+-- Se usa ADD COLUMN IF NOT EXISTS por la misma razón que en las migraciones anteriores: la base
+-- local puede haber sido preparada a mano con db/init.sql y ambas rutas de inicialización deben
+-- poder convivir.
+
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS manager VARCHAR(120);
+
+-- =============================================================================
 -- R__demo_data.sql (datos de demostración, solo perfil dev)
 -- =============================================================================
 
@@ -391,13 +433,33 @@ WHERE p.name = 'Migración core bancario'
 -- deliberado, porque son datos de muestra y no de trabajo.
 -- ---------------------------------------------------------------------------------------------
 
+-- Las cifras de cada actividad de demostración vuelven a las del diseño. Cubre tanto la corrección
+-- de esta versión como la deriva de haber estado trasteando con el tablero: los datos de muestra
+-- deben poder recuperarse, o dejan de servir para comparar contra la referencia.
 UPDATE activities a
-SET actual_progress_percent = 79.70
-FROM projects p
+SET budget_at_completion = v.bac,
+    planned_progress_percent = v.planned,
+    actual_progress_percent = v.actual,
+    actual_cost = v.ac
+FROM projects p,
+     (VALUES
+         ('Obra civil — cimentación',   500000.00,  84.00,  79.70, 468000.00),
+         ('Montaje de estructuras',     475000.00,  80.00,  76.00, 352000.00),
+         ('Instalación eléctrica',      325000.00,  80.00,  74.00, 244000.00),
+         ('Pruebas y puesta en marcha', 400000.00,  45.00,  29.00, 194000.00),
+         ('Conexión a la red',          300000.00,   0.00,   0.00,      0.00),
+         ('Análisis de brechas',        200000.00, 100.00, 100.00, 185000.00),
+         ('Migración de datos',         380000.00,  70.00,  72.00, 262000.00),
+         ('Certificación regulatoria',  280000.00,  45.00,  46.00, 124900.00),
+         ('Diseño de la experiencia',    90000.00, 100.00,  95.00,  88000.00),
+         ('Desarrollo del portal',      160000.00,  51.00,  40.00,  72000.00),
+         ('Integración con el core',     90000.00,  10.00,   4.00,      0.00)
+     ) AS v(name, bac, planned, actual, ac)
 WHERE a.project_id = p.id
-  AND p.name = 'Planta Solar Norte'
-  AND a.name = 'Obra civil — cimentación'
-  AND a.actual_progress_percent <> 79.70;
+  AND p.name IN ('Planta Solar Norte', 'Migración core bancario', 'Portal de autogestión')
+  AND a.name = v.name
+  AND (a.budget_at_completion, a.planned_progress_percent, a.actual_progress_percent, a.actual_cost)
+      IS DISTINCT FROM (v.bac, v.planned, v.actual, v.ac);
 
 UPDATE project_measurements m
 SET budget_at_completion = 2000000.00
@@ -428,3 +490,22 @@ WHERE l.measurement_id = m.id
   AND l.activity_name = 'Obra civil — cimentación'
   AND m.cutoff_date >= DATE '2026-06-30'
   AND l.earned_value <> 398500.00;
+
+-- ---------------------------------------------------------------------------------------------
+-- Responsables de los proyectos de demostración
+--
+-- Se asignan con UPDATE y no en los INSERT de arriba porque esos INSERT llevan WHERE NOT EXISTS:
+-- en una base que ya cargó una versión anterior de la semilla no volverían a ejecutarse y los
+-- proyectos se quedarían sin responsable. El UPDATE solo escribe donde hace falta, así que es
+-- idempotente y no pisa una asignación posterior distinta de nula.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE projects p
+SET manager = v.manager
+FROM (VALUES
+    ('Planta Solar Norte',       'Alicia Ramos'),
+    ('Migración core bancario',  'Diego Muñoz'),
+    ('Portal de autogestión',    'Laura Peña')
+) AS v(name, manager)
+WHERE p.name = v.name
+  AND p.manager IS NULL;

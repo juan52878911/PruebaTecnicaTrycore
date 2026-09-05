@@ -1,5 +1,6 @@
 package com.trycore.evm.adapter.out.persistence;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +44,19 @@ public class ActivityPersistenceAdapter implements ActivityRepositoryPort {
     @Transactional(readOnly = true)
     public List<Activity> findAllByProjectId(final Long projectId) {
         return activityJpaRepository.findAllByProjectId(projectId).stream()
+                .map(ActivityPersistenceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Activity> findAllByProjectIdIn(final Collection<Long> projectIds) {
+        // Con la colección vacía no hay nada que preguntar: una consulta con IN () no devolvería
+        // filas y sí gastaría un viaje a la base de datos.
+        if (projectIds.isEmpty()) {
+            return List.of();
+        }
+        return activityJpaRepository.findAllByProjectIdIn(projectIds).stream()
                 .map(ActivityPersistenceMapper::toDomain)
                 .toList();
     }

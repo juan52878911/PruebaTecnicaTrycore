@@ -1,31 +1,63 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChildren,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter, map } from 'rxjs';
 
 import { SelectedProjectStore } from '../core/selection/selected-project-store';
 import { NAV_ITEMS } from './navigation';
 
-/** Barra de navegación de escritorio: píldora con la pestaña activa en blanco. */
+interface Indicator {
+  readonly left: number;
+  readonly width: number;
+  readonly visible: boolean;
+}
+
+const HIDDEN: Indicator = { left: 0, width: 0, visible: false };
+
+/**
+ * Barra de navegación de escritorio.
+ *
+ * La pastilla blanca es un único elemento que se desplaza y se estira hasta la pestaña activa, en
+ * lugar de un fondo por pestaña que aparece y desaparece. Se mide del DOM porque el ancho depende
+ * del texto, que cambia con el idioma de los rótulos.
+ */
 @Component({
   selector: 'app-top-nav',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink],
   template: `
     <nav aria-label="Navegación principal">
       <ul class="pill">
-        @for (item of items; track item.path) {
+        <li
+          class="marker"
+          aria-hidden="true"
+          [style.left.px]="indicator().left"
+          [style.width.px]="indicator().width"
+          [style.opacity]="indicator().visible ? 1 : 0"
+        ></li>
+        @for (item of items; track item.path; let index = $index) {
           <li>
             <a
+              #tab
               [routerLink]="item.path"
-              routerLinkActive="active"
-              #link="routerLinkActive"
-              [attr.aria-current]="link.isActive ? 'page' : null"
+              [class.active]="index === activeIndex()"
+              [attr.aria-current]="index === activeIndex() ? 'page' : null"
             >
               {{ item.label }}
             </a>
           </li>
         }
       </ul>
-      <a class="profile" routerLink="/perfil" routerLinkActive="active">
+      <a class="profile" routerLink="/perfil" [class.active]="isProfile()">
         <span class="avatar" aria-hidden="true">AR</span>
         <span class="identity">
           <span class="role">Administradora</span>
@@ -47,6 +79,7 @@ import { NAV_ITEMS } from './navigation';
       margin-bottom: var(--gap-section);
     }
     .pill {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -57,26 +90,40 @@ import { NAV_ITEMS } from './navigation';
       border: 1px solid var(--border-control);
       border-radius: var(--radius-pill);
     }
+    .marker {
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      border-radius: var(--radius-pill);
+      background: #fff;
+      transition:
+        left 320ms cubic-bezier(0.4, 0, 0.2, 1),
+        width 320ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 260ms ease;
+    }
     .pill a {
+      position: relative;
       display: block;
-      padding: 11px 20px;
+      padding: 11px 22px;
       border-radius: var(--radius-pill);
       font-size: 13.5px;
       font-weight: 600;
       color: var(--text-muted);
       text-decoration: none;
-      transition:
-        background var(--motion-veil),
-        color var(--motion-veil);
+      white-space: nowrap;
+      transition: color 260ms ease;
     }
-    .pill a:hover {
-      background: rgba(255, 255, 255, 0.06);
+    /* El velo del hover se queda por debajo de la pastilla, nunca sobre ella. */
+    .pill a:hover:not(.active) {
       color: var(--text);
     }
     .pill a.active {
-      background: #fff;
       color: var(--screen);
-      padding: 11px 22px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .marker {
+        transition: none;
+      }
     }
     .profile {
       display: flex;
@@ -143,6 +190,67 @@ export class TopNav {
   private readonly router = inject(Router);
 
   protected readonly items = NAV_ITEMS;
+
+  private readonly tabs = viewChildren<ElementRef<HTMLElement>>('tab');
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /**
+   * Pestaña activa.
+   *
+   * No se puede delegar en `routerLinkActive`: la ruta de una actividad es
+   * `/proyectos/:id/actividades`, que empieza por `/proyectos`, así que el enlace de Proyectos
+   * casaría por prefijo y se encenderían dos pestañas a la vez.
+   */
+  protected readonly activeIndex = computed(() => {
+    const url = this.url().split('?')[0] ?? '';
+    if (url.includes('/actividades')) {
+      return this.indexOf('/actividades');
+    }
+    if (url.startsWith('/proyectos')) {
+      return this.indexOf('/proyectos');
+    }
+    if (url.startsWith('/ajustes')) {
+      return this.indexOf('/ajustes');
+    }
+    if (url.startsWith('/panel')) {
+      return this.indexOf('/panel');
+    }
+    return -1;
+  });
+
+  protected readonly isProfile = computed(() => this.url().startsWith('/perfil'));
+
+  private readonly measured = signal<Indicator>(HIDDEN);
+  protected readonly indicator = this.measured.asReadonly();
+
+  constructor() {
+    effect(() => {
+      const index = this.activeIndex();
+      const elements = this.tabs();
+      const target = index < 0 ? undefined : elements[index];
+      if (target === undefined) {
+        this.measured.set(HIDDEN);
+        return;
+      }
+      const element = target.nativeElement;
+      this.measured.set({
+        left: element.offsetLeft,
+        width: element.offsetWidth,
+        visible: true,
+      });
+    });
+  }
+
+  private indexOf(path: string): number {
+    return this.items.findIndex((item) => item.path === path);
+  }
 
   /**
    * Abre el alta de actividad del proyecto activo.

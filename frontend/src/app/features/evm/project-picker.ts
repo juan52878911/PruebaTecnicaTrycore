@@ -1,26 +1,61 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { Project } from '../../core/api/models/project';
+import { UndefinedIndicator } from '../../core/api/models/evm';
+import { Tone } from '../../core/status/status-tone';
+import { IndexValue } from '../../shared/ui/index-value';
 
-/** Selector del proyecto activo, en forma de lista de opciones dentro de un diálogo. */
+/** Una opción del selector, con lo que hace falta para decidir sin salir del menú. */
+export interface PickerOption {
+  readonly project: Project;
+  readonly meta: string;
+  readonly costPerformanceIndex: UndefinedIndicator;
+  readonly schedulePerformanceIndex: UndefinedIndicator;
+  readonly costTone: Tone;
+  readonly scheduleTone: Tone;
+}
+
+/**
+ * Selector del proyecto activo, anclado bajo su píldora.
+ *
+ * Es un desplegable y no un diálogo centrado a propósito: cambiar de proyecto es una acción de
+ * navegación, no una decisión que merezca oscurecer la pantalla. Cada opción lleva su eficiencia
+ * en costo y en plazo, que es lo que permite elegir sin entrar a mirar.
+ */
 @Component({
   selector: 'app-project-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IndexValue],
+  host: {
+    '(document:keydown.escape)': 'dismissed.emit()',
+  },
   template: `
-    <ul class="options" role="radiogroup" aria-label="Proyecto activo">
-      @for (project of projects(); track project.id) {
+    <div class="veil" (click)="dismissed.emit()" aria-hidden="true"></div>
+    <ul class="menu" role="listbox" aria-label="Proyecto activo">
+      @for (option of options(); track option.project.id) {
         <li>
           <button
             type="button"
-            role="radio"
-            [class.selected]="project.id === selectedId()"
-            [attr.aria-checked]="project.id === selectedId()"
-            (click)="choose.emit(project.id)"
+            role="option"
+            [class.selected]="option.project.id === selectedId()"
+            [attr.aria-selected]="option.project.id === selectedId()"
+            (click)="choose.emit(option.project.id)"
           >
             <span class="radio" aria-hidden="true"></span>
             <span class="text">
-              <span class="name">{{ project.name }}</span>
-              <span class="meta">{{ project.description ?? 'Sin descripción' }}</span>
+              <span class="name">{{ option.project.name }}</span>
+              <span class="meta">{{ option.meta }}</span>
+            </span>
+            <span class="indices">
+              <span class="badge" [class]="'tone-' + option.costTone">
+                <app-index-value [value]="option.costPerformanceIndex" [tone]="option.costTone" />
+              </span>
+              <span class="badge" [class]="'tone-' + option.scheduleTone">
+                <app-index-value
+                  [value]="option.schedulePerformanceIndex"
+                  [tone]="option.scheduleTone"
+                />
+              </span>
             </span>
           </button>
         </li>
@@ -28,32 +63,46 @@ import { Project } from '../../core/api/models/project';
     </ul>
   `,
   styles: `
-    .options {
+    :host {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 20;
+    }
+    .veil {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+    }
+    .menu {
       list-style: none;
       margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      padding: 8px;
+      width: 340px;
+      max-width: calc(100vw - 32px);
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     button {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       width: 100%;
-      border: 1px solid transparent;
-      border-radius: 18px;
-      background: var(--card-nested);
-      padding: 14px 16px;
+      border: none;
+      border-radius: 14px;
+      background: none;
+      padding: 13px 14px;
       text-align: left;
       transition: background var(--motion-veil);
     }
     button:hover {
-      background: var(--control-active);
+      background: rgba(255, 255, 255, 0.05);
     }
     button.selected {
       background: rgba(139, 111, 224, 0.1);
-      border-color: rgba(139, 111, 224, 0.45);
     }
     .radio {
       flex: none;
@@ -67,6 +116,7 @@ import { Project } from '../../core/api/models/project';
       background: var(--screen);
     }
     .text {
+      flex: 1;
       display: flex;
       flex-direction: column;
       gap: 3px;
@@ -83,10 +133,33 @@ import { Project } from '../../core/api/models/project';
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .indices {
+      display: flex;
+      gap: 6px;
+      flex: none;
+    }
+    .badge {
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    .badge.tone-success {
+      background: var(--ok-soft);
+    }
+    .badge.tone-warning {
+      background: var(--warning-soft);
+    }
+    .badge.tone-danger {
+      background: var(--danger-soft);
+    }
+    .badge.tone-neutral {
+      background: var(--neutral-soft);
+    }
   `,
 })
 export class ProjectPicker {
-  readonly projects = input.required<readonly Project[]>();
+  readonly options = input.required<readonly PickerOption[]>();
   readonly selectedId = input<number | undefined>(undefined);
   readonly choose = output<number>();
+  readonly dismissed = output<void>();
 }
