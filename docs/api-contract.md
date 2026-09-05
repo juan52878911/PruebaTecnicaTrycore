@@ -43,6 +43,8 @@ Request de creación/edición (`ProjectRequest`):
   "plannedProgressPercent": 50.00,
   "actualProgressPercent": 40.00,
   "actualCost": 60000.00,
+  "derivedProgressPercent": null,
+  "milestones": [],
   "indicators": { "...": "ver EvmIndicators" }
 }
 ```
@@ -54,9 +56,19 @@ Request de creación/edición (`ActivityRequest`):
 | `name` | string | obligatorio, 1-120 caracteres |
 | `budgetAtCompletion` | decimal | obligatorio, >= 0 |
 | `plannedProgressPercent` | decimal | obligatorio, 0-100 |
-| `actualProgressPercent` | decimal | obligatorio, 0-100 |
+| `actualProgressPercent` | decimal | obligatorio y 0-100, **salvo** con `WEIGHTED_MILESTONES`, donde no se admite |
 | `actualCost` | decimal | obligatorio, >= 0 |
 | `measurementMethod` | enum | opcional; si se omite, `PERCENT_COMPLETE` |
+| `milestones` | lista | opcional; reemplaza entera la tabla de hitos. Obligatoria con `WEIGHTED_MILESTONES` |
+
+Cada elemento de `milestones` (`MilestoneRequest`):
+
+| Campo | Tipo | Reglas |
+| --- | --- | --- |
+| `name` | string | obligatorio, 1-120 caracteres |
+| `weightPercent` | decimal | obligatorio, > 0 y <= 100, hasta 2 decimales |
+| `achieved` | boolean | opcional; por defecto `false` |
+| `achievedOn` | fecha | opcional; solo admisible si `achieved` es `true` |
 
 ### Regla de medición del avance
 
@@ -87,6 +99,34 @@ Ejemplo con BAC 100.000, planificado 50 %, real 40 % y AC 60.000:
 | `PERCENT_COMPLETE` | 50.000 | 40.000 | -10.000 | 0,8000 |
 | `FIXED_0_100` | 0 | 0 | 0 | `null` |
 | `FIXED_50_50` | 50.000 | 50.000 | 0 | 1,0000 |
+
+### Hitos ponderados
+
+Con `WEIGHTED_MILESTONES` el avance real **deja de ser un dato de entrada**: se deriva de los hitos cumplidos
+y se materializa al guardar. La respuesta lo devuelve dos veces a propósito, en `derivedProgressPercent` y en
+`actualProgressPercent`, porque son el mismo número visto como cálculo y como cifra almacenada.
+
+Reglas del conjunto:
+
+- Los pesos de **todos** los hitos deben sumar exactamente 100. La suma se compara por valor, así que `20`,
+  `20.0` y `20.00` cuentan igual. Si no suman 100, la respuesta es 400 y el detalle dice la suma obtenida.
+- La lista viaja dentro de la actividad y **reemplaza entera** a la anterior. No hay endpoints por hito: una
+  invariante sobre un conjunto solo es exigible si el conjunto se escribe de forma atómica, y una actividad
+  medida por hitos debe tener hitos válidos desde el primer instante.
+- Enviar `actualProgressPercent` junto a esta regla es un 400 que nombra el campo, no un dato que se acepte y
+  se ignore en silencio.
+- Omitir `milestones` en una modificación **conserva** los hitos actuales. Cambiar de regla nunca los borra:
+  siguen viajando en la respuesta y es `measurementMethod` quien dice si gobiernan, para que el cliente pueda
+  atenuarlos en vez de ocultarlos. Volver a `WEIGHTED_MILESTONES` sí exige enviarlos de nuevo.
+- El orden de los hitos es su posición en la lista; no es un campo editable.
+
+Ejemplo con BAC 100.000, planificado 80 %, AC 75.000 y la tabla Diseño 20, Construcción 50 y Pruebas 30:
+
+| Hitos cumplidos | Avance derivado | EV | CPI | SPI | EAC |
+| --- | --- | --- | --- | --- | --- |
+| ninguno | 0,00 | 0 | 0,0000 | 0,0000 | `null` |
+| Diseño y Construcción | 70,00 | 70.000 | 0,9333 | 0,8750 | 107.142,86 |
+| los tres | 100,00 | 100.000 | 1,3333 | 1,2500 | 75.000,00 |
 
 ### EvmIndicators
 

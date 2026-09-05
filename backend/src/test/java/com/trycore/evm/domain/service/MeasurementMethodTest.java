@@ -13,6 +13,7 @@ import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivitySchedule;
 import com.trycore.evm.domain.model.EvmIndicators;
 import com.trycore.evm.domain.model.MeasurementMethod;
+import com.trycore.evm.domain.model.Milestone;
 import com.trycore.evm.domain.model.PerformanceStatus;
 import com.trycore.evm.domain.model.ProgressMeasurement;
 import com.trycore.evm.domain.model.Project;
@@ -33,6 +34,7 @@ class MeasurementMethodTest {
     private static final Long FIRST_ACTIVITY_ID = 10L;
     private static final Long SECOND_ACTIVITY_ID = 11L;
     private static final LocalDate STARTED_ON = LocalDate.parse("2026-01-10");
+    private static final String SINGLE_MILESTONE_NAME = "Entrega";
 
     private final EvmCalculator calculator = new EvmCalculator();
     private final Project project = new Project(PROJECT_ID, "Planta Solar Norte", null, null, null);
@@ -47,7 +49,19 @@ class MeasurementMethodTest {
             final MeasurementMethod method, final ActivityFigures figures, final ActivitySchedule schedule) {
         return new Activity(
                 FIRST_ACTIVITY_ID, PROJECT_ID, "Obra civil", figures, schedule,
-                new ProgressMeasurement(method), null, null);
+                measurementFor(method), null, null);
+    }
+
+    /**
+     * Medición válida para cada regla. La de hitos ponderados no admite una tabla vacía, así que
+     * se le da la mínima que suma 100: un único hito cumplido que lo reconoce todo.
+     */
+    private static ProgressMeasurement measurementFor(final MeasurementMethod method) {
+        if (method == MeasurementMethod.WEIGHTED_MILESTONES) {
+            return ProgressMeasurement.weightedMilestones(
+                    List.of(new Milestone(SINGLE_MILESTONE_NAME, new BigDecimal("100"), true, null)));
+        }
+        return new ProgressMeasurement(method);
     }
 
     private static Activity canonical(final MeasurementMethod method) {
