@@ -11,13 +11,17 @@ final class ProjectPersistenceMapper {
 
     static Project toDomain(final ProjectJpaEntity entity) {
         return new Project(
-                entity.getId(), entity.getName(), entity.getDescription(), entity.getCreatedAt(),
-                entity.getUpdatedAt());
+                entity.getId(), entity.getName(), entity.getDescription(), entity.getManager(),
+                entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
-    /** Copia el nombre y la descripción del proyecto de dominio a la entidad, para crear o actualizar. */
+    /**
+     * Copia el nombre, la descripción y el responsable del proyecto de dominio a la entidad, para
+     * crear o actualizar.
+     */
     static void copyForSave(final Project project, final ProjectJpaEntity entity) {
         entity.setName(project.name());
         entity.setDescription(project.description());
+        entity.setManager(project.manager());
     }
 }

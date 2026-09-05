@@ -20,10 +20,15 @@ verdad final es la especificación OpenAPI expuesta en `/api-docs` y `/swagger-u
   "id": 1,
   "name": "Plataforma de pagos",
   "description": "Proyecto de demostración para el análisis de Valor Ganado",
+  "manager": "Alicia Ramos",
   "createdAt": "2026-09-03T21:00:00Z",
   "updatedAt": "2026-09-03T21:00:00Z"
 }
 ```
+
+`manager` es el responsable del proyecto y admite `null`: un proyecto puede registrarse antes de que se designe
+a quien lo dirige. `PUT /projects/{id}` reemplaza el recurso completo, así que una petición sin `manager` deja
+el proyecto sin responsable.
 
 Request de creación/edición (`ProjectRequest`):
 
@@ -31,6 +36,37 @@ Request de creación/edición (`ProjectRequest`):
 | --- | --- | --- |
 | `name` | string | obligatorio, 1-120 caracteres |
 | `description` | string | opcional, hasta 500 caracteres |
+| `manager` | string | opcional, hasta 120 caracteres |
+
+#### Listado con indicadores
+
+`GET /projects?includeIndicators=true` añade a cada proyecto el contador de actividades, las sumas y los
+indicadores consolidados, para que una tabla con cifras no tenga que pedir `/projects/{id}/evm` una vez por
+proyecto. El servidor resuelve la pantalla entera en dos consultas: una de proyectos y una de actividades.
+
+```json
+{
+  "id": 1,
+  "name": "Plataforma de pagos",
+  "description": "...",
+  "manager": "Alicia Ramos",
+  "createdAt": "2026-09-03T21:00:00Z",
+  "updatedAt": "2026-09-03T21:00:00Z",
+  "activityCount": 5,
+  "totals": {
+    "budgetAtCompletion": 2000000.00,
+    "plannedValue": 1240000.00,
+    "earnedValue": 1116000.00,
+    "actualCost": 1258000.00
+  },
+  "indicators": { "...": "ver EvmIndicators" }
+}
+```
+
+Las tres propiedades nuevas se omiten por completo cuando no se pide el parámetro: sin él la respuesta es
+exactamente la de siempre, ni siquiera con nulos. Un proyecto sin actividades devuelve `activityCount` 0, sumas
+en 0 e índices `null` con estado `NOT_APPLICABLE`, nunca un error. Las cifras salen del mismo consolidado que
+`GET /projects/{id}/evm`, así que la fila del listado y el detalle no pueden discrepar.
 
 ### Actividad
 
@@ -278,13 +314,14 @@ Un proyecto sin cortes devuelve 200 con `points` vacío.
 
 | Método | Ruta | Éxito | Errores |
 | --- | --- | --- | --- |
-| GET | `/projects` | 200 lista de Proyecto | |
+| GET | `/projects` | 200 lista de Proyecto; con `?includeIndicators=true` cada uno con `activityCount`, `totals` e `indicators` | |
 | POST | `/projects` | 201 Proyecto, cabecera `Location` | 400 validación |
 | GET | `/projects/{id}` | 200 Proyecto | 404 |
 | PUT | `/projects/{id}` | 200 Proyecto | 400, 404 |
 | DELETE | `/projects/{id}` | 204 | 404 |
 | GET | `/projects/{id}/evm` | 200 ProjectEvmSummary | 404 |
 | GET | `/projects/{id}/activities` | 200 lista de Actividad con indicators | 404 |
+| GET | `/projects/{id}/activities/{activityId}` | 200 Actividad con indicators | 404 |
 | POST | `/projects/{id}/activities` | 201 Actividad, cabecera `Location` | 400, 404 |
 | PUT | `/projects/{id}/activities/{activityId}` | 200 Actividad | 400, 404 |
 | DELETE | `/projects/{id}/activities/{activityId}` | 204 | 404 |

@@ -63,6 +63,61 @@ class ActivityControllerIT extends AbstractRestIntegrationTest {
     }
 
     @Test
+    void getReturnsTheActivityCreatedAtItsLocation() {
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
+        final ResponseEntity<ActivityResponse> created = restTemplate.postForEntity(
+                activitiesPath(projectId),
+                activityRequest("Actividad consultable", "100000", "50", "40", "60000"),
+                ActivityResponse.class);
+        final URI location = created.getHeaders().getLocation();
+        assertThat(location).isNotNull();
+        assertThat(created.getBody()).isNotNull();
+
+        // La cabecera Location de la creación ya apunta a un recurso que se puede leer.
+        final ResponseEntity<ActivityResponse> response =
+                restTemplate.getForEntity(location, ActivityResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        final ActivityResponse body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.id()).isEqualTo(created.getBody().id());
+        assertThat(body.projectId()).isEqualTo(projectId);
+        assertThat(body.name()).isEqualTo("Actividad consultable");
+        // PV = 0,50 x 100.000 = 50.000 y EV = 0,40 x 100.000 = 40.000, calculados a mano
+        assertThat(body.indicators().plannedValue()).isEqualByComparingTo("50000.00");
+        assertThat(body.indicators().earnedValue()).isEqualByComparingTo("40000.00");
+    }
+
+    @Test
+    void getMissingActivityReturns404WithProblemDetail() {
+        final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
+
+        final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                activitiesPath(projectId) + "/" + MISSING_ID, HttpMethod.GET, null, PROBLEM_TYPE);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().get("detail")).asString().contains(String.valueOf(MISSING_ID));
+    }
+
+    @Test
+    void getActivityOfAnotherProjectReturns404() {
+        final Long ownerProjectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
+        final Long otherProjectId = createProject("Otro proyecto", PROJECT_DESCRIPTION);
+        final ActivityResponse created = restTemplate.postForEntity(
+                activitiesPath(ownerProjectId),
+                activityRequest("Actividad de otro proyecto", "100000", "50", "40", "60000"),
+                ActivityResponse.class).getBody();
+        assertThat(created).isNotNull();
+
+        // La actividad existe, pero no en esta ruta: el proyecto forma parte de su identidad.
+        final ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                activitiesPath(otherProjectId) + "/" + created.id(), HttpMethod.GET, null, PROBLEM_TYPE);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void updateThenListReflectsChanges() {
         final Long projectId = createProject(PROJECT_NAME, PROJECT_DESCRIPTION);
         final ActivityResponse created = restTemplate.postForEntity(

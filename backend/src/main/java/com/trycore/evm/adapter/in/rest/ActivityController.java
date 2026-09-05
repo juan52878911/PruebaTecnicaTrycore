@@ -64,6 +64,24 @@ public class ActivityController {
         return activityUseCases.listByProject(projectId).stream().map(ActivityRestMapper::toResponse).toList();
     }
 
+    @GetMapping("/{activityId}")
+    @Operation(
+            summary = "Obtener actividad",
+            description = "Devuelve una actividad del proyecto con sus indicadores calculados. Es el recurso al "
+                    + "que apunta la cabecera Location de la creación. El proyecto forma parte de la identidad "
+                    + "de la búsqueda: una actividad que existe pero pertenece a otro proyecto devuelve 404.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Actividad encontrada",
+            content = @Content(schema = @Schema(implementation = ActivityResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "No existe la actividad en ese proyecto",
+            content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    public ActivityResponse get(@PathVariable final Long projectId, @PathVariable final Long activityId) {
+        return ActivityRestMapper.toResponse(activityUseCases.get(projectId, activityId));
+    }
+
     @PostMapping
     @Operation(
             summary = "Crear actividad",
