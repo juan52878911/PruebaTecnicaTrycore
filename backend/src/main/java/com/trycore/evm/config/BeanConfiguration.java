@@ -34,8 +34,11 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public ProjectService projectService(final ProjectRepositoryPort projectRepositoryPort) {
-        return new ProjectService(projectRepositoryPort);
+    public ProjectService projectService(
+            final ProjectRepositoryPort projectRepositoryPort,
+            final ActivityRepositoryPort activityRepositoryPort,
+            final EvmCalculator evmCalculator) {
+        return new ProjectService(projectRepositoryPort, activityRepositoryPort, evmCalculator);
     }
 
     @Bean
