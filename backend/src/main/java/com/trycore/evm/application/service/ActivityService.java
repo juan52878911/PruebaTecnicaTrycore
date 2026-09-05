@@ -11,6 +11,7 @@ import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.ProgressMeasurement;
 import com.trycore.evm.domain.service.EvmCalculator;
 
 /**
@@ -37,9 +38,11 @@ public final class ActivityService implements ActivityUseCases {
             final Long projectId,
             final String name,
             final ActivityFigures figures,
-            final ActivitySchedule schedule) {
+            final ActivitySchedule schedule,
+            final ProgressMeasurement progress) {
         requireProjectExists(projectId);
-        return withIndicators(activityRepository.save(Activity.create(projectId, name, figures, schedule)));
+        return withIndicators(
+                activityRepository.save(Activity.create(projectId, name, figures, schedule, progress)));
     }
 
     @Override
@@ -48,9 +51,10 @@ public final class ActivityService implements ActivityUseCases {
             final Long activityId,
             final String name,
             final ActivityFigures figures,
-            final ActivitySchedule schedule) {
+            final ActivitySchedule schedule,
+            final ProgressMeasurement progress) {
         final Activity existing = findActivity(projectId, activityId);
-        return withIndicators(activityRepository.save(existing.update(name, figures, schedule)));
+        return withIndicators(activityRepository.save(existing.update(name, figures, schedule, progress)));
     }
 
     @Override
@@ -66,7 +70,7 @@ public final class ActivityService implements ActivityUseCases {
     }
 
     private ActivityEvm withIndicators(final Activity activity) {
-        return new ActivityEvm(activity, evmCalculator.calculate(activity.figures()));
+        return evmCalculator.evaluate(activity);
     }
 
     private void requireProjectExists(final Long projectId) {

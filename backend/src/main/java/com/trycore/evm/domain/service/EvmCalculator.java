@@ -19,6 +19,7 @@ import com.trycore.evm.domain.model.EstimateFormula;
 import com.trycore.evm.domain.model.EvmIndicators;
 import com.trycore.evm.domain.model.EvmTotals;
 import com.trycore.evm.domain.model.IndexInterpretation;
+import com.trycore.evm.domain.model.MeasurementMethod;
 import com.trycore.evm.domain.model.MeasurementPoint;
 import com.trycore.evm.domain.model.PerformanceStatus;
 import com.trycore.evm.domain.model.PerformanceThresholds;
@@ -42,6 +43,8 @@ import com.trycore.evm.domain.model.ProjectTimeline;
  *       la expresión para no arrastrar el redondeo a cuatro decimales de los índices. Junto al
  *       titular se devuelven las tres fórmulas estándar, porque el rango entre ellas informa más
  *       que una sola cifra. Ver {@link EstimateFormula}.</li>
+ *   <li>Cada actividad reconoce valor según su regla de medición, y la regla se aplica tanto al
+ *       valor planificado como al ganado. Ver {@link MeasurementMethod}.</li>
  *   <li>El consolidado del proyecto suma BAC, PV, EV y AC y calcula los índices sobre las sumas.
  *       No se promedian los índices de las actividades.</li>
  *   <li>Cada índice viaja con su estado y con la severidad de su desviación. El estado es el hecho
@@ -90,11 +93,37 @@ public final class EvmCalculator {
 
     /** Indicadores de una sola actividad a partir de sus cifras, con la fórmula de EAC indicada. */
     public EvmIndicators calculate(final ActivityFigures figures, final EstimateFormula formula) {
-        final BigDecimal plannedValue = percentOf(figures.plannedProgressPercent(), figures.budgetAtCompletion());
-        final BigDecimal earnedValue = percentOf(figures.actualProgressPercent(), figures.budgetAtCompletion());
+        return calculate(totalsOf(figures, MeasurementMethod.PERCENT_COMPLETE, false), formula);
+    }
+
+    /** Indicadores de una actividad, aplicando su propia regla de medición. */
+    public EvmIndicators calculate(final Activity activity) {
+        return calculate(activity, DEFAULT_FORMULA);
+    }
+
+    /** Indicadores de una actividad, con su regla de medición y la fórmula de EAC indicada. */
+    public EvmIndicators calculate(final Activity activity, final EstimateFormula formula) {
         return calculate(
-                new EvmTotals(figures.budgetAtCompletion(), plannedValue, earnedValue, figures.actualCost()),
-                formula);
+                totalsOf(activity.figures(), activity.progress().method(), activity.started()), formula);
+    }
+
+    /**
+     * Cifras de una actividad tras aplicar su regla de medición a los dos lados.
+     *
+     * <p>La misma regla gobierna el valor planificado y el ganado. Al lado planificado no le consta
+     * ninguna fecha real, así que su señal de "iniciada" es que el plan previera algún avance a la
+     * fecha; al lado real le basta con haber arrancado.
+     */
+    private static EvmTotals totalsOf(
+            final ActivityFigures figures, final MeasurementMethod method, final boolean started) {
+        final BigDecimal plannedPercent = method.recognisedPercent(
+                figures.plannedProgressPercent(), figures.plannedProgressPercent().signum() > 0);
+        final BigDecimal earnedPercent = method.recognisedPercent(figures.actualProgressPercent(), started);
+        return new EvmTotals(
+                figures.budgetAtCompletion(),
+                percentOf(plannedPercent, figures.budgetAtCompletion()),
+                percentOf(earnedPercent, figures.budgetAtCompletion()),
+                figures.actualCost());
     }
 
     /**
@@ -107,6 +136,16 @@ public final class EvmCalculator {
         return calculate(totals, DEFAULT_FORMULA);
     }
 
+    /**
+     * Actividad con sus indicadores y con los porcentajes que su regla de medición reconoce.
+     *
+     * <p>Es la unidad que consume una vista de detalle: la misma que compone el consolidado, de
+     * modo que una actividad vista suelta y vista dentro del proyecto dan exactamente lo mismo.
+     */
+    public ActivityEvm evaluate(final Activity activity) {
+        return toActivityEvm(activity, DEFAULT_FORMULA);
+    }
+
     /** Indicadores de cada actividad y consolidado del proyecto, con la fórmula de EAC por defecto. */
     public ProjectEvmSummary consolidate(final Project project, final List<Activity> activities) {
         return consolidate(project, activities, DEFAULT_FORMULA);
@@ -116,7 +155,7 @@ public final class EvmCalculator {
     public ProjectEvmSummary consolidate(
             final Project project, final List<Activity> activities, final EstimateFormula formula) {
         final List<ActivityEvm> perActivity = activities.stream()
-                .map(activity -> new ActivityEvm(activity, calculate(activity.figures(), formula)))
+                .map(activity -> toActivityEvm(activity, formula))
                 .toList();
         final BigDecimal totalBudget = sum(perActivity, item -> item.activity().figures().budgetAtCompletion());
         final BigDecimal totalPlannedValue = sum(perActivity, item -> item.indicators().plannedValue());
@@ -225,6 +264,17 @@ public final class EvmCalculator {
                 interpretCost(costPerformanceIndex),
                 interpretSchedule(schedulePerformanceIndex),
                 thresholds);
+    }
+
+    private ActivityEvm toActivityEvm(final Activity activity, final EstimateFormula formula) {
+        final MeasurementMethod method = activity.progress().method();
+        final ActivityFigures figures = activity.figures();
+        return new ActivityEvm(
+                activity,
+                calculate(activity, formula),
+                method.recognisedPercent(
+                        figures.plannedProgressPercent(), figures.plannedProgressPercent().signum() > 0),
+                method.recognisedPercent(figures.actualProgressPercent(), activity.started()));
     }
 
     private static BigDecimal percentOf(final BigDecimal percent, final BigDecimal amount) {

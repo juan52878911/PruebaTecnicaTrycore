@@ -56,6 +56,37 @@ Request de creación/edición (`ActivityRequest`):
 | `plannedProgressPercent` | decimal | obligatorio, 0-100 |
 | `actualProgressPercent` | decimal | obligatorio, 0-100 |
 | `actualCost` | decimal | obligatorio, >= 0 |
+| `measurementMethod` | enum | opcional; si se omite, `PERCENT_COMPLETE` |
+
+### Regla de medición del avance
+
+Cada actividad reconoce valor según su regla, y **la regla se aplica tanto al valor planificado como al
+ganado**. Es lo que hace que SV y SPI signifiquen algo: restar dos cifras medidas con varas distintas fabrica
+atrasos que no existen.
+
+| Valor | Qué reconoce |
+| --- | --- |
+| `PERCENT_COMPLETE` | El porcentaje declarado tal cual. Comportamiento por defecto |
+| `FIXED_0_100` | Nada hasta llegar al 100 %, y entonces todo |
+| `FIXED_50_50` | La mitad al iniciar, el resto al cerrar |
+| `WEIGHTED_MILESTONES` | El avance derivado de los hitos cumplidos y sus pesos |
+
+Una actividad se considera iniciada si tiene fecha real de inicio **o** un avance declarado mayor que cero.
+La primera señal es la que importa en `FIXED_50_50`: quien usa esa regla no estima el avance intermedio y deja
+el porcentaje a cero hasta cerrar, así que deducir el arranque del porcentaje anularía el método.
+
+La respuesta de actividad incluye `effectivePlannedProgressPercent` y `effectiveActualProgressPercent`, que son
+los porcentajes que la regla reconoció. Con las reglas de umbral pueden no coincidir con los declarados, y sin
+ese dato un valor ganado de cero sobre un avance del 65 % parecería un error en vez de la regla haciendo su
+trabajo.
+
+Ejemplo con BAC 100.000, planificado 50 %, real 40 % y AC 60.000:
+
+| Regla | PV | EV | SV | SPI |
+| --- | --- | --- | --- | --- |
+| `PERCENT_COMPLETE` | 50.000 | 40.000 | -10.000 | 0,8000 |
+| `FIXED_0_100` | 0 | 0 | 0 | `null` |
+| `FIXED_50_50` | 50.000 | 50.000 | 0 | 1,0000 |
 
 ### EvmIndicators
 
