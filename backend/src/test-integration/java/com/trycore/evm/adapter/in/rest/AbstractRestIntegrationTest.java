@@ -69,15 +69,28 @@ abstract class AbstractRestIntegrationTest {
     protected TestRestTemplate restTemplate;
 
     /**
-     * Crea un proyecto a través de la API y devuelve su identificador.
+     * Crea un proyecto sin responsable a través de la API y devuelve su identificador.
      *
      * @param name        nombre del proyecto
      * @param description descripción del proyecto, admite {@code null}
      * @return identificador del proyecto creado
      */
     protected Long createProject(final String name, final String description) {
+        return createProject(name, description, null);
+    }
+
+    /**
+     * Crea un proyecto a través de la API y devuelve su identificador.
+     *
+     * @param name        nombre del proyecto
+     * @param description descripción del proyecto, admite {@code null}
+     * @param manager     responsable del proyecto, admite {@code null}
+     * @return identificador del proyecto creado
+     */
+    protected Long createProject(final String name, final String description, final String manager) {
         final ProjectResponse created = restTemplate
-                .postForEntity(PROJECTS_PATH, new ProjectRequest(name, description), ProjectResponse.class)
+                .postForEntity(
+                        PROJECTS_PATH, new ProjectRequest(name, description, manager), ProjectResponse.class)
                 .getBody();
         assertThat(created).isNotNull();
         return created.id();
