@@ -12,6 +12,7 @@ import com.trycore.evm.domain.exception.InvalidActivityException;
  * @param name      nombre no vacío de hasta {@link #NAME_MAX_LENGTH} caracteres
  * @param figures   cifras de presupuesto, avance y costo
  * @param schedule  fechas previstas y reales; nunca nulo, puede estar vacío
+ * @param progress  regla con la que la actividad reconoce valor; nunca nulo
  * @param createdAt fecha de creación, nula antes de guardar
  * @param updatedAt fecha de última modificación, nula antes de guardar
  */
@@ -21,6 +22,7 @@ public record Activity(
         String name,
         ActivityFigures figures,
         ActivitySchedule schedule,
+        ProgressMeasurement progress,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -42,6 +44,31 @@ public record Activity(
         }
         // Un calendario vacío evita propagar nulos a los adaptadores y a las respuestas del API.
         schedule = schedule == null ? ActivitySchedule.empty() : schedule;
+        progress = progress == null ? ProgressMeasurement.percentComplete() : progress;
+    }
+
+    /**
+     * Constructor con la forma anterior a que existiera la regla de medición, que asume la de
+     * siempre. Existe para que el código que no elige regla no tenga que nombrarla.
+     */
+    public Activity(
+            final Long id,
+            final Long projectId,
+            final String name,
+            final ActivityFigures figures,
+            final ActivitySchedule schedule,
+            final Instant createdAt,
+            final Instant updatedAt) {
+        this(id, projectId, name, figures, schedule, ProgressMeasurement.percentComplete(), createdAt, updatedAt);
+    }
+
+    /** Actividad nueva con la regla de medición por defecto. */
+    public static Activity create(
+            final Long projectId,
+            final String name,
+            final ActivityFigures figures,
+            final ActivitySchedule schedule) {
+        return create(projectId, name, figures, schedule, ProgressMeasurement.percentComplete());
     }
 
     /** Actividad nueva, todavía sin identificador ni fechas de auditoría. */
@@ -49,13 +76,32 @@ public record Activity(
             final Long projectId,
             final String name,
             final ActivityFigures figures,
-            final ActivitySchedule schedule) {
-        return new Activity(null, projectId, name, figures, schedule, null, null);
+            final ActivitySchedule schedule,
+            final ProgressMeasurement progress) {
+        return new Activity(null, projectId, name, figures, schedule, progress, null, null);
     }
 
-    /** Copia con nuevo nombre, cifras y calendario, conservando identidad, proyecto y auditoría. */
+    /** Copia con nuevo nombre, cifras y calendario, conservando la regla de medición actual. */
     public Activity update(
             final String newName, final ActivityFigures newFigures, final ActivitySchedule newSchedule) {
-        return new Activity(id, projectId, newName, newFigures, newSchedule, createdAt, updatedAt);
+        return update(newName, newFigures, newSchedule, progress);
+    }
+
+    /** Copia con nuevo nombre, cifras, calendario y regla, conservando identidad y auditoría. */
+    public Activity update(
+            final String newName,
+            final ActivityFigures newFigures,
+            final ActivitySchedule newSchedule,
+            final ProgressMeasurement newProgress) {
+        return new Activity(id, projectId, newName, newFigures, newSchedule, newProgress, createdAt, updatedAt);
+    }
+
+    /**
+     * Indica si la actividad ha arrancado. Se toma de la fecha real de inicio o de un avance
+     * declarado mayor que cero: es una unión, así que las dos señales no pueden contradecirse, y
+     * cubre tanto el caso de quien registra la fecha sin estimar avance como el contrario.
+     */
+    public boolean started() {
+        return schedule.actualStart() != null || figures.actualProgressPercent().signum() > 0;
     }
 }
