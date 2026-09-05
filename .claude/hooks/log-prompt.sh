@@ -23,6 +23,14 @@ case "$PROMPT" in
   /*) exit 0 ;;
 esac
 
+# Las notificaciones de tareas en segundo plano llegan por el mismo gancho que un prompt, pero no
+# las escribe Juan: son avisos de la propia herramienta cuando termina un comando lanzado en
+# background. Registrarlas rompe el contrato de esta sección, que es el registro de SUS prompts.
+case "$PROMPT" in
+  '<task-notification>'*) exit 0 ;;
+  '[SYSTEM NOTIFICATION'*) exit 0 ;;
+esac
+
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M %Z')"
 {
   printf '\n### %s - %s\n\n' "$TIMESTAMP" "$TOOL_NAME"
