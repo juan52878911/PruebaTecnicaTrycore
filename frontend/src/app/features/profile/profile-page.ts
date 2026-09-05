@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { PageHeader } from '../../shared/ui/page-header';
 
 import { MeasurementsApi } from '../../core/api/measurements-api';
@@ -29,28 +30,42 @@ import { ProjectsStore } from '../projects/projects-store';
   host: { class: 'v-rise' },
   imports: [PageHeader, RouterLink],
   template: `
-    <app-page-header title="Perfil" subtitle="del administrador" />
+    <app-page-header
+      [title]="isDesktop() ? 'Perfil' : 'Perfil'"
+      [subtitle]="isDesktop() ? 'del administrador' : 'Administrador'"
+    />
 
     <div class="grid">
-      <section class="card identity">
-        <span class="avatar" aria-hidden="true">AR</span>
-        <h2>Alicia Ramos</h2>
-        <p class="role">Administradora del sistema</p>
-        <dl>
-          <div>
-            <dt>Correo</dt>
-            <dd>a.ramos&#64;valora.app</dd>
+      <div class="column">
+        <section class="card identity" [class.row]="!isDesktop()">
+          <span class="avatar" aria-hidden="true">AR</span>
+          <div class="who">
+            <h2>Alicia Ramos</h2>
+            <p class="role">Administradora del sistema</p>
           </div>
-          <div>
-            <dt>Área</dt>
-            <dd>Dirección de Proyectos</dd>
-          </div>
-          <div>
-            <dt>Usuario</dt>
-            <dd>admin</dd>
-          </div>
-        </dl>
-      </section>
+        </section>
+
+        <section class="card details">
+          <dl>
+            <div>
+              <dt>Correo</dt>
+              <dd>a.ramos&#64;valora.app</dd>
+            </div>
+            <div>
+              <dt>Área</dt>
+              <dd>{{ isDesktop() ? 'Dirección de Proyectos' : 'Dir. de Proyectos' }}</dd>
+            </div>
+            <div>
+              <dt>Usuario</dt>
+              <dd>admin</dd>
+            </div>
+            <div>
+              <dt>Moneda</dt>
+              <dd>{{ preferences.currencyCode() }}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
 
       <div class="column">
         <section class="card">
@@ -123,6 +138,26 @@ import { ProjectsStore } from '../projects/projects-store';
       border: 1px solid var(--border-card);
       border-radius: var(--radius-card);
       padding: var(--pad-card);
+    }
+    .identity.row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .identity.row .avatar {
+      width: 60px;
+      height: 60px;
+      font-size: 21px;
+    }
+    .identity.row h2 {
+      margin: 0;
+      font-size: 19px;
+    }
+    .identity.row .role {
+      margin: 4px 0 0;
+    }
+    .details {
+      padding: 6px var(--pad-card) 8px;
     }
     .avatar {
       display: grid;
@@ -239,6 +274,10 @@ import { ProjectsStore } from '../projects/projects-store';
       .grid {
         grid-template-columns: 1fr;
       }
+      .identity,
+      .details {
+        margin-bottom: 0;
+      }
     }
     @media (max-width: 767px) {
       .tiles,
@@ -250,6 +289,7 @@ import { ProjectsStore } from '../projects/projects-store';
 })
 export class ProfilePage {
   protected readonly preferences = inject(PreferencesStore);
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
   private readonly projects = inject(ProjectsStore);
   private readonly projectsApi = inject(ProjectsApi);
   private readonly measurementsApi = inject(MeasurementsApi);

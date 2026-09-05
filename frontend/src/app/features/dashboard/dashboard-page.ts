@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 
 import { MeasurementRequest } from '../../core/api/models/measurement';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { ViewTransition } from '../../core/layout/view-transition';
 import {
   formatCompact,
   formatDate,
@@ -101,7 +102,7 @@ const PERCENT_BASE = 100;
         actionLabel="Elegir proyecto"
         (action)="pickerOpen.set(true)"
       />
-    } @else if (evm.isLoading() && !evm.summary()) {
+    } @else if (showSkeleton()) {
       <!-- El esqueleto reproduce la misma retícula y la forma de cada tarjeta, para que el
            contenido no salte al llegar. -->
       <div class="grid">
@@ -578,6 +579,15 @@ export class DashboardPage {
   protected readonly measurementOpen = signal(false);
 
   protected readonly isDesktop = inject(BreakpointService).isDesktop;
+  private readonly transition = inject(ViewTransition);
+
+  /**
+   * El esqueleto cubre dos casos: los datos que aún no han llegado y la transición entre vistas.
+   * Sin el segundo, cambiar de pestaña con los datos ya en caché no da ningún acuse de recibo.
+   */
+  protected readonly showSkeleton = computed(
+    () => this.transition.isTransitioning() || (this.evm.isLoading() && !this.evm.summary()),
+  );
   protected readonly selectedId = this.selection.projectId;
 
   /** Fecha abreviada del último corte, para el distintivo de la cabecera. */
