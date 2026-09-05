@@ -159,3 +159,49 @@ test.describe('móvil', () => {
     await expect(page.locator('app-grouped-bars')).toHaveCount(0);
   });
 });
+
+test.describe('móvil · scroll con capas', () => {
+  test.skip(({ isMobile }) => !isMobile, 'solo en el proyecto móvil');
+
+  test('con una hoja abierta solo se desplaza la hoja, y el fondo se libera al cerrarla', async ({
+    page,
+  }) => {
+    await mockApi(page);
+    await page.goto('/proyectos/1/actividades');
+    const bodyOverflow = () => page.evaluate(() => getComputedStyle(document.body).overflowY);
+    expect(await bodyOverflow()).not.toBe('hidden');
+
+    await page.getByRole('button', { name: 'Nueva actividad' }).click();
+    await expect(page.getByRole('dialog', { name: 'Nueva actividad' })).toBeVisible();
+    await settledBox(page.getByRole('dialog', { name: 'Nueva actividad' }));
+    await expect.poll(bodyOverflow).toBe('hidden');
+    await expect(page.locator('app-dialog .panel')).toHaveCSS('overscroll-behavior-y', 'contain');
+
+    // El pie de la hoja queda dentro de la pantalla al llegar al final de su propio scroll.
+    await page.locator('app-dialog .panel').evaluate((panel) => {
+      panel.scrollTop = panel.scrollHeight;
+    });
+    const cancel = page.getByRole('dialog').getByRole('button', { name: 'Cancelar' });
+    const box = (await cancel.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    const center = box.x + box.width / 2;
+    expect(Math.abs(center - page.viewportSize()!.width / 2)).toBeLessThan(2);
+
+    await cancel.click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // La capa se destruye en el siguiente ciclo de detección de cambios: se espera, no se asume.
+    await expect.poll(bodyOverflow).not.toBe('hidden');
+
+    // La hoja del selector también bloquea el fondo y centra su "Cancelar".
+    await page.getByRole('button', { name: 'Cambiar de proyecto' }).click();
+    await expect(page.getByRole('listbox', { name: 'Proyecto activo' })).toBeVisible();
+    await expect.poll(bodyOverflow).toBe('hidden');
+    const pickerCancel = page.locator('app-project-picker .cancel');
+    const pickerBox = (await pickerCancel.boundingBox())!;
+    expect(
+      Math.abs(pickerBox.x + pickerBox.width / 2 - page.viewportSize()!.width / 2),
+    ).toBeLessThan(2);
+    await pickerCancel.click();
+    await expect.poll(bodyOverflow).not.toBe('hidden');
+  });
+});
