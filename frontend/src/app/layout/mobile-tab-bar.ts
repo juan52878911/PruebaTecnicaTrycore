@@ -34,17 +34,26 @@ import { NAV_ITEMS } from './navigation';
     </nav>
   `,
   styles: `
+    /*
+     * Fija a la ventana, no al final del documento: la barra tiene que estar a mano en cualquier
+     * punto del scroll. El marco reserva sitio abajo para que no tape el último contenido.
+     */
     nav {
-      position: sticky;
-      bottom: 0;
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      /* Por debajo de diálogos (40) y avisos (50): una hoja inferior debe taparla. */
+      z-index: 30;
       display: flex;
       justify-content: space-between;
       gap: 4px;
-      margin-top: auto;
       padding: 10px;
-      background: var(--nav-mobile);
+      background: rgba(16, 16, 18, 0.94);
+      backdrop-filter: blur(18px);
       border: 1px solid var(--border-control);
       border-radius: 26px;
+      box-shadow: var(--shadow-float);
     }
     a {
       flex: 1;

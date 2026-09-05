@@ -45,7 +45,8 @@ import { ToastHost } from './shared/ui/toast-host';
     }
     @media (max-width: 767px) {
       .shell {
-        padding: 14px 20px 20px;
+        /* Hueco para la barra inferior fija, más el borde seguro de los móviles con gesto. */
+        padding: 14px 20px calc(112px + env(safe-area-inset-bottom, 0px));
       }
     }
   `,
