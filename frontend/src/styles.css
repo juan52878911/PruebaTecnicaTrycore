@@ -78,6 +78,15 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Reserva siempre el hueco de la barra de desplazamiento. Sin esto, una vista que cabe en la
+     ventana no la muestra y otra más alta sí, de modo que el ancho disponible cambia en 15 px al
+     navegar y el contenido centrado salta 7,5 px de lado. Es el temblor que se ve al pasar del
+     panel a las actividades. Reservar el hueco cuesta ese ancho siempre, a cambio de que ninguna
+     vista se mueva. En móvil no cuesta nada, porque allí la barra se superpone. */
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   margin: 0;
