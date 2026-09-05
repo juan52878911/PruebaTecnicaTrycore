@@ -22,6 +22,7 @@ import {
 } from '../../core/status/status-tone';
 import { ChipGroup, ChipOption } from '../../shared/ui/chip-group';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { PageHeader } from '../../shared/ui/page-header';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
@@ -59,14 +60,19 @@ const EMPTY_CELL = '—';
 @Component({
   selector: 'app-projects-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChipGroup, EmptyState, IndexValue, ProjectFormDialog, Skeleton, StatusBadge],
+  imports: [
+    ChipGroup,
+    EmptyState,
+    IndexValue,
+    PageHeader,
+    ProjectFormDialog,
+    Skeleton,
+    StatusBadge,
+  ],
   template: `
-    <header class="page-header">
-      <h1>
-        Proyectos <span>{{ countLabel() }}</span>
-      </h1>
-      <button type="button" class="primary" (click)="openCreate()">Nuevo proyecto</button>
-    </header>
+    <app-page-header title="Proyectos" [subtitle]="countLabel()">
+      <button type="button" class="primary" (click)="openCreate()">+ Nuevo proyecto</button>
+    </app-page-header>
 
     @if (store.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
@@ -155,23 +161,6 @@ const EMPTY_CELL = '—';
     }
   `,
   styles: `
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 26px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 54px;
-      line-height: 1.1;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-    }
-    h1 span {
-      color: rgba(255, 255, 255, 0.32);
-    }
     .primary {
       border: none;
       border-radius: var(--radius-pill);
@@ -280,14 +269,6 @@ const EMPTY_CELL = '—';
       flex-direction: column;
       gap: 8px;
       padding: 16px 12px;
-    }
-    @media (max-width: 767px) {
-      h1 {
-        font-size: 26px;
-      }
-      .page-header {
-        align-items: center;
-      }
     }
   `,
 })

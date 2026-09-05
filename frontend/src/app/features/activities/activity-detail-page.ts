@@ -25,6 +25,7 @@ import { combinedStatusLabel, overallTone } from '../../core/status/status-tone'
 import { EmptyState } from '../../shared/ui/empty-state';
 import { MetricBar, MetricBars } from '../../shared/ui/metric-bars';
 import { Skeleton } from '../../shared/ui/skeleton';
+import { PageHeader } from '../../shared/ui/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ProjectEvmStore } from '../evm/project-evm-store';
@@ -35,31 +36,23 @@ import { ProgressDialog } from './progress-dialog';
   selector: 'app-activity-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ProjectEvmStore],
-  imports: [EmptyState, MetricBars, ProgressDialog, RouterLink, Skeleton, StatusBadge],
+  imports: [EmptyState, MetricBars, PageHeader, ProgressDialog, RouterLink, Skeleton, StatusBadge],
   template: `
-    <header class="page-header">
-      <div>
-        <p class="breadcrumb">
-          <a [routerLink]="['/proyectos', projectId(), 'actividades']">Actividades</a>
-          · {{ projectName() }}
-        </p>
-        <h1>{{ activity()?.name ?? 'Actividad' }}</h1>
-        @if (dateRange()) {
-          <p class="dates">{{ dateRange() }}</p>
-        }
-      </div>
+    <p class="breadcrumb">
+      <a [routerLink]="['/proyectos', projectId(), 'actividades']">Actividades</a>
+      · {{ projectName() }}
+    </p>
+    <app-page-header [title]="activity()?.name ?? 'Actividad'" [lead]="dateRange()">
       @if (activity(); as current) {
-        <div class="header-actions">
-          <app-status-badge
-            [label]="combinedStatusLabel(current.indicators)"
-            [tone]="overallTone(current.indicators)"
-          />
-          <button type="button" class="primary" (click)="progressOpen.set(true)">
-            Registrar avance
-          </button>
-        </div>
+        <app-status-badge
+          [label]="combinedStatusLabel(current.indicators)"
+          [tone]="overallTone(current.indicators)"
+        />
+        <button type="button" class="primary" (click)="progressOpen.set(true)">
+          Registrar avance
+        </button>
       }
-    </header>
+    </app-page-header>
 
     @if (evm.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
@@ -139,40 +132,14 @@ import { ProgressDialog } from './progress-dialog';
     }
   `,
   styles: `
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
-    }
     .breadcrumb {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 13px;
       font-weight: 600;
       color: var(--text-dim);
     }
     .breadcrumb a {
       text-decoration: none;
-    }
-    h1 {
-      margin: 0;
-      font-size: 38px;
-      line-height: 1.15;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-    }
-    .dates {
-      margin: 10px 0 0;
-      font-size: 13px;
-      color: var(--text-dim);
-    }
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
     }
     .primary {
       border: none;
@@ -292,11 +259,6 @@ import { ProgressDialog } from './progress-dialog';
       }
       .tiles {
         grid-template-columns: 1fr 1fr;
-      }
-    }
-    @media (max-width: 767px) {
-      h1 {
-        font-size: 24px;
       }
     }
   `,

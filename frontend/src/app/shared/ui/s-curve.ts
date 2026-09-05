@@ -9,6 +9,7 @@ const PADDING_TOP = 12;
 const PADDING_BOTTOM = 22;
 const GRID_LINES = 4;
 const HALF = 2;
+const HEADROOM = 1.12;
 
 interface Coordinate {
   readonly x: number;
@@ -324,7 +325,10 @@ export class SCurve {
       point.totals.actualCost,
     ]);
     const highest = values.length === 0 ? 0 : Math.max(...values);
-    return highest === 0 ? 1 : highest;
+    // Un margen sobre el máximo evita que las series se peguen al borde superior y el área acabe
+    // cubriendo la tarjeta entera, que es lo que pasaba con proyectos de pocos cortes y cifras
+    // parecidas entre sí.
+    return highest === 0 ? 1 : highest * HEADROOM;
   });
 
   protected readonly series = computed<readonly Series[]>(() => {

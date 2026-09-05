@@ -1819,3 +1819,9 @@ aplica la semilla
 ```text
 mergea el PR a develop
 ```
+
+### 2026-09-04 22:49 -05 - Claude Code
+
+```text
+La alineación de los contenedores no es la correcta. Ademas añade la animación de el navbar que desplaza el fondo blanco a lo que seleccione, el Hola de nuevo no existe y los tamaños entre pantallas son diferentes haciendo que halla un efecto de movimiento extraño. Ademas el menu de seleccion de proyectos no es el mismo del diseño. No existe la vista de actividades ni los modales para crear nuevas actividades, avances en las mismas.
+```

@@ -8,6 +8,8 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { PageHeader } from '../../shared/ui/page-header';
+
 import { MeasurementsApi } from '../../core/api/measurements-api';
 import { ProjectsApi } from '../../core/api/projects-api';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
@@ -23,11 +25,9 @@ import { ProjectsStore } from '../projects/projects-store';
 @Component({
   selector: 'app-profile-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [PageHeader, RouterLink],
   template: `
-    <header class="page-header">
-      <h1>Perfil <span>del administrador</span></h1>
-    </header>
+    <app-page-header title="Perfil" subtitle="del administrador" />
 
     <div class="grid">
       <section class="card identity">
@@ -105,19 +105,6 @@ import { ProjectsStore } from '../projects/projects-store';
     </div>
   `,
   styles: `
-    .page-header {
-      margin-bottom: 26px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 44px;
-      line-height: 1.1;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-    }
-    h1 span {
-      color: rgba(255, 255, 255, 0.32);
-    }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1.3fr;
@@ -252,9 +239,6 @@ import { ProjectsStore } from '../projects/projects-store';
       }
     }
     @media (max-width: 767px) {
-      h1 {
-        font-size: 24px;
-      }
       .tiles,
       .scope {
         grid-template-columns: 1fr 1fr;

@@ -90,8 +90,6 @@ describe('SCurve', () => {
     for (const path of paths) {
       expect(path).toMatch(/ 600 [\d.]+$/);
     }
-    // Y la serie más alta (AC, 1 258 000) toca el borde superior útil del lienzo.
-    expect(paths.at(-1)?.split(' ').at(-1)).toBe('12');
   });
 
   it('centra el único punto cuando solo hay un corte, en vez de pegarlo al borde', () => {
@@ -100,6 +98,22 @@ describe('SCurve', () => {
     const path = element.querySelector('path[stroke]')?.getAttribute('d') ?? '';
 
     expect(path.startsWith('M300 ')).toBe(true);
+  });
+
+  it('deja margen sobre el máximo, para que el área no cubra la tarjeta entera', () => {
+    const element = render([
+      point('2026-07-31', 990_000, 920_000, 984_000),
+      point('2026-08-31', 1_240_000, 1_117_500, 1_258_000),
+    ]);
+    const paths = [...element.querySelectorAll('path[stroke]')].map(
+      (node) => node.getAttribute('d') ?? '',
+    );
+
+    // La serie más alta (AC) no llega al borde superior útil del lienzo, que está en y = 12.
+    const highestY = Number(paths.at(-1)?.split(' ').at(-1));
+    expect(highestY).toBeGreaterThan(12);
+    // Pero sigue ocupando la mayor parte del alto: el margen es holgura, no aplastamiento.
+    expect(highestY).toBeLessThan(60);
   });
 
   it('etiqueta el eje con el mes de cada corte, como el diseño', () => {

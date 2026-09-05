@@ -6,10 +6,15 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { Activity, ActivityRequest } from '../../core/api/models/activity';
-import { formatDateRange, formatMoneyRounded } from '../../core/format/evm-format';
+import {
+  formatCompact,
+  formatDateRange,
+  formatMoneyRounded,
+  formatShortDate,
+} from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { PreferencesStore } from '../../core/preferences/preferences-store';
 import { SelectedProjectStore } from '../../core/selection/selected-project-store';
@@ -20,14 +25,18 @@ import {
   scheduleTone,
 } from '../../core/status/status-tone';
 import { DualProgress } from '../../shared/ui/dual-progress';
+import { ChipButton } from '../../shared/ui/chip-button';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { GroupedBars } from '../../shared/ui/grouped-bars';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
+import { PageHeader } from '../../shared/ui/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ProjectEvmStore } from '../evm/project-evm-store';
 import { ActivityFormDialog } from './activity-form-dialog';
+
+type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
 
 /** Tabla de actividades del proyecto, con alta, edición y borrado. */
 @Component({
@@ -36,22 +45,44 @@ import { ActivityFormDialog } from './activity-form-dialog';
   providers: [ProjectEvmStore],
   imports: [
     ActivityFormDialog,
+    ChipButton,
     DualProgress,
     EmptyState,
     GroupedBars,
     IndexValue,
-    RouterLink,
+    PageHeader,
     Skeleton,
     StatusBadge,
   ],
   template: `
-    <header class="page-header">
-      <div>
-        <p class="breadcrumb"><a routerLink="/proyectos">Proyectos</a> · {{ projectName() }}</p>
-        <h1>Actividades</h1>
+    <app-page-header title="Actividades" [subtitle]="projectName()">
+      <app-chip-button [label]="projectName()" [expandable]="false" (pressed)="goToProjects()" />
+      <div class="anchor">
+        <app-chip-button
+          [label]="statusFilterLabel()"
+          [open]="statusMenuOpen()"
+          (pressed)="statusMenuOpen.set(!statusMenuOpen())"
+        />
+        @if (statusMenuOpen()) {
+          <div class="status-menu" role="radiogroup" aria-label="Filtrar por estado">
+            @for (option of statusOptions; track option.value) {
+              <button
+                type="button"
+                role="radio"
+                [class.active]="option.value === statusFilter()"
+                [attr.aria-checked]="option.value === statusFilter()"
+                (click)="chooseStatus(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        }
       </div>
-      <button type="button" class="primary" (click)="openCreate()">+ Nueva actividad</button>
-    </header>
+      @if (lastCutoffShort(); as cutoff) {
+        <app-chip-button [label]="'Corte: ' + cutoff" [expandable]="false" />
+      }
+    </app-page-header>
 
     @if (evm.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
@@ -60,24 +91,116 @@ import { ActivityFormDialog } from './activity-form-dialog';
     @if (evm.indicators(); as indicators) {
       <div class="totals">
         <div class="card small">
-          <span class="label">{{ labels.short('PV') }} consolidado</span>
-          <p class="figure">{{ money(indicators.plannedValue) }}</p>
+          <span class="label">{{ labels.title('PV') }} consolidado</span>
+          <p class="figure">{{ compact(indicators.plannedValue) }}</p>
         </div>
         <div class="card small">
-          <span class="label">{{ labels.short('EV') }} consolidado</span>
-          <p class="figure accent">{{ money(indicators.earnedValue) }}</p>
+          <span class="label">{{ labels.title('EV') }} consolidado</span>
+          <p class="figure accent">{{ compact(indicators.earnedValue) }}</p>
         </div>
         <div class="card small">
-          <span class="label">{{ labels.short('CV') }}</span>
+          <span class="label">{{ labels.title('CV') }}</span>
           <p [class]="'figure tone-' + (indicators.costVariance < 0 ? 'danger' : 'success')">
             {{ money(indicators.costVariance) }}
           </p>
         </div>
         <div class="card small">
-          <span class="label">{{ labels.short('SV') }}</span>
+          <span class="label">{{ labels.title('SV') }}</span>
           <p [class]="'figure tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')">
             {{ money(indicators.scheduleVariance) }}
           </p>
+        </div>
+      </div>
+    }
+
+    @if (evm.isLoading() && rows().length === 0) {
+      <div class="card">
+        @for (placeholder of placeholders; track placeholder) {
+          <div class="skeleton-row">
+            <app-skeleton width="35%" [height]="16" />
+            <app-skeleton width="60%" [height]="12" />
+          </div>
+        }
+      </div>
+    } @else if (!evm.hasActivities()) {
+      <app-empty-state
+        title="Aún no hay actividades"
+        description="Sin actividades registradas no es posible calcular PV, EV ni los índices del proyecto. Agrega la primera para empezar el análisis."
+        actionLabel="+ Nueva actividad"
+        (action)="openCreate()"
+      />
+    } @else {
+      <div class="card table">
+        <div class="table-bar">
+          <span class="count">{{ countLabel() }}</span>
+          <button type="button" class="primary" (click)="openCreate()">+ Nueva actividad</button>
+        </div>
+        <div class="grid" role="table" aria-label="Actividades del proyecto">
+          <div class="row head" role="row">
+            <span role="columnheader">Actividad</span>
+            <span role="columnheader">{{ labels.title('BAC') }}</span>
+            <span role="columnheader">Avance</span>
+            <span role="columnheader">{{ labels.title('AC') }}</span>
+            <span role="columnheader">{{ labels.short('CPI') }}</span>
+            <span role="columnheader">{{ labels.short('SPI') }}</span>
+            <span role="columnheader">Estado</span>
+          </div>
+          @for (row of rows(); track row.activity.id) {
+            <div class="row" role="row">
+              <div class="name-cell" role="cell">
+                <span class="rail" [class]="'tone-' + row.tone" aria-hidden="true"></span>
+                <button type="button" class="name" (click)="openDetail(row.activity.id)">
+                  <span class="title">{{ row.activity.name }}</span>
+                  @if (row.dates) {
+                    <span class="meta">{{ row.dates }}</span>
+                  }
+                </button>
+              </div>
+              <span class="tabular" role="cell">{{ money(row.activity.budgetAtCompletion) }}</span>
+              <span role="cell">
+                <app-dual-progress
+                  [planned]="row.activity.plannedProgressPercent"
+                  [actual]="row.activity.actualProgressPercent"
+                />
+              </span>
+              <span class="tabular" role="cell">{{ money(row.activity.actualCost) }}</span>
+              <span role="cell">
+                <app-index-value
+                  [value]="row.activity.indicators.costPerformanceIndex"
+                  [tone]="row.costTone"
+                  [hint]="row.activity.indicators.costStatus.message"
+                />
+              </span>
+              <span role="cell">
+                <app-index-value
+                  [value]="row.activity.indicators.schedulePerformanceIndex"
+                  [tone]="row.scheduleTone"
+                  [hint]="row.activity.indicators.scheduleStatus.message"
+                />
+              </span>
+              <span class="actions" role="cell">
+                <app-status-badge [label]="row.statusLabel" [tone]="row.tone" />
+                <span class="row-tools">
+                  <button
+                    type="button"
+                    class="icon"
+                    [attr.aria-label]="'Editar ' + row.activity.name"
+                    (click)="openEdit(row.activity)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="icon danger"
+                    [attr.aria-label]="'Borrar ' + row.activity.name"
+                    (click)="confirmRemove(row.activity)"
+                  >
+                    Borrar
+                  </button>
+                </span>
+              </span>
+            </div>
+          }
         </div>
       </div>
     }
@@ -100,78 +223,6 @@ import { ActivityFormDialog } from './activity-form-dialog';
       </section>
     }
 
-    @if (evm.isLoading() && rows().length === 0) {
-      <div class="card">
-        @for (placeholder of placeholders; track placeholder) {
-          <div class="skeleton-row">
-            <app-skeleton width="35%" [height]="16" />
-            <app-skeleton width="60%" [height]="12" />
-          </div>
-        }
-      </div>
-    } @else if (!evm.hasActivities()) {
-      <app-empty-state
-        title="Aún no hay actividades"
-        description="Sin actividades registradas no es posible calcular PV, EV ni los índices del proyecto. Agrega la primera para empezar el análisis."
-        actionLabel="+ Nueva actividad"
-        (action)="openCreate()"
-      />
-    } @else {
-      <div class="card table" role="table" aria-label="Actividades del proyecto">
-        <div class="row head" role="row">
-          <span role="columnheader">Actividad</span>
-          <span role="columnheader">{{ labels.short('BAC') }}</span>
-          <span role="columnheader">Avance</span>
-          <span role="columnheader">{{ labels.short('AC') }}</span>
-          <span role="columnheader">{{ labels.short('CPI') }}</span>
-          <span role="columnheader">{{ labels.short('SPI') }}</span>
-          <span role="columnheader">Estado</span>
-        </div>
-        @for (row of rows(); track row.activity.id) {
-          <div class="row" role="row">
-            <div class="name-cell" role="cell">
-              <span class="rail" [class]="'tone-' + row.tone" aria-hidden="true"></span>
-              <button type="button" class="name" (click)="openDetail(row.activity.id)">
-                <span class="title">{{ row.activity.name }}</span>
-                @if (row.dates) {
-                  <span class="meta">{{ row.dates }}</span>
-                }
-              </button>
-            </div>
-            <span class="tabular" role="cell">{{ money(row.activity.budgetAtCompletion) }}</span>
-            <span role="cell">
-              <app-dual-progress
-                [planned]="row.activity.plannedProgressPercent"
-                [actual]="row.activity.actualProgressPercent"
-              />
-            </span>
-            <span class="tabular" role="cell">{{ money(row.activity.actualCost) }}</span>
-            <span role="cell">
-              <app-index-value
-                [value]="row.activity.indicators.costPerformanceIndex"
-                [tone]="row.costTone"
-                [hint]="row.activity.indicators.costStatus.message"
-              />
-            </span>
-            <span role="cell">
-              <app-index-value
-                [value]="row.activity.indicators.schedulePerformanceIndex"
-                [tone]="row.scheduleTone"
-                [hint]="row.activity.indicators.scheduleStatus.message"
-              />
-            </span>
-            <span class="actions" role="cell">
-              <app-status-badge [label]="row.statusLabel" [tone]="row.tone" />
-              <button type="button" class="icon" (click)="openEdit(row.activity)">Editar</button>
-              <button type="button" class="icon danger" (click)="confirmRemove(row.activity)">
-                Borrar
-              </button>
-            </span>
-          </div>
-        }
-      </div>
-    }
-
     @if (formOpen()) {
       <app-activity-form-dialog
         [activity]="editing()"
@@ -182,29 +233,68 @@ import { ActivityFormDialog } from './activity-form-dialog';
     }
   `,
   styles: `
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
+    .anchor {
+      position: relative;
     }
-    .breadcrumb {
-      margin: 0 0 8px;
+    .status-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 220px;
+      padding: 8px;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .status-menu button {
+      border: none;
+      border-radius: 12px;
+      background: none;
+      color: var(--text-muted);
       font-size: 13px;
       font-weight: 600;
-      color: var(--text-dim);
+      padding: 11px 14px;
+      text-align: left;
     }
-    .breadcrumb a {
-      text-decoration: none;
+    .status-menu button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
     }
-    h1 {
-      margin: 0;
-      font-size: 44px;
-      line-height: 1.1;
-      font-weight: 800;
-      letter-spacing: -0.035em;
+    .status-menu button.active {
+      background: rgba(139, 111, 224, 0.12);
+      color: var(--text);
+    }
+    .table-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 12px 12px 18px;
+    }
+    .count {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .grid {
+      overflow-x: auto;
+    }
+    /* Las herramientas de fila aparecen al apuntar: el diseño deja la fila limpia. */
+    .row-tools {
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity var(--motion-veil);
+    }
+    .row:hover .row-tools,
+    .row:focus-within .row-tools {
+      opacity: 1;
     }
     .primary {
       border: none;
@@ -247,7 +337,7 @@ import { ActivityFormDialog } from './activity-form-dialog';
     .comparison {
       padding: var(--pad-card);
       overflow: visible;
-      margin-bottom: var(--gap-grid);
+      margin-top: var(--gap-grid);
     }
     .comparison h2 {
       margin: 0 0 6px;
@@ -378,10 +468,38 @@ export class ActivitiesPage {
   private readonly toasts = inject(ToastService);
 
   protected readonly money = formatMoneyRounded;
+  protected readonly compact = formatCompact;
   protected readonly placeholders = [0, 1, 2, 3];
 
   protected readonly formOpen = signal(false);
   protected readonly editing = signal<Activity | null>(null);
+
+  protected readonly statusOptions: readonly { value: StatusFilter; label: string }[] = [
+    { value: 'todos', label: 'Todos los estados' },
+    { value: 'riesgo', label: 'En riesgo' },
+    { value: 'al-dia', label: 'Al día' },
+    { value: 'sin-datos', label: 'Sin costo registrado' },
+  ];
+  protected readonly statusFilter = signal<StatusFilter>('todos');
+  protected readonly statusMenuOpen = signal(false);
+
+  protected readonly statusFilterLabel = computed(
+    () =>
+      this.statusOptions.find((option) => option.value === this.statusFilter())?.label ??
+      'Todos los estados',
+  );
+
+  protected readonly lastCutoffShort = computed(() => {
+    const last = this.evm.timeline().at(-1);
+    return last === undefined ? null : formatShortDate(last.cutoffDate);
+  });
+
+  protected readonly countLabel = computed(() => {
+    const shown = this.rows().length;
+    const total = this.evm.activityList().length;
+    const noun = total === 1 ? 'actividad' : 'actividades';
+    return shown === total ? `${total} ${noun}` : `${shown} de ${total} ${noun}`;
+  });
 
   private readonly projectId = computed(() => {
     const raw = this.route.snapshot.paramMap.get('projectId');
@@ -391,7 +509,7 @@ export class ActivitiesPage {
 
   protected readonly projectName = computed(() => this.evm.summary()?.project.name ?? 'Proyecto');
 
-  protected readonly rows = computed(() => {
+  private readonly allRows = computed(() => {
     const dateFormat = this.preferences.preferences().dateFormat;
     return this.evm.activityList().map((activity) => ({
       activity,
@@ -401,6 +519,26 @@ export class ActivitiesPage {
       statusLabel: combinedStatusLabel(activity.indicators),
       tone: overallTone(activity.indicators),
     }));
+  });
+
+  /**
+   * Filtro por salud de la actividad.
+   *
+   * Se apoya en el estado que devuelve el servidor. "Sin costo registrado" es una categoría propia
+   * y no un caso de riesgo: que falte el dato no significa que la actividad vaya mal.
+   */
+  protected readonly rows = computed(() => {
+    const filter = this.statusFilter();
+    if (filter === 'todos') {
+      return this.allRows();
+    }
+    return this.allRows().filter((row) => {
+      if (row.tone === 'neutral') {
+        return filter === 'sin-datos';
+      }
+      const atRisk = row.tone === 'danger' || row.tone === 'warning';
+      return filter === 'riesgo' ? atRisk : filter === 'al-dia' && !atRisk;
+    });
   });
 
   constructor() {
@@ -413,6 +551,15 @@ export class ActivitiesPage {
       this.formOpen.set(true);
     }
     effect(() => this.evm.select(this.projectId()));
+  }
+
+  protected chooseStatus(value: StatusFilter): void {
+    this.statusFilter.set(value);
+    this.statusMenuOpen.set(false);
+  }
+
+  protected goToProjects(): void {
+    void this.router.navigate(['/proyectos']);
   }
 
   protected openCreate(): void {
