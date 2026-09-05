@@ -35,6 +35,14 @@ public interface ActivityUseCases {
     /** Elimina una actividad del proyecto. */
     void delete(Long projectId, Long activityId);
 
+    /**
+     * Obtiene una actividad concreta del proyecto, con sus indicadores.
+     *
+     * <p>El proyecto forma parte de la identidad de la búsqueda: una actividad que existe pero
+     * pertenece a otro proyecto se considera inexistente en esta ruta.
+     */
+    ActivityEvm get(Long projectId, Long activityId);
+
     /** Lista las actividades de un proyecto, cada una con sus indicadores. */
     List<ActivityEvm> listByProject(Long projectId);
 }
