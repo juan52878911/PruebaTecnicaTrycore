@@ -27,6 +27,7 @@ import com.trycore.evm.application.port.in.ActivityUseCases;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.ProgressMeasurement;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -82,7 +83,8 @@ public class ActivityController {
     public ResponseEntity<ActivityResponse> create(
             @PathVariable final Long projectId, @Valid @RequestBody final ActivityRequest request) {
         final ActivityEvm created =
-                activityUseCases.create(projectId, request.name(), toFigures(request), toSchedule(request));
+                activityUseCases.create(
+                        projectId, request.name(), toFigures(request), toSchedule(request), toProgress(request));
         final ActivityResponse response = ActivityRestMapper.toResponse(created);
         return ResponseEntity.created(locationOf(created.activity().id())).body(response);
     }
@@ -106,7 +108,8 @@ public class ActivityController {
             @PathVariable final Long activityId,
             @Valid @RequestBody final ActivityRequest request) {
         final ActivityEvm updated = activityUseCases.update(
-                projectId, activityId, request.name(), toFigures(request), toSchedule(request));
+                projectId, activityId, request.name(), toFigures(request), toSchedule(request),
+                toProgress(request));
         return ActivityRestMapper.toResponse(updated);
     }
 
@@ -125,6 +128,10 @@ public class ActivityController {
     /** Deriva la ubicación del recurso creado de la petición en curso, sin repetir la ruta base. */
     private static URI locationOf(final Long activityId) {
         return ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(activityId).toUri();
+    }
+
+    private static ProgressMeasurement toProgress(final ActivityRequest request) {
+        return new ProgressMeasurement(request.measurementMethod());
     }
 
     private static ActivitySchedule toSchedule(final ActivityRequest request) {

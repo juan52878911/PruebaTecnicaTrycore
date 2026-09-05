@@ -5,6 +5,7 @@ import java.util.List;
 import com.trycore.evm.domain.model.ActivityEvm;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.ActivitySchedule;
+import com.trycore.evm.domain.model.ProgressMeasurement;
 
 /**
  * Casos de uso disponibles sobre actividades de un proyecto. Puerto de entrada de la aplicación:
@@ -15,11 +16,21 @@ import com.trycore.evm.domain.model.ActivitySchedule;
 public interface ActivityUseCases {
 
     /** Crea una actividad nueva dentro de un proyecto existente. */
-    ActivityEvm create(Long projectId, String name, ActivityFigures figures, ActivitySchedule schedule);
+    ActivityEvm create(
+            Long projectId,
+            String name,
+            ActivityFigures figures,
+            ActivitySchedule schedule,
+            ProgressMeasurement progress);
 
     /** Actualiza el nombre y las cifras de una actividad existente del proyecto. */
     ActivityEvm update(
-            Long projectId, Long activityId, String name, ActivityFigures figures, ActivitySchedule schedule);
+            Long projectId,
+            Long activityId,
+            String name,
+            ActivityFigures figures,
+            ActivitySchedule schedule,
+            ProgressMeasurement progress);
 
     /** Elimina una actividad del proyecto. */
     void delete(Long projectId, Long activityId);

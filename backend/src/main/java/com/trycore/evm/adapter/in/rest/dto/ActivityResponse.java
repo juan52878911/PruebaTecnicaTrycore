@@ -41,6 +41,22 @@ public record ActivityResponse(
         @Schema(description = "Fecha de fin real", example = "2026-09-28")
         LocalDate actualEndDate,
 
+        @Schema(description = "Regla con la que la actividad reconoce valor", example = "PERCENT_COMPLETE")
+        String measurementMethod,
+
+        @Schema(description = "Nombre legible de la regla de medición", example = "Porcentaje completado")
+        String measurementMethodDescription,
+
+        @Schema(
+                description = "Porcentaje planificado que la regla reconoce; puede no coincidir con el declarado",
+                example = "50.00")
+        BigDecimal effectivePlannedProgressPercent,
+
+        @Schema(
+                description = "Porcentaje real que la regla reconoce; puede no coincidir con el declarado",
+                example = "40.00")
+        BigDecimal effectiveActualProgressPercent,
+
         @Schema(description = "Indicadores de Valor Ganado calculados a partir de las cifras de la actividad")
         EvmIndicatorsResponse indicators) {
 }
