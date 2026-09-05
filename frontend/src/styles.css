@@ -78,6 +78,15 @@
   box-sizing: border-box;
 }
 
+/* En móvil el documento no se desplaza: el marco mide la pantalla y solo se mueve <main>. */
+@media (max-width: 767px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
 /* Con una capa modal abierta solo se desplaza la capa; ver ScrollLock. En móvil desplaza <main>. */
 body.scroll-locked,
 body.scroll-locked main {

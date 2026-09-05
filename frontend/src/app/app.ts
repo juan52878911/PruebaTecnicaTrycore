@@ -50,6 +50,9 @@ import { ToastHost } from './shared/ui/toast-host';
      */
     @media (max-width: 767px) {
       .shell {
+        /* min-height a cero: el 100vh de escritorio supera al alto real con la barra del navegador
+           visible, y ese exceso era un segundo scroll fuera del contenido. */
+        min-height: 0;
         height: 100vh;
         height: 100dvh;
         padding: 14px 20px 0;

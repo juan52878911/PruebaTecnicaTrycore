@@ -31,15 +31,19 @@ test.describe('móvil', () => {
     await mockApi(page);
   });
 
-  test('ninguna vista desborda en horizontal', async ({ page }) => {
+  test('ninguna vista desborda: el documento no se desplaza en ningún eje', async ({ page }) => {
     for (const route of ROUTES) {
       await page.goto(route);
       await expect(page.locator('main')).not.toBeEmpty();
       const overflow = await page.evaluate(() => ({
         document: document.documentElement.scrollWidth,
         viewport: window.innerWidth,
+        documentHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
       }));
       expect(overflow.document, route).toBeLessThanOrEqual(overflow.viewport);
+      // Tampoco en vertical: el único scroll es el del contenido, nunca el del documento.
+      expect(overflow.documentHeight, route).toBeLessThanOrEqual(overflow.viewportHeight);
     }
   });
 
@@ -78,7 +82,9 @@ test.describe('móvil', () => {
     page,
   }) => {
     await page.goto('/proyectos/1/actividades');
-    // El alta sale del "+" de la barra inferior, como en el diseño.
+    // Con la vista ya cargada (si no, el "+" aún no sabe en qué proyecto está), el alta sale del
+    // "+" de la barra inferior, como en el diseño.
+    await expect(page.locator('app-activities-page .cards li')).toHaveCount(5);
     await page.getByRole('button', { name: 'Nueva actividad' }).click();
     const sheet = page.getByRole('dialog', { name: 'Nueva actividad' });
     await expect(sheet).toBeVisible();
@@ -181,7 +187,10 @@ test.describe('móvil · scroll con capas', () => {
   }) => {
     await mockApi(page);
     await page.goto('/proyectos/1/actividades');
-    const bodyOverflow = () => page.evaluate(() => getComputedStyle(document.body).overflowY);
+    await expect(page.locator('app-activities-page .cards li')).toHaveCount(5);
+    // En móvil lo que se desplaza es <main>; el bloqueo se ve en su overflow.
+    const bodyOverflow = () =>
+      page.evaluate(() => getComputedStyle(document.querySelector('main')!).overflowY);
     expect(await bodyOverflow()).not.toBe('hidden');
 
     await page.getByRole('button', { name: 'Nueva actividad' }).click();
