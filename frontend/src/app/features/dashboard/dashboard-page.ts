@@ -384,7 +384,20 @@ const PERCENT_BASE = 100;
       display: grid;
       grid-template-columns: 1fr 1fr 1.72fr;
       gap: var(--gap-grid);
-      align-items: start;
+      /*
+       * Las columnas se estiran hasta la más alta en lugar de quedarse en su altura natural. Con
+       * "start" cada una terminaba donde le tocaba y sus bordes inferiores no coincidían: la de PV,
+       * EV y AC acababa 51 px por encima de las otras dos, y el panel se veía descuadrado por abajo.
+       */
+      align-items: stretch;
+    }
+    /*
+     * El sobrante de cada columna se reparte entre sus tarjetas tomando la altura natural como base
+     * (de ahí el "auto" y no un cero), así que crecen todas por igual y conservan la proporción que
+     * les da su contenido. Dárselo solo a la última dejaría una tarjeta desproporcionada al final.
+     */
+    .grid > .column > * {
+      flex: 1 1 auto;
     }
     /*
      * Entrada escalonada, columna a columna. El retraso es corto a propósito: marca el orden de
