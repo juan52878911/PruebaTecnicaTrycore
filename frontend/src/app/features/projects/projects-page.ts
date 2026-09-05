@@ -254,7 +254,10 @@ const EMPTY_CELL = '—';
     }
     .row {
       display: grid;
-      grid-template-columns: 2.2fr 1fr 1fr 1fr 0.8fr 0.8fr 1.4fr;
+      position: relative;
+      grid-template-columns:
+        minmax(0, 2.2fr) minmax(0, 0.95fr) minmax(0, 0.95fr) minmax(0, 0.95fr) minmax(0, 0.7fr)
+        minmax(0, 0.7fr) minmax(0, 1.85fr);
       gap: 14px;
       align-items: center;
       padding: 14px 12px;
@@ -300,9 +303,17 @@ const EMPTY_CELL = '—';
     .actions {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .row > * {
+      min-width: 0;
+    }
+    /* Las herramientas flotan sobre el borde derecho: no reservan hueco mientras están ocultas. */
+    .row app-row-tools {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
     }
     /* Las herramientas de fila aparecen al apuntar: el diseño deja la fila limpia. Siguen siendo
        alcanzables con el teclado gracias a focus-within. */

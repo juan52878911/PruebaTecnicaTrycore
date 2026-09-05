@@ -414,15 +414,33 @@ function parseId(raw: string | null): number | undefined {
     .figure.accent {
       color: var(--accent-text);
     }
+    /*
+     * Cada fila es su propia rejilla, así que las pistas llevan un mínimo de cero: sin él, el
+     * contenido más ancho de cada fila (un distintivo largo, un nombre) ensanchaba su columna
+     * solo en esa fila y las columnas dejaban de coincidir entre filas.
+     */
     .row {
+      position: relative;
       display: grid;
-      grid-template-columns: 2.3fr 0.85fr 1.6fr 0.95fr 0.78fr 0.78fr 1.5fr;
+      grid-template-columns:
+        minmax(0, 2.2fr) minmax(0, 0.85fr) minmax(0, 1.45fr) minmax(0, 0.95fr) minmax(0, 0.75fr)
+        minmax(0, 0.75fr) minmax(0, 1.8fr);
       gap: 14px;
       align-items: center;
       padding: 14px 12px;
       border-radius: var(--radius-tile);
       min-width: 1000px;
       transition: background var(--motion-veil);
+    }
+    .row > * {
+      min-width: 0;
+    }
+    /* Las herramientas flotan sobre el borde derecho: no reservan hueco mientras están ocultas. */
+    .row app-row-tools {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
     }
     .row.clickable {
       cursor: pointer;
@@ -472,8 +490,7 @@ function parseId(raw: string | null): number | undefined {
     .actions {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      min-width: 0;
     }
     .mobile-bar {
       display: flex;
