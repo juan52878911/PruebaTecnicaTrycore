@@ -277,6 +277,10 @@ FROM projects p,
 WHERE a.project_id = p.id
   AND p.name IN ('Planta Solar Norte', 'Migración core bancario', 'Portal de autogestión')
   AND a.name = v.name
+  -- Las actividades medidas por hitos quedan fuera: su avance real no es un dato de referencia,
+  -- es una proyección de los pesos cumplidos, y devolverlo al valor del diseño lo dejaría en
+  -- contradicción con sus propios hitos.
+  AND a.measurement_method = 'PERCENT_COMPLETE'
   AND (a.budget_at_completion, a.planned_progress_percent, a.actual_progress_percent, a.actual_cost)
       IS DISTINCT FROM (v.bac, v.planned, v.actual, v.ac);
 
@@ -328,3 +332,60 @@ FROM (VALUES
 ) AS v(name, manager)
 WHERE p.name = v.name
   AND p.manager IS NULL;
+
+-- ---------------------------------------------------------------------------------------------
+-- Reglas de medición del avance
+--
+-- Se asignan con UPDATE por el mismo motivo que los responsables: los INSERT de arriba llevan
+-- WHERE NOT EXISTS y no se reejecutan sobre una base que ya cargó una versión anterior de la
+-- semilla. Cada regla queda representada al menos una vez para que el tablero muestre las cuatro
+-- ramas de cálculo con datos reales, y para que se vea la diferencia entre el avance declarado y
+-- el que la regla reconoce.
+--
+--   "Montaje de estructuras" pasa a mitad al iniciar y mitad al cerrar. Declara 76 % pero la regla
+--   reconoce 50 % por ambos lados, así que su PV y su EV valen 237 500 y su SPI es exactamente 1.
+--   "Conexión a la red" pasa a todo o nada. Sigue en cero por los dos lados, luego no cambia nada:
+--   sirve para enseñar la regla sin alterar el consolidado del proyecto.
+-- ---------------------------------------------------------------------------------------------
+
+UPDATE activities a
+SET measurement_method = v.method
+FROM (VALUES
+    ('Montaje de estructuras', 'FIXED_50_50'),
+    ('Conexión a la red',      'FIXED_0_100')
+) AS v(name, method)
+WHERE a.name = v.name
+  AND a.measurement_method IS DISTINCT FROM v.method;
+
+-- ---------------------------------------------------------------------------------------------
+-- Hitos ponderados
+--
+-- "Certificación regulatoria" pasa a medirse por hitos. Sus pesos suman exactamente 100, que es la
+-- invariante del dominio, y los dos primeros están cumplidos: 15 + 30 = 45, de modo que su avance
+-- real queda derivado en 45 % en lugar del 46 % que declaraba. Con BAC 280 000 su EV pasa de
+-- 128 800 a 126 000.
+--
+-- El avance derivado se escribe también en la columna de porcentaje porque para estas actividades
+-- ese valor es una proyección de los hitos, no un dato independiente: mantener los dos sin
+-- sincronizar sería tener dos verdades sobre lo mismo.
+-- ---------------------------------------------------------------------------------------------
+
+INSERT INTO activity_milestones (activity_id, name, weight_percent, achieved, achieved_on, position)
+SELECT a.id, v.name, v.weight, v.achieved, v.achieved_on, v.position
+FROM activities a
+CROSS JOIN (VALUES
+    ('Expediente presentado',      15.00, true,  DATE '2026-07-10', 0),
+    ('Auditoría de cumplimiento',  30.00, true,  DATE '2026-09-18', 1),
+    ('Resolución favorable',       40.00, false, NULL,              2),
+    ('Publicación en el registro', 15.00, false, NULL,              3)
+) AS v(name, weight, achieved, achieved_on, position)
+WHERE a.name = 'Certificación regulatoria'
+  AND NOT EXISTS (SELECT 1 FROM activity_milestones m WHERE m.activity_id = a.id AND m.name = v.name);
+
+-- Sin condicionar a la regla actual: el UPDATE debe poder reparar una base que quedó a medias,
+-- por ejemplo si una versión anterior de esta semilla dejó la regla puesta y el avance sin derivar.
+UPDATE activities
+SET measurement_method = 'WEIGHTED_MILESTONES',
+    actual_progress_percent = 45.00
+WHERE name = 'Certificación regulatoria'
+  AND (measurement_method, actual_progress_percent) IS DISTINCT FROM ('WEIGHTED_MILESTONES', 45.00);

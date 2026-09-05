@@ -177,11 +177,11 @@ especificación OpenAPI.
 
 | Método | Ruta | Respuesta |
 | --- | --- | --- |
-| GET, POST | `/projects` | 200, 201 |
+| GET, POST | `/projects` | 200, 201. `?includeIndicators=true` añade contador, cifras e indicadores por proyecto |
 | GET, PUT, DELETE | `/projects/{id}` | 200, 200, 204 |
-| GET | `/projects/{id}/evm` | 200, análisis consolidado con cada actividad |
+| GET | `/projects/{id}/evm` | 200, análisis consolidado con cada actividad. `?eacFormula=` elige la fórmula titular |
 | GET, POST | `/projects/{id}/activities` | 200, 201 |
-| PUT, DELETE | `/projects/{id}/activities/{activityId}` | 200, 204 |
+| GET, PUT, DELETE | `/projects/{id}/activities/{activityId}` | 200, 200, 204 |
 | GET, POST | `/projects/{id}/measurements` | 200, 201 |
 | GET, DELETE | `/projects/{id}/measurements/{measurementId}` | 200, 204 |
 | GET | `/projects/{id}/timeline` | 200, serie temporal lista para graficar |
@@ -246,12 +246,45 @@ curl -s http://localhost:8080/api/v1/projects/1/timeline
 - **Un índice cuyo divisor es cero no vale cero: no existe.** Con AC = 0 el CPI se devuelve como `null` con
   estado `NOT_APPLICABLE` y su motivo, en lugar de un cero que se leería como el peor desempeño posible.
   Lo mismo con el SPI cuando PV = 0. EAC y VAC heredan esa indefinición.
-- **EAC se calcula como BAC x AC / EV con precisión completa**, no dividiendo por el CPI ya redondeado. Es la
-  misma fórmula, pero usar el CPI a cuatro decimales daría 149.992,50 donde el resultado exacto es 150.000.
+- **El estado es un hecho y la severidad es una política.** Un CPI de 0,9857 está `OVER_BUDGET`, porque se
+  gastó más de lo que se ganó, y su severidad es `WARNING`, porque la desviación cabe dentro de la tolerancia.
+  Ensanchar el estado hasta cubrir la tolerancia diría algo falso y dejaría una variación de costo negativa
+  contradiciendo al propio estado. Los umbrales usados viajan en la respuesta para que ningún cliente los
+  repita por su cuenta.
+- **La regla de medición gobierna el valor planificado además del ganado.** SV = EV - PV y SPI = EV / PV solo
+  significan algo si ambos términos se miden con la misma vara. Un paquete de todo o nada que va al día pero no
+  ha cerrado, medido con la regla solo en el lado ganado, saldría con una desviación de -50.000 y un SPI de
+  cero: una alarma falsa fabricada por restar cifras que no son comparables.
+- **Se devuelven las tres fórmulas estándar del EAC**, cada una con su supuesto sobre el futuro, porque el
+  rango entre ellas informa más que una cifra suelta. La tercera se desarrolla algebraicamente en vez de
+  multiplicar índices ya redondeados, que darían 172.494,38 donde el resultado exacto es 172.500,00.
 - **El consolidado del proyecto suma BAC, PV, EV y AC y calcula los índices sobre las sumas.** No promedia los
   índices de las actividades: dos actividades con CPI 2,0 y 0,5 consolidan en 1,0, no en 1,25.
 - Las cifras se rechazan si exceden la precisión con la que el dominio trabaja, en vez de redondearse en
   silencio. Aceptar un 33,333 % y guardar 33,33 haría que el API confirmara datos que no almacenó.
+
+## Reglas de medición del avance
+
+Cada actividad declara cómo reconoce valor. Es un campo opcional: sin él se comporta como siempre.
+
+| Regla | Qué reconoce | Para qué sirve |
+| --- | --- | --- |
+| `PERCENT_COMPLETE` | El porcentaje declarado tal cual | Cuando el avance se puede estimar de forma continua |
+| `FIXED_0_100` | Nada hasta cerrar, y entonces todo | Actividades cortas donde un avance parcial no vale |
+| `FIXED_50_50` | La mitad al iniciar, el resto al cerrar | Cuando no se quiere estimar el avance intermedio |
+| `WEIGHTED_MILESTONES` | El avance derivado de los hitos cumplidos | Trabajo con entregables verificables |
+
+Una actividad se considera iniciada por su fecha real de inicio **o** por cualquier avance declarado. Esa
+primera señal es la que importa en la regla de mitad y mitad: quien la usa deja el porcentaje a cero hasta
+cerrar, así que deducir el arranque del porcentaje anularía el método justo en su escenario.
+
+En las actividades medidas por hitos, **el avance real es una proyección de los pesos cumplidos**, no un dato
+independiente. Los pesos deben sumar exactamente 100, y el conjunto viaja dentro de la petición de la actividad
+con semántica de reemplazo total: una invariante sobre una colección solo es exigible si la colección se
+escribe de forma atómica.
+
+La respuesta trae los porcentajes efectivos que la regla reconoció, para que un valor ganado de cero sobre un
+avance declarado del 65 % se lea como la regla actuando y no como un fallo.
 
 ## Arquitectura
 
