@@ -20,8 +20,11 @@ import {
   scheduleTone,
   Tone,
 } from '../../core/status/status-tone';
-import { ChipGroup, ChipOption } from '../../shared/ui/chip-group';
+import { ChipButton } from '../../shared/ui/chip-button';
+import { ChipOption } from '../../shared/ui/chip-group';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { PageHeader } from '../../shared/ui/page-header';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
@@ -59,26 +62,46 @@ const EMPTY_CELL = '—';
 @Component({
   selector: 'app-projects-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChipGroup, EmptyState, IndexValue, ProjectFormDialog, Skeleton, StatusBadge],
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
+  imports: [
+    ChipButton,
+    EmptyState,
+    IndexValue,
+    PageHeader,
+    ProjectFormDialog,
+    Skeleton,
+    StatusBadge,
+  ],
   template: `
-    <header class="page-header">
-      <h1>
-        Proyectos <span>{{ countLabel() }}</span>
-      </h1>
-      <button type="button" class="primary" (click)="openCreate()">Nuevo proyecto</button>
-    </header>
+    <app-page-header title="Proyectos" [subtitle]="countLabel()">
+      <div class="anchor">
+        <app-chip-button
+          [label]="filterLabel()"
+          [open]="filterMenuOpen()"
+          (pressed)="filterMenuOpen.set(!filterMenuOpen())"
+        />
+        @if (filterMenuOpen()) {
+          <div class="filter-menu" role="radiogroup" aria-label="Filtrar proyectos">
+            @for (option of filterOptions; track option.value) {
+              <button
+                type="button"
+                role="radio"
+                [class.active]="option.value === filter()"
+                [attr.aria-checked]="option.value === filter()"
+                (click)="chooseFilter(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+      <button type="button" class="primary" (click)="openCreate()">+ Nuevo proyecto</button>
+    </app-page-header>
 
     @if (store.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
-    }
-
-    @if (rows().length > 0) {
-      <div class="filters">
-        <app-chip-group label="Filtrar proyectos" [options]="filterOptions" [(selected)]="filter" />
-        @if (filter() !== 'todos') {
-          <span class="filter-count">{{ filterCountLabel() }}</span>
-        }
-      </div>
     }
 
     @if (store.isLoading() && rows().length === 0) {
@@ -97,6 +120,37 @@ const EMPTY_CELL = '—';
         actionLabel="Nuevo proyecto"
         (action)="openCreate()"
       />
+    } @else if (!isDesktop()) {
+      <!-- En móvil la tabla se convierte en una lista de tarjetas: siete columnas no caben en
+           390 px sin obligar a desplazar en horizontal. -->
+      <ul class="cards">
+        @for (row of visibleRows(); track row.project.id) {
+          <li>
+            <button type="button" (click)="openActivities(row.project.id)">
+              <span class="card-head">
+                <span class="card-text">
+                  <span class="title">{{ row.project.name }}</span>
+                  <span class="meta">{{ row.meta }}</span>
+                </span>
+                <app-status-badge [label]="row.statusLabel" [tone]="row.statusTone" />
+              </span>
+              <span class="card-indices">
+                <span class="pair">
+                  {{ labels.short('CPI') }}
+                  <app-index-value [value]="row.costPerformanceIndex" [tone]="row.costTone" />
+                </span>
+                <span class="pair">
+                  {{ labels.short('SPI') }}
+                  <app-index-value
+                    [value]="row.schedulePerformanceIndex"
+                    [tone]="row.scheduleTone"
+                  />
+                </span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
     } @else {
       <div class="card table" role="table" aria-label="Proyectos con sus indicadores">
         <div class="row head" role="row">
@@ -133,12 +187,24 @@ const EMPTY_CELL = '—';
             </span>
             <span class="actions" role="cell">
               <app-status-badge [label]="row.statusLabel" [tone]="row.statusTone" />
-              <button type="button" class="icon" (click)="openEdit(row.project)" title="Editar">
-                Editar
-              </button>
-              <button type="button" class="icon danger" (click)="confirmRemove(row.project)">
-                Borrar
-              </button>
+              <span class="row-tools">
+                <button
+                  type="button"
+                  class="icon"
+                  [attr.aria-label]="'Editar ' + row.project.name"
+                  (click)="openEdit(row.project)"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="icon danger"
+                  [attr.aria-label]="'Borrar ' + row.project.name"
+                  (click)="confirmRemove(row.project)"
+                >
+                  Borrar
+                </button>
+              </span>
             </span>
           </div>
         }
@@ -155,23 +221,6 @@ const EMPTY_CELL = '—';
     }
   `,
   styles: `
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 26px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 54px;
-      line-height: 1.1;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-    }
-    h1 span {
-      color: rgba(255, 255, 255, 0.32);
-    }
     .primary {
       border: none;
       border-radius: var(--radius-pill);
@@ -182,16 +231,42 @@ const EMPTY_CELL = '—';
       padding: 12px 22px;
       white-space: nowrap;
     }
-    .filters {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
+    .anchor {
+      position: relative;
     }
-    .filter-count {
-      font-size: 12.5px;
-      color: var(--text-dim);
+    .filter-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 200px;
+      padding: 8px;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      animation: vPop 0.2s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    }
+    .filter-menu button {
+      border: none;
+      border-radius: 12px;
+      background: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 11px 14px;
+      text-align: left;
+    }
+    .filter-menu button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+    }
+    .filter-menu button.active {
+      background: rgba(139, 111, 224, 0.12);
+      color: var(--text);
     }
     .banner {
       margin: 0 0 18px;
@@ -258,6 +333,18 @@ const EMPTY_CELL = '—';
       gap: 8px;
       flex-wrap: wrap;
     }
+    /* Las herramientas de fila aparecen al apuntar: el diseño deja la fila limpia. Siguen siendo
+       alcanzables con el teclado gracias a focus-within. */
+    .row-tools {
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity var(--motion-veil);
+    }
+    .row:hover .row-tools,
+    .row:focus-within .row-tools {
+      opacity: 1;
+    }
     .icon {
       border: 1px solid var(--border-control);
       border-radius: var(--radius-pill);
@@ -275,25 +362,67 @@ const EMPTY_CELL = '—';
       color: var(--danger);
       border-color: rgba(255, 138, 107, 0.4);
     }
+    .cards {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .cards button {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 12px;
+      text-align: left;
+      transition: border-color var(--motion-border);
+    }
+    .cards button:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .card-head .title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .card-indices {
+      display: flex;
+      gap: 26px;
+    }
+    .pair {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
     .skeleton-row {
       display: flex;
       flex-direction: column;
       gap: 8px;
       padding: 16px 12px;
     }
-    @media (max-width: 767px) {
-      h1 {
-        font-size: 26px;
-      }
-      .page-header {
-        align-items: center;
-      }
-    }
   `,
 })
 export class ProjectsPage {
   protected readonly store = inject(ProjectsStore);
   protected readonly labels = inject(IndicatorLabels);
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
   private readonly projectsApi = inject(ProjectsApi);
   private readonly selection = inject(SelectedProjectStore);
   private readonly router = inject(Router);
@@ -307,11 +436,18 @@ export class ProjectsPage {
   protected readonly editing = signal<Project | null>(null);
 
   protected readonly filterOptions: readonly ChipOption<ProjectFilter>[] = [
-    { value: 'todos', label: 'Todos' },
+    { value: 'todos', label: 'Todos los estados' },
     { value: 'riesgo', label: 'En riesgo' },
     { value: 'al-dia', label: 'Al día' },
   ];
   protected readonly filter = signal<ProjectFilter>('todos');
+  protected readonly filterMenuOpen = signal(false);
+
+  protected readonly filterLabel = computed(
+    () =>
+      this.filterOptions.find((option) => option.value === this.filter())?.label ??
+      'Todos los estados',
+  );
 
   protected readonly rows = computed(() =>
     this.store
@@ -339,6 +475,11 @@ export class ProjectsPage {
       return filter === 'riesgo' ? atRisk : !atRisk;
     });
   });
+
+  protected chooseFilter(value: ProjectFilter): void {
+    this.filter.set(value);
+    this.filterMenuOpen.set(false);
+  }
 
   protected readonly filterCountLabel = computed(() => {
     const shown = this.visibleRows().length;

@@ -10,6 +10,7 @@ import {
   THRESHOLD_MIN,
 } from '../../core/preferences/preferences.model';
 import { ChipGroup, ChipOption } from '../../shared/ui/chip-group';
+import { PageHeader } from '../../shared/ui/page-header';
 import { FormField } from '../../shared/ui/form-field';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ToggleSwitch } from '../../shared/ui/toggle-switch';
@@ -26,18 +27,17 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
 @Component({
   selector: 'app-settings-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChipGroup, FormField, FormsModule, ToggleSwitch],
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
+  imports: [ChipGroup, FormField, FormsModule, PageHeader, ToggleSwitch],
   template: `
-    <header class="page-header">
-      <div>
-        <h1>Ajustes <span>del cálculo</span></h1>
-        <p class="lead">
-          Estas preferencias se guardan en este navegador. No viajan al servidor ni afectan a los
-          datos del proyecto.
-        </p>
-      </div>
+    <app-page-header
+      title="Ajustes"
+      subtitle="del cálculo"
+      lead="Estas preferencias se guardan en este navegador. No viajan al servidor ni afectan a los datos del proyecto."
+    >
       <button type="button" class="chip" (click)="restore()">Restablecer valores</button>
-    </header>
+    </app-page-header>
 
     <div class="layout">
       <nav class="side" aria-label="Secciones de ajustes">
@@ -190,31 +190,6 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
     </div>
   `,
   styles: `
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 26px;
-      flex-wrap: wrap;
-    }
-    h1 {
-      margin: 0;
-      font-size: 44px;
-      line-height: 1.1;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-    }
-    h1 span {
-      color: rgba(255, 255, 255, 0.32);
-    }
-    .lead {
-      margin: 10px 0 0;
-      max-width: 560px;
-      font-size: 13px;
-      line-height: 1.55;
-      color: var(--text-dim);
-    }
     .chip {
       border: 1px solid var(--border-control);
       border-radius: var(--radius-pill);
@@ -373,11 +348,6 @@ import { ToggleSwitch } from '../../shared/ui/toggle-switch';
       }
       .pair {
         grid-template-columns: 1fr;
-      }
-    }
-    @media (max-width: 767px) {
-      h1 {
-        font-size: 24px;
       }
     }
   `,

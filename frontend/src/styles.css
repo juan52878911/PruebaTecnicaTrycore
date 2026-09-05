@@ -139,7 +139,29 @@ textarea {
   color: var(--neutral);
 }
 
-@keyframes valora-rise {
+/*
+ * Movimiento. Los nombres y las curvas salen del diseño publicado: entrada de vista, aparición de
+ * modal, subida de hoja inferior, brillo de esqueleto y entrada de aviso.
+ */
+@keyframes vFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vRise {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -150,16 +172,7 @@ textarea {
   }
 }
 
-@keyframes valora-shimmer {
-  from {
-    background-position: -320px 0;
-  }
-  to {
-    background-position: 320px 0;
-  }
-}
-
-@keyframes valora-pop {
+@keyframes vPop {
   from {
     opacity: 0;
     transform: translateY(14px) scale(0.985);
@@ -170,13 +183,58 @@ textarea {
   }
 }
 
-@keyframes valora-sheet {
+@keyframes vPopOut {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@keyframes vSheet {
   from {
     transform: translateY(100%);
   }
   to {
     transform: none;
   }
+}
+
+@keyframes vSheetOut {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes vShimmer {
+  0% {
+    background-position: -320px 0;
+  }
+  100% {
+    background-position: 320px 0;
+  }
+}
+
+@keyframes vToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Entrada de vista: la usa cada página al montarse, como en el diseño. */
+.v-rise {
+  animation: vRise 0.26s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
 /* Quien pide menos movimiento no debería recibir ninguno. */

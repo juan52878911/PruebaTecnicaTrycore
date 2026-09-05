@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ActivityRequest } from '../../core/api/models/activity';
 import {
   formatDateRange,
+  formatIndex,
   formatIndexPrecise,
   formatMoneyRounded,
   formatPercent,
@@ -25,6 +26,8 @@ import { combinedStatusLabel, overallTone } from '../../core/status/status-tone'
 import { EmptyState } from '../../shared/ui/empty-state';
 import { MetricBar, MetricBars } from '../../shared/ui/metric-bars';
 import { Skeleton } from '../../shared/ui/skeleton';
+import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { PageHeader } from '../../shared/ui/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ProjectEvmStore } from '../evm/project-evm-store';
@@ -34,22 +37,18 @@ import { ProgressDialog } from './progress-dialog';
 @Component({
   selector: 'app-activity-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
+  host: { class: 'v-rise' },
   providers: [ProjectEvmStore],
-  imports: [EmptyState, MetricBars, ProgressDialog, RouterLink, Skeleton, StatusBadge],
+  imports: [EmptyState, MetricBars, PageHeader, ProgressDialog, RouterLink, Skeleton, StatusBadge],
   template: `
-    <header class="page-header">
-      <div>
-        <p class="breadcrumb">
-          <a [routerLink]="['/proyectos', projectId(), 'actividades']">Actividades</a>
-          · {{ projectName() }}
-        </p>
-        <h1>{{ activity()?.name ?? 'Actividad' }}</h1>
-        @if (dateRange()) {
-          <p class="dates">{{ dateRange() }}</p>
-        }
-      </div>
-      @if (activity(); as current) {
-        <div class="header-actions">
+    @if (isDesktop()) {
+      <p class="breadcrumb">
+        <a [routerLink]="['/proyectos', projectId(), 'actividades']">Actividades</a>
+        · {{ projectName() }}
+      </p>
+      <app-page-header [title]="activity()?.name ?? 'Actividad'" [lead]="dateRange()">
+        @if (activity(); as current) {
           <app-status-badge
             [label]="combinedStatusLabel(current.indicators)"
             [tone]="overallTone(current.indicators)"
@@ -57,9 +56,33 @@ import { ProgressDialog } from './progress-dialog';
           <button type="button" class="primary" (click)="progressOpen.set(true)">
             Registrar avance
           </button>
-        </div>
+        }
+      </app-page-header>
+    } @else if (activity(); as current) {
+      <!-- En móvil la cabecera es una barra de acción: volver, estado y la acción principal. -->
+      <div class="mobile-bar">
+        <a
+          class="back"
+          [routerLink]="['/proyectos', projectId(), 'actividades']"
+          aria-label="Volver a actividades"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+          </svg>
+        </a>
+        <app-status-badge
+          [label]="combinedStatusLabel(current.indicators)"
+          [tone]="overallTone(current.indicators)"
+        />
+        <button type="button" class="primary compact" (click)="progressOpen.set(true)">
+          Registrar avance
+        </button>
+      </div>
+      <h1 class="mobile-title">{{ current.name }}</h1>
+      @if (dateRange(); as range) {
+        <p class="mobile-dates">{{ range }}</p>
       }
-    </header>
+    }
 
     @if (evm.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
@@ -73,6 +96,22 @@ import { ProgressDialog } from './progress-dialog';
         description="La actividad ya no existe o pertenece a otro proyecto. Vuelve al listado para elegir otra."
       />
     } @else if (activity(); as current) {
+      @if (!isDesktop()) {
+        <div class="mini-grid">
+          <div class="mini">
+            <span class="mini-label">{{ labels.short('CPI') }}</span>
+            <p class="mini-value">{{ index(current.indicators.costPerformanceIndex) }}</p>
+          </div>
+          <div class="mini">
+            <span class="mini-label">{{ labels.short('SPI') }}</span>
+            <p class="mini-value">{{ index(current.indicators.schedulePerformanceIndex) }}</p>
+          </div>
+          <div class="mini">
+            <span class="mini-label">{{ labels.short('EAC') }}</span>
+            <p class="mini-value">{{ money(current.indicators.estimateAtCompletion) }}</p>
+          </div>
+        </div>
+      }
       <div class="grid">
         <section class="card">
           <h2>Datos registrados</h2>
@@ -139,40 +178,81 @@ import { ProgressDialog } from './progress-dialog';
     }
   `,
   styles: `
-    .page-header {
+    .mobile-bar {
       display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .mobile-bar app-status-badge {
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+    .back {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      flex: none;
+      border: 1px solid var(--border-control);
+      border-radius: 50%;
+      background: var(--control);
+    }
+    .back svg {
+      width: 20px;
+      height: 20px;
+      fill: rgba(255, 255, 255, 0.7);
+    }
+    .primary.compact {
+      margin-left: auto;
+      flex: none;
+      font-size: 12px;
+      padding: 9px 15px;
+    }
+    .mobile-title {
+      margin: 0 0 4px;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .mobile-dates {
+      margin: 0 0 16px;
+      font-size: 12.5px;
+      color: var(--text-dim);
+    }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .mini {
+      background: var(--card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-tile);
+      padding: 14px 15px;
+    }
+    .mini-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+    }
+    .mini-value {
+      margin: 6px 0 0;
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     .breadcrumb {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 13px;
       font-weight: 600;
       color: var(--text-dim);
     }
     .breadcrumb a {
       text-decoration: none;
-    }
-    h1 {
-      margin: 0;
-      font-size: 38px;
-      line-height: 1.15;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-    }
-    .dates {
-      margin: 10px 0 0;
-      font-size: 13px;
-      color: var(--text-dim);
-    }
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
     }
     .primary {
       border: none;
@@ -294,11 +374,6 @@ import { ProgressDialog } from './progress-dialog';
         grid-template-columns: 1fr 1fr;
       }
     }
-    @media (max-width: 767px) {
-      h1 {
-        font-size: 24px;
-      }
-    }
   `,
 })
 export class ActivityDetailPage {
@@ -308,7 +383,9 @@ export class ActivityDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly toasts = inject(ToastService);
 
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
   protected readonly money = formatMoneyRounded;
+  protected readonly index = formatIndex;
   protected readonly percent = formatPercent;
   protected readonly combinedStatusLabel = combinedStatusLabel;
   protected readonly overallTone = overallTone;
