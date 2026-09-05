@@ -4,7 +4,7 @@ import { MeasurementPoint } from '../../core/api/models/measurement';
 import { formatIndex, formatMoneyRounded, formatShortDate } from '../../core/format/evm-format';
 
 const FULL_PERCENT = 100;
-const MAX_GROUPS = 8;
+const DEFAULT_MAX_GROUPS = 8;
 
 /**
  * Comparativa de PV, EV y AC corte a corte, en barras agrupadas.
@@ -111,6 +111,7 @@ const MAX_GROUPS = 8;
     .group {
       position: relative;
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -148,10 +149,13 @@ const MAX_GROUPS = 8;
       }
     }
     .tick {
+      max-width: 100%;
       font-size: 11.5px;
       font-weight: 600;
       color: var(--text-dim);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .tooltip {
       position: absolute;
@@ -227,12 +231,14 @@ export class GroupedBars {
   readonly plannedLabel = input('PV');
   readonly earnedLabel = input('EV');
   readonly actualCostLabel = input('AC');
+  /** Cortes visibles; en una pantalla estrecha caben menos sin que las etiquetas se pisen. */
+  readonly maxGroups = input(DEFAULT_MAX_GROUPS);
 
   /** Corte apuntado, por su fecha; nulo cuando el cursor está fuera. */
   protected readonly hovered = signal<string | null>(null);
 
   /** Con muchos cortes las barras se vuelven ilegibles; se muestran los más recientes. */
-  private readonly visible = computed(() => this.points().slice(-MAX_GROUPS));
+  private readonly visible = computed(() => this.points().slice(-this.maxGroups()));
 
   private readonly scale = computed(() => {
     const values = this.visible().flatMap((point) => [

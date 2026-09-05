@@ -16,7 +16,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       border-radius: 8px;
       background: linear-gradient(90deg, #17171a 0%, #212126 50%, #17171a 100%);
       background-size: 320px 100%;
-      animation: valora-shimmer 1.15s linear infinite;
+      animation: vShimmer 1.15s linear infinite;
     }
   `,
 })

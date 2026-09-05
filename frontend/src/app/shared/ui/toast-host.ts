@@ -51,7 +51,7 @@ import { ToastService } from './toast.service';
       border-radius: var(--radius-tile);
       padding: 14px 16px;
       box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
-      animation: valora-rise 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+      animation: vRise 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     .toast.tone-ok {
       border-color: rgba(126, 224, 160, 0.28);

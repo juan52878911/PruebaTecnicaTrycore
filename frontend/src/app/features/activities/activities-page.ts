@@ -274,6 +274,7 @@ function parseId(raw: string | null): number | undefined {
         </p>
         <app-grouped-bars
           [points]="evm.timeline()"
+          [maxGroups]="isDesktop() ? maxGroupsDesktop : maxGroupsMobile"
           [plannedLabel]="labels.short('PV')"
           [earnedLabel]="labels.short('EV')"
           [actualCostLabel]="labels.short('AC')"
@@ -308,7 +309,7 @@ function parseId(raw: string | null): number | undefined {
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 18px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
-      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+      animation: vPop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     .status-menu button {
       border: none;
@@ -581,6 +582,8 @@ export class ActivitiesPage {
   protected readonly money = formatMoneyRounded;
   protected readonly compact = formatCompact;
   protected readonly placeholders = [0, 1, 2, 3];
+  protected readonly maxGroupsDesktop = 8;
+  protected readonly maxGroupsMobile = 4;
 
   private readonly projects = inject(ProjectSummariesStore);
 

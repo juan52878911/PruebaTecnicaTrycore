@@ -100,9 +100,21 @@ const MEDIUM_TITLE = 26;
       letter-spacing: -0.03em;
       white-space: normal;
     }
+    /*
+     * Fila propia y ancho acotado: sin el mínimo a cero, el ancho natural de los chips (que no
+     * se parten) ensanchaba la cabecera y con ella toda la página, y el móvil alejaba el zoom.
+     */
     header.mobile .actions {
+      flex: 1 1 100%;
+      min-width: 0;
+      max-width: 100%;
       flex-wrap: nowrap;
       overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    header.mobile .actions::-webkit-scrollbar {
+      display: none;
     }
   `,
 })

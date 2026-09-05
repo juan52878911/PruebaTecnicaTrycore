@@ -404,7 +404,7 @@ const PERCENT_BASE = 100;
      * lectura sin hacer esperar a quien ya sabe lo que viene a mirar.
      */
     .grid > .column {
-      animation: valora-rise 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+      animation: vRise 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
     }
     .grid > .column:nth-child(2) {
       animation-delay: 60ms;

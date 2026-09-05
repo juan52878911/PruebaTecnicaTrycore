@@ -69,7 +69,7 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
       border-radius: 24px;
       padding: 26px 28px;
       box-shadow: var(--shadow-modal);
-      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+      animation: vPop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     :host:has(.sheet) {
       align-items: flex-end;
@@ -77,9 +77,10 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
     .panel.sheet {
       width: 100%;
       max-width: none;
+      max-height: calc(100dvh - 48px);
       border-radius: 28px 28px 0 0;
-      padding: 10px 20px 22px;
-      animation: valora-sheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
+      padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+      animation: vSheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
     }
     .grabber {
       display: block;

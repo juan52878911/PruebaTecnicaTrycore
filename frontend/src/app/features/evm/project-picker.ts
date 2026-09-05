@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 
 import { Project } from '../../core/api/models/project';
 import { UndefinedIndicator } from '../../core/api/models/evm';
+import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { Tone } from '../../core/status/status-tone';
 import { IndexValue } from '../../shared/ui/index-value';
 
@@ -16,11 +17,12 @@ export interface PickerOption {
 }
 
 /**
- * Selector del proyecto activo, anclado bajo su píldora.
+ * Selector del proyecto activo: desplegable bajo su píldora en escritorio, hoja inferior en móvil.
  *
- * Es un desplegable y no un diálogo centrado a propósito: cambiar de proyecto es una acción de
- * navegación, no una decisión que merezca oscurecer la pantalla. Cada opción lleva su eficiencia
- * en costo y en plazo, que es lo que permite elegir sin entrar a mirar.
+ * En escritorio es un desplegable y no un diálogo centrado a propósito: cambiar de proyecto es
+ * una acción de navegación, no una decisión que merezca oscurecer la pantalla. En móvil no hay
+ * sitio para anclarlo y el diseño lo resuelve como hoja inferior, igual que los formularios. Cada
+ * opción lleva su eficiencia en costo y en plazo, que es lo que permite elegir sin entrar a mirar.
  */
 @Component({
   selector: 'app-project-picker',
@@ -28,10 +30,14 @@ export interface PickerOption {
   imports: [IndexValue],
   host: {
     '(document:keydown.escape)': 'dismissed.emit()',
+    '[class.sheet]': '!isDesktop()',
   },
   template: `
     <div class="veil" (click)="dismissed.emit()" aria-hidden="true"></div>
     <ul class="menu" role="listbox" aria-label="Proyecto activo">
+      @if (!isDesktop()) {
+        <li class="grabber" aria-hidden="true"></li>
+      }
       @for (option of options(); track option.project.id) {
         <li>
           <button
@@ -74,6 +80,36 @@ export interface PickerOption {
       inset: 0;
       z-index: -1;
     }
+    /* Hoja inferior: mismo plano que los diálogos, por encima de la barra de pestañas. */
+    :host(.sheet) {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: flex-end;
+    }
+    :host(.sheet) .veil {
+      z-index: auto;
+      background: rgba(4, 4, 5, 0.72);
+      backdrop-filter: blur(3px);
+    }
+    :host(.sheet) .menu {
+      position: relative;
+      width: 100%;
+      max-width: none;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      border-radius: 28px 28px 0 0;
+      padding: 10px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+      animation: vSheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
+    }
+    .grabber {
+      width: 38px;
+      height: 4px;
+      margin: 0 auto 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.18);
+    }
     .menu {
       list-style: none;
       margin: 0;
@@ -84,7 +120,7 @@ export interface PickerOption {
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
-      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+      animation: vPop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     button {
       display: flex;
@@ -158,6 +194,8 @@ export interface PickerOption {
   `,
 })
 export class ProjectPicker {
+  protected readonly isDesktop = inject(BreakpointService).isDesktop;
+
   readonly options = input.required<readonly PickerOption[]>();
   readonly selectedId = input<number | undefined>(undefined);
   readonly choose = output<number>();
