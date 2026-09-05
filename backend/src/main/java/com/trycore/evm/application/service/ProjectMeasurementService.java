@@ -12,6 +12,7 @@ import com.trycore.evm.domain.exception.InvalidMeasurementException;
 import com.trycore.evm.domain.exception.MeasurementAlreadyExistsException;
 import com.trycore.evm.domain.exception.MeasurementNotFoundException;
 import com.trycore.evm.domain.exception.ProjectNotFoundException;
+import com.trycore.evm.domain.model.EstimateFormula;
 import com.trycore.evm.domain.model.Project;
 import com.trycore.evm.domain.model.ProjectMeasurement;
 import com.trycore.evm.domain.model.ProjectTimeline;
@@ -82,8 +83,16 @@ public final class ProjectMeasurementService implements ProjectMeasurementUseCas
 
     @Override
     public ProjectTimeline timeline(final Long projectId) {
+        return timeline(projectId, null);
+    }
+
+    @Override
+    public ProjectTimeline timeline(final Long projectId, final EstimateFormula formula) {
         final Project project = findProject(projectId);
-        return evmCalculator.buildTimeline(project, measurementRepository.findAllByProjectId(projectId));
+        final var measurements = measurementRepository.findAllByProjectId(projectId);
+        return formula == null
+                ? evmCalculator.buildTimeline(project, measurements)
+                : evmCalculator.buildTimeline(project, measurements, formula);
     }
 
     private Project findProject(final Long projectId) {

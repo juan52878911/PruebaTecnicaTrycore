@@ -3,6 +3,7 @@ package com.trycore.evm.application.port.in;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.trycore.evm.domain.model.EstimateFormula;
 import com.trycore.evm.domain.model.ProjectMeasurement;
 import com.trycore.evm.domain.model.ProjectTimeline;
 
@@ -30,4 +31,11 @@ public interface ProjectMeasurementUseCases {
 
     /** Serie temporal del proyecto: un punto por corte, con sus indicadores ya calculados. */
     ProjectTimeline timeline(Long projectId);
+
+    /**
+     * Igual que {@link #timeline(Long)} eligiendo la fórmula del EAC. Acepta el mismo parámetro que
+     * el análisis en vivo: si cada pantalla usara una fórmula distinta, mostrarían estimaciones
+     * diferentes para las mismas cifras y parecería un fallo.
+     */
+    ProjectTimeline timeline(Long projectId, EstimateFormula formula);
 }
