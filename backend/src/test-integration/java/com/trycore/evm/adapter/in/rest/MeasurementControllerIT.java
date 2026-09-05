@@ -76,7 +76,7 @@ class MeasurementControllerIT extends AbstractRestIntegrationTest {
             final String budget, final String planned, final String actual, final String cost) {
         return new ActivityRequest(
                 ACTIVITY_NAME, new BigDecimal(budget), new BigDecimal(planned), new BigDecimal(actual),
-                new BigDecimal(cost), null, null, null, null, null);
+                new BigDecimal(cost), null, null, null, null, null, null);
     }
 
     /** Proyecto con una actividad de BAC 100.000, avance planificado 50 %, real 40 % y costo 60.000. */

@@ -2,7 +2,9 @@ package com.trycore.evm.adapter.in.rest.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -10,6 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import com.trycore.evm.adapter.in.rest.validation.ConsistentProgressInput;
 import com.trycore.evm.domain.model.Activity;
 import com.trycore.evm.domain.model.ActivityFigures;
 import com.trycore.evm.domain.model.MeasurementMethod;
@@ -23,7 +26,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * que la validación HTTP y la del modelo no puedan divergir. Las restricciones de dígitos existen
  * para que un valor demasiado preciso o demasiado grande se rechace con un 400 que nombra el campo,
  * en lugar de llegar a la base de datos y redondearse o desbordar.
+ *
+ * <p>Los hitos viajan dentro de la actividad y con semántica de reemplazo total: la lista que se
+ * envía sustituye entera a la anterior. Es lo que permite exigir que sus pesos sumen 100, porque
+ * una invariante sobre un conjunto solo se puede garantizar si el conjunto se escribe de una vez.
+ * Omitir la lista en una modificación conserva los hitos que ya tenía la actividad, de modo que
+ * cambiar de regla de medición nunca los borra.
  */
+@ConsistentProgressInput
 public record ActivityRequest(
 
         @Schema(description = "Nombre de la actividad", example = "Diseño de arquitectura")
@@ -58,8 +68,10 @@ public record ActivityRequest(
                 message = "El porcentaje de avance planificado admite hasta 2 decimales")
         BigDecimal plannedProgressPercent,
 
-        @Schema(description = "Porcentaje de avance real completado", example = "40.00")
-        @NotNull(message = "El porcentaje de avance real es obligatorio")
+        @Schema(
+                description = "Porcentaje de avance real completado. Obligatorio salvo con la regla de hitos "
+                        + "ponderados, donde no se admite porque se deriva de los hitos cumplidos.",
+                example = "40.00")
         @DecimalMin(
                 value = ActivityFigures.MIN_PERCENT_VALUE,
                 message = "El porcentaje de avance real debe estar entre 0 y 100")
@@ -97,5 +109,12 @@ public record ActivityRequest(
                 description = "Regla con la que la actividad reconoce valor. Si se omite se usa el porcentaje "
                         + "completado, que es el comportamiento por defecto.",
                 example = "PERCENT_COMPLETE")
-        MeasurementMethod measurementMethod) {
+        MeasurementMethod measurementMethod,
+
+        @Schema(
+                description = "Hitos de la actividad, en orden. Reemplazan por completo a los anteriores; si se "
+                        + "omite la lista, se conservan los hitos actuales. Obligatoria con la regla de hitos "
+                        + "ponderados, y entonces sus pesos deben sumar exactamente 100.")
+        @Valid
+        List<MilestoneRequest> milestones) {
 }
