@@ -6,7 +6,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { map } from 'rxjs';
 
 import { Activity, ActivityRequest } from '../../core/api/models/activity';
 import {
@@ -32,12 +34,20 @@ import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { PageHeader } from '../../shared/ui/page-header';
+import { RowTools } from '../../shared/ui/row-tools';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { ToastService } from '../../shared/ui/toast.service';
 import { ProjectEvmStore } from '../evm/project-evm-store';
+import { PickerOption, ProjectPicker } from '../evm/project-picker';
+import { ProjectSummariesStore } from '../projects/project-summaries-store';
 import { ActivityFormDialog } from './activity-form-dialog';
 
 type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
+
+function parseId(raw: string | null): number | undefined {
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
 
 /** Tabla de actividades del proyecto, con alta, edición y borrado. */
 @Component({
@@ -54,12 +64,29 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
     GroupedBars,
     IndexValue,
     PageHeader,
+    ProjectPicker,
+    RowTools,
     Skeleton,
     StatusBadge,
   ],
   template: `
     <app-page-header title="Actividades" [subtitle]="projectName()">
-      <app-chip-button [label]="projectName()" [expandable]="false" (pressed)="goToProjects()" />
+      <!-- El mismo selector del panel: cambiar de proyecto no obliga a volver al listado. -->
+      <div class="anchor">
+        <app-chip-button
+          [label]="projectName()"
+          [open]="pickerOpen()"
+          (pressed)="pickerOpen.set(!pickerOpen())"
+        />
+        @if (pickerOpen()) {
+          <app-project-picker
+            [options]="pickerOptions()"
+            [selectedId]="projectId()"
+            (choose)="choose($event)"
+            (dismissed)="pickerOpen.set(false)"
+          />
+        }
+      </div>
       <div class="anchor">
         <app-chip-button
           [label]="statusFilterLabel()"
@@ -83,7 +110,7 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
         }
       </div>
       @if (lastCutoffShort(); as cutoff) {
-        <app-chip-button [label]="'Corte: ' + cutoff" [expandable]="false" />
+        <app-chip-button [label]="'Corte: ' + cutoff" informative />
       }
     </app-page-header>
 
@@ -184,10 +211,16 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
             <span role="columnheader">Estado</span>
           </div>
           @for (row of rows(); track row.activity.id) {
-            <div class="row" role="row">
+            <!--
+            La fila entera responde al puntero por comodidad; el camino accesible es el botón del
+            nombre, que recibe el foco y cuyo Enter sube hasta aquí como clic.
+            -->
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+            <div class="row clickable" role="row" (click)="openDetail(row.activity.id)">
               <div class="name-cell" role="cell">
                 <span class="rail" [class]="'tone-' + row.tone" aria-hidden="true"></span>
-                <button type="button" class="name" (click)="openDetail(row.activity.id)">
+                <!-- Sin manejador propio: su clic sube a la fila, y sigue siendo el foco de teclado. -->
+                <button type="button" class="name">
                   <span class="title">{{ row.activity.name }}</span>
                   @if (row.dates) {
                     <span class="meta">{{ row.dates }}</span>
@@ -218,24 +251,11 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
               </span>
               <span class="actions" role="cell">
                 <app-status-badge [label]="row.statusLabel" [tone]="row.tone" />
-                <span class="row-tools">
-                  <button
-                    type="button"
-                    class="icon"
-                    [attr.aria-label]="'Editar ' + row.activity.name"
-                    (click)="openEdit(row.activity)"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    class="icon danger"
-                    [attr.aria-label]="'Borrar ' + row.activity.name"
-                    (click)="confirmRemove(row.activity)"
-                  >
-                    Borrar
-                  </button>
-                </span>
+                <app-row-tools
+                  [name]="row.activity.name"
+                  (edit)="openEdit(row.activity)"
+                  (remove)="confirmRemove(row.activity)"
+                />
               </span>
             </div>
           }
@@ -323,17 +343,6 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
     .grid {
       overflow-x: auto;
     }
-    /* Las herramientas de fila aparecen al apuntar: el diseño deja la fila limpia. */
-    .row-tools {
-      display: flex;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity var(--motion-veil);
-    }
-    .row:hover .row-tools,
-    .row:focus-within .row-tools {
-      opacity: 1;
-    }
     .primary {
       border: none;
       border-radius: var(--radius-pill);
@@ -415,6 +424,9 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
       min-width: 1000px;
       transition: background var(--motion-veil);
     }
+    .row.clickable {
+      cursor: pointer;
+    }
     .row:not(.head):hover {
       background: rgba(255, 255, 255, 0.045);
     }
@@ -460,25 +472,8 @@ type StatusFilter = 'todos' | 'riesgo' | 'al-dia' | 'sin-datos';
     .actions {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
-      flex-wrap: wrap;
-    }
-    .icon {
-      border: 1px solid var(--border-control);
-      border-radius: var(--radius-pill);
-      background: var(--control);
-      color: var(--text-muted);
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 6px 12px;
-    }
-    .icon:hover {
-      background: var(--control-hover);
-      color: var(--text);
-    }
-    .icon.danger:hover {
-      color: var(--danger);
-      border-color: rgba(255, 138, 107, 0.4);
     }
     .mobile-bar {
       display: flex;
@@ -570,8 +565,11 @@ export class ActivitiesPage {
   protected readonly compact = formatCompact;
   protected readonly placeholders = [0, 1, 2, 3];
 
+  private readonly projects = inject(ProjectSummariesStore);
+
   protected readonly formOpen = signal(false);
   protected readonly editing = signal<Activity | null>(null);
+  protected readonly pickerOpen = signal(false);
 
   protected readonly statusOptions: readonly { value: StatusFilter; label: string }[] = [
     { value: 'todos', label: 'Todos los estados' },
@@ -600,11 +598,25 @@ export class ActivitiesPage {
     return shown === total ? `${total} ${noun}` : `${shown} de ${total} ${noun}`;
   });
 
-  private readonly projectId = computed(() => {
-    const raw = this.route.snapshot.paramMap.get('projectId');
-    const parsed = Number(raw);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
-  });
+  /**
+   * Sigue a la ruta, no a su instantánea: al elegir otro proyecto desde el selector el enrutador
+   * reutiliza este componente y solo cambia el parámetro.
+   */
+  protected readonly projectId = toSignal(
+    this.route.paramMap.pipe(map((params) => parseId(params.get('projectId')))),
+    { initialValue: parseId(this.route.snapshot.paramMap.get('projectId')) },
+  );
+
+  protected readonly pickerOptions = computed<readonly PickerOption[]>(() =>
+    this.projects.rows().map((row) => ({
+      project: row.project,
+      meta: row.meta,
+      costPerformanceIndex: row.costPerformanceIndex,
+      schedulePerformanceIndex: row.schedulePerformanceIndex,
+      costTone: row.costTone,
+      scheduleTone: row.scheduleTone,
+    })),
+  );
 
   protected readonly projectName = computed(() => this.evm.summary()?.project.name ?? 'Proyecto');
 
@@ -641,24 +653,28 @@ export class ActivitiesPage {
   });
 
   constructor() {
-    const projectId = this.projectId();
-    if (projectId !== undefined) {
-      this.selection.select(projectId);
-    }
     // El botón "+" de la barra superior abre el alta desde cualquier vista pasando ?nueva=1.
     if (this.route.snapshot.queryParamMap.has('nueva')) {
       this.formOpen.set(true);
     }
-    effect(() => this.evm.select(this.projectId()));
+    effect(() => {
+      const projectId = this.projectId();
+      this.evm.select(projectId);
+      if (projectId !== undefined) {
+        this.selection.select(projectId);
+      }
+    });
+  }
+
+  protected choose(projectId: number): void {
+    this.pickerOpen.set(false);
+    this.statusFilter.set('todos');
+    void this.router.navigate(['/proyectos', projectId, 'actividades']);
   }
 
   protected chooseStatus(value: StatusFilter): void {
     this.statusFilter.set(value);
     this.statusMenuOpen.set(false);
-  }
-
-  protected goToProjects(): void {
-    void this.router.navigate(['/proyectos']);
   }
 
   protected openCreate(): void {

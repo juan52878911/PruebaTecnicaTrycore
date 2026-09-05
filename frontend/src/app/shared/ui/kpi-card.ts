@@ -42,7 +42,13 @@ import { RollingNumber } from './rolling-number';
     </article>
   `,
   styles: `
+    /* La tarjeta llena su celda: en el panel las columnas se alinean por el pie del último bloque. */
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
     .card {
+      flex: 1;
       background: var(--card);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-card);
@@ -79,6 +85,10 @@ import { RollingNumber } from './rolling-number';
       line-height: 1;
       font-weight: 700;
       letter-spacing: -0.04em;
+    }
+    /* Anclado al borde: la cifra cambia de ancho al rodar y el botón no debe huir del cursor. */
+    app-copy-value {
+      margin-left: auto;
     }
     .unit {
       margin-left: 8px;
