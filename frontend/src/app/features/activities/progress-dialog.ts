@@ -16,13 +16,20 @@ import {
   PERCENT_MAX,
   PERCENT_MIN,
 } from '../../core/api/models/activity';
-import { toMilestoneRequests } from '../../core/evm/milestone-request';
+import {
+  derivedProgressPercent,
+  MilestoneDraft,
+  milestoneTableError,
+  toMilestoneDrafts,
+  toMilestoneRequests,
+} from '../../core/evm/milestones';
 import { isStarted, previewProgress } from '../../core/evm/progress-preview';
 import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
 import { Dialog } from '../../shared/ui/dialog';
 import { DualProgress } from '../../shared/ui/dual-progress';
 import { FormField } from '../../shared/ui/form-field';
+import { MilestoneEditor } from './milestone-editor';
 
 const STEP = 1;
 
@@ -36,31 +43,18 @@ const STEP = 1;
 @Component({
   selector: 'app-progress-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, Dialog, DualProgress, FormField],
+  imports: [FormsModule, Dialog, DualProgress, FormField, MilestoneEditor],
   template: `
     <app-dialog title="Registrar avance" [subtitle]="activity().name" (dismiss)="dismissed.emit()">
       @if (milestoneDriven()) {
-        <section class="milestones">
-          <div class="stepper-head">
-            <span class="label">Avance derivado de los hitos</span>
-            <span class="value">{{ percentLabel() }}</span>
-          </div>
-          <ul>
-            @for (milestone of activity().milestones; track $index) {
-              <li [class.achieved]="milestone.achieved">
-                <span class="mark" aria-hidden="true">{{
-                  milestone.achieved ? '[ok]' : '[ ]'
-                }}</span>
-                <span class="name">{{ milestone.name }}</span>
-                <span class="weight">{{ percent(milestone.weightPercent) }}</span>
-              </li>
-            }
-          </ul>
-          <p class="hint">
-            El porcentaje lo deriva el servidor de los hitos cumplidos; aquí solo se registra el
-            costo incurrido.
-          </p>
-        </section>
+        <app-milestone-editor [(milestones)]="milestones" />
+        <p class="hint">
+          Con hitos ponderados el avance se registra marcando los hitos cumplidos; el porcentaje lo
+          deriva el servidor de sus pesos. Planificado a la fecha de corte: {{ plannedLabel() }}
+        </p>
+        @if (serverError()?.fieldError('milestones'); as error) {
+          <p class="general-error" role="alert">{{ error }}</p>
+        }
       } @else {
         <div class="stepper">
           <div class="stepper-head">
@@ -132,7 +126,9 @@ const STEP = 1;
 
       <ng-container dialogActions>
         <button type="button" class="secondary" (click)="dismissed.emit()">Cancelar</button>
-        <button type="button" class="primary" (click)="submit()">Guardar avance</button>
+        <button type="button" class="primary" [disabled]="!canSave()" (click)="submit()">
+          Guardar avance
+        </button>
       </ng-container>
     </app-dialog>
   `,
@@ -180,38 +176,6 @@ const STEP = 1;
       font-size: 12px;
       line-height: 1.5;
       color: var(--text-dim);
-    }
-    .milestones ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 6px;
-    }
-    .milestones li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12.5px;
-      color: var(--text-muted);
-    }
-    .milestones li.achieved {
-      color: var(--text);
-    }
-    .mark {
-      font-family: monospace;
-      font-size: 11px;
-      color: var(--text-dim);
-    }
-    .achieved .mark {
-      color: var(--ok);
-    }
-    .name {
-      flex: 1;
-      min-width: 0;
-    }
-    .weight {
-      font-variant-numeric: tabular-nums;
     }
     .preview {
       background: var(--card-nested);
@@ -274,6 +238,10 @@ const STEP = 1;
       background: #fff;
       color: var(--screen);
     }
+    .primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .secondary {
       background: var(--control-hover);
       color: var(--text-muted);
@@ -298,19 +266,36 @@ export class ProgressDialog {
   );
   protected readonly actualCost = linkedSignal(() => this.activity().actualCost);
 
-  /** Con hitos ponderados el porcentaje lo deriva el servidor y enviarlo es un 400. */
+  /**
+   * Con hitos ponderados el porcentaje lo deriva el servidor de los hitos cumplidos y enviarlo es
+   * un 400: aquí se registra el avance marcando hitos, y se anticipa el mismo número.
+   */
   protected readonly milestoneDriven = computed(
     () => this.activity().measurementMethod === 'WEIGHTED_MILESTONES',
   );
+  protected readonly milestones = linkedSignal<readonly MilestoneDraft[]>(() =>
+    toMilestoneDrafts(this.activity().milestones),
+  );
 
-  protected readonly percentLabel = computed(() => formatPercent(this.actualProgressPercent()));
+  /** Avance real que se enviaría: el del stepper, o el derivado de los hitos con esa regla. */
+  private readonly effectiveActualInput = computed(() =>
+    this.milestoneDriven()
+      ? derivedProgressPercent(this.milestones())
+      : Number(this.actualProgressPercent()),
+  );
+
+  protected readonly canSave = computed(
+    () => !this.milestoneDriven() || milestoneTableError(this.milestones()) === null,
+  );
+
+  protected readonly percentLabel = computed(() => formatPercent(this.effectiveActualInput()));
   protected readonly plannedLabel = computed(() =>
     formatPercent(this.activity().plannedProgressPercent),
   );
 
   protected readonly preview = computed(() => {
     const activity = this.activity();
-    const actualProgressPercent = Number(this.actualProgressPercent());
+    const actualProgressPercent = this.effectiveActualInput();
     return previewProgress({
       budgetAtCompletion: activity.budgetAtCompletion,
       plannedProgressPercent: activity.plannedProgressPercent,
@@ -325,7 +310,7 @@ export class ProgressDialog {
   protected readonly recognisesLessThanDeclared = computed(() => {
     const preview = this.preview();
     return (
-      preview.effectiveActualProgressPercent !== Number(this.actualProgressPercent()) ||
+      preview.effectiveActualProgressPercent !== this.effectiveActualInput() ||
       preview.effectivePlannedProgressPercent !== this.activity().plannedProgressPercent
     );
   });
@@ -338,7 +323,7 @@ export class ProgressDialog {
     if (costPerformanceIndex === null) {
       return `Sin costo real registrado: la eficiencia en costo no está definida.`;
     }
-    if (preview.effectiveActualProgressPercent === 0 && Number(this.actualProgressPercent()) > 0) {
+    if (preview.effectiveActualProgressPercent === 0 && this.effectiveActualInput() > 0) {
       return `La regla todavía no reconoce valor para ${percent} de avance: los índices solo informarán cuando la actividad alcance el hito que la regla exige.`;
     }
     const overBudget = costPerformanceIndex < 1;
@@ -386,7 +371,7 @@ export class ProgressDialog {
       // Registrar avance no cambia la regla de medición: se reenvía la que ya tenía.
       measurementMethod: activity.measurementMethod,
       // Con hitos ponderados el servidor exige la tabla en cada petición: se reenvía intacta.
-      milestones: this.milestoneDriven() ? toMilestoneRequests(activity.milestones) : undefined,
+      milestones: this.milestoneDriven() ? toMilestoneRequests(this.milestones()) : undefined,
     });
   }
 }
