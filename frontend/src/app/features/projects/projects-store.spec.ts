@@ -10,6 +10,7 @@ const PROJECT = {
   id: 1,
   name: 'Planta Solar Norte',
   description: null,
+  manager: null,
   createdAt: '2026-09-03T21:00:00Z',
   updatedAt: '2026-09-03T21:00:00Z',
 };
@@ -86,7 +87,7 @@ describe('ProjectsStore', () => {
     ]);
     await settle();
 
-    const created = await store.create({ name: 'Nuevo', description: null });
+    const created = await store.create({ name: 'Nuevo', description: null, manager: null });
     await settle();
 
     expect(created).toEqual(PROJECT);
@@ -109,7 +110,7 @@ describe('ProjectsStore', () => {
     ]);
     await settle();
 
-    const created = await store.create({ name: '', description: null });
+    const created = await store.create({ name: '', description: null, manager: null });
 
     expect(created).toBeNull();
     expect(store.error()?.kind).toBe('validation');
@@ -138,7 +139,7 @@ describe('ProjectsStore', () => {
       { method: 'post', url: `${BASE}/projects`, status: 500, data: {} },
     ]);
     await settle();
-    await store.create({ name: 'x', description: null });
+    await store.create({ name: 'x', description: null, manager: null });
 
     store.clearError();
 

@@ -12,6 +12,7 @@ import { ApiError } from '../../core/api/api-error';
 import {
   Project,
   PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_MANAGER_MAX_LENGTH,
   PROJECT_NAME_MAX_LENGTH,
   ProjectRequest,
 } from '../../core/api/models/project';
@@ -65,6 +66,22 @@ import { FormField } from '../../shared/ui/form-field';
         ></textarea>
       </app-form-field>
 
+      <app-form-field
+        label="Responsable"
+        fieldId="project-manager"
+        [error]="serverError()?.fieldError('manager') ?? null"
+        [hint]="'Opcional, hasta ' + managerMaxLength + ' caracteres'"
+      >
+        <input
+          id="project-manager"
+          type="text"
+          name="manager"
+          autocomplete="off"
+          [maxlength]="managerMaxLength"
+          [(ngModel)]="manager"
+        />
+      </app-form-field>
+
       @if (generalError()) {
         <p class="general-error" role="alert">{{ generalError() }}</p>
       }
@@ -114,11 +131,13 @@ export class ProjectFormDialog {
 
   protected readonly nameMaxLength = PROJECT_NAME_MAX_LENGTH;
   protected readonly descriptionMaxLength = PROJECT_DESCRIPTION_MAX_LENGTH;
+  protected readonly managerMaxLength = PROJECT_MANAGER_MAX_LENGTH;
 
   // linkedSignal y no signal: el valor inicial viene de una entrada, que en el constructor
   // todavía no está resuelta, y así el formulario se resiembra solo si cambia el proyecto.
   protected readonly name = linkedSignal(() => this.project()?.name ?? '');
   protected readonly description = linkedSignal(() => this.project()?.description ?? '');
+  protected readonly manager = linkedSignal(() => this.project()?.manager ?? '');
 
   protected readonly isEdit = computed(() => this.project() !== null);
   protected readonly canSave = computed(() => this.name().trim().length > 0);
@@ -133,10 +152,15 @@ export class ProjectFormDialog {
   });
 
   protected submit(): void {
-    const description = this.description().trim();
     this.save.emit({
       name: this.name().trim(),
-      description: description === '' ? null : description,
+      description: this.orNull(this.description()),
+      manager: this.orNull(this.manager()),
     });
+  }
+
+  private orNull(value: string): string | null {
+    const trimmed = value.trim();
+    return trimmed === '' ? null : trimmed;
   }
 }

@@ -55,6 +55,7 @@ const SUMMARY = {
     id: 1,
     name: 'Planta Solar Norte',
     description: null,
+    manager: null,
     createdAt: '2026-09-03T21:00:00Z',
     updatedAt: '2026-09-03T21:00:00Z',
   },

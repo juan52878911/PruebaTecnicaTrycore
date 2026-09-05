@@ -1,8 +1,7 @@
 import { computed, inject, Injectable, resource, Signal } from '@angular/core';
 
 import { asDisplayableError } from '../../core/api/api-error';
-import { ProjectEvmSummary } from '../../core/api/models/activity';
-import { Project } from '../../core/api/models/project';
+import { Project, ProjectSummary } from '../../core/api/models/project';
 import { ProjectsApi } from '../../core/api/projects-api';
 import {
   combinedStatusLabel,
@@ -30,15 +29,21 @@ export interface ProjectSummaryRow {
   readonly hasData: boolean;
 }
 
-function toRow(summary: ProjectEvmSummary): ProjectSummaryRow {
-  const indicators = summary.indicators;
-  const activityCount = summary.activities.length;
+function activityLabel(count: number): string {
+  return count === 1 ? '1 actividad' : `${count} actividades`;
+}
+
+function toRow(summary: ProjectSummary): ProjectSummaryRow {
+  const { activityCount, totals, indicators, ...project } = summary;
   const hasData = activityCount > 0;
   return {
-    project: summary.project,
+    project,
     activityCount,
-    meta: activityCount === 1 ? '1 actividad' : `${activityCount} actividades`,
-    budgetAtCompletion: summary.budgetAtCompletion,
+    meta:
+      project.manager === null
+        ? activityLabel(activityCount)
+        : `${activityLabel(activityCount)} · ${project.manager}`,
+    budgetAtCompletion: totals.budgetAtCompletion,
     earnedValue: indicators.earnedValue,
     actualCost: indicators.actualCost,
     costPerformanceIndex: indicators.costPerformanceIndex,
@@ -52,12 +57,11 @@ function toRow(summary: ProjectEvmSummary): ProjectSummaryRow {
 }
 
 /**
- * Consolidado de todos los proyectos.
+ * Consolidado de todos los proyectos, en una sola petición.
  *
- * `GET /projects` no devuelve cifras, así que hay que pedir el resumen de cada proyecto. Se hace
- * una sola vez y desde aquí, en lugar de repetir la misma ráfaga en el listado, en el perfil y en
- * el selector de la cabecera. La solución de fondo es un endpoint consolidado en el backend; queda
- * anotado en AI_PROCESS.md.
+ * Se carga una vez y se comparte entre el listado, el perfil y el selector de la cabecera. Antes
+ * era una ráfaga de `/projects/{id}/evm` por proyecto; el backend expone ahora el consolidado en el
+ * propio listado con `includeIndicators=true`.
  */
 @Injectable({ providedIn: 'root' })
 export class ProjectSummariesStore {
@@ -65,17 +69,8 @@ export class ProjectSummariesStore {
 
   private readonly summaries = resource<readonly ProjectSummaryRow[], void>({
     loader: async ({ abortSignal }) => {
-      const projects = await this.api.list({ signal: abortSignal });
-      const results = await Promise.all(
-        projects.map((project) =>
-          this.api
-            .evmSummary(project.id, { signal: abortSignal })
-            .then(toRow)
-            // Un proyecto cuyo consolidado falla no debe tumbar la tabla entera.
-            .catch(() => null),
-        ),
-      );
-      return results.filter((row): row is ProjectSummaryRow => row !== null);
+      const summaries = await this.api.listWithIndicators({ signal: abortSignal });
+      return summaries.map(toRow);
     },
     defaultValue: [],
   });
