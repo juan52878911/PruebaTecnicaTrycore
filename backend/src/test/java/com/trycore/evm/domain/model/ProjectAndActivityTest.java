@@ -149,9 +149,11 @@ class ProjectAndActivityTest {
 
         @Test
         void ofUsesTheStatusDescription() {
-            final IndexInterpretation interpretation = IndexInterpretation.of(PerformanceStatus.ON_SCHEDULE);
+            final IndexInterpretation interpretation =
+                    IndexInterpretation.of(PerformanceStatus.ON_SCHEDULE, DeviationSeverity.NONE);
 
             assertThat(interpretation.status()).isEqualTo(PerformanceStatus.ON_SCHEDULE);
+            assertThat(interpretation.severity()).isEqualTo(DeviationSeverity.NONE);
             assertThat(interpretation.message()).isEqualTo(PerformanceStatus.ON_SCHEDULE.description());
         }
 
@@ -160,14 +162,30 @@ class ProjectAndActivityTest {
             final IndexInterpretation interpretation = IndexInterpretation.notApplicable("sin divisor");
 
             assertThat(interpretation.status()).isEqualTo(PerformanceStatus.NOT_APPLICABLE);
+            assertThat(interpretation.severity()).isEqualTo(DeviationSeverity.NOT_APPLICABLE);
             assertThat(interpretation.message()).isEqualTo("sin divisor");
         }
 
         @Test
         void rejectsNullStatusOrMessage() {
-            assertThatThrownBy(() -> new IndexInterpretation(null, "m"))
+            assertThatThrownBy(() -> new IndexInterpretation(null, DeviationSeverity.NONE, "m"))
                     .isInstanceOf(InvalidIndicatorException.class);
-            assertThatThrownBy(() -> new IndexInterpretation(PerformanceStatus.ON_BUDGET, null))
+            assertThatThrownBy(() -> new IndexInterpretation(PerformanceStatus.ON_BUDGET, null, "m"))
+                    .isInstanceOf(InvalidIndicatorException.class);
+            assertThatThrownBy(() -> new IndexInterpretation(
+                    PerformanceStatus.ON_BUDGET, DeviationSeverity.NONE, null))
+                    .isInstanceOf(InvalidIndicatorException.class);
+        }
+
+        @Test
+        @DisplayName("un índice no aplicable exige severidad no aplicable, y al revés")
+        void notApplicableStatusAndSeverityGoTogether() {
+            assertThatThrownBy(() -> new IndexInterpretation(
+                    PerformanceStatus.NOT_APPLICABLE, DeviationSeverity.NONE, "m"))
+                    .isInstanceOf(InvalidIndicatorException.class)
+                    .hasMessageContaining("no aplicable");
+            assertThatThrownBy(() -> new IndexInterpretation(
+                    PerformanceStatus.ON_BUDGET, DeviationSeverity.NOT_APPLICABLE, "m"))
                     .isInstanceOf(InvalidIndicatorException.class);
         }
     }
