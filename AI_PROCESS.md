@@ -9,7 +9,9 @@ Convención de este documento:
 - Las secciones 1 a 6 son narrativa y se completan a medida que avanza el proyecto.
 - La sección 7 contiene los prompts que Claude Code generó para delegar trabajo a subagentes y a opencode. Son
   prompts de la IA, no de Juan, y se marcan como tales.
-- La sección 8 es el registro cronológico verbatim de los prompts de Juan. Se alimenta automáticamente con el
+- La sección 8 reúne la bibliografía sobre Valor Ganado y la investigación hecha con Gemini, que no pasa por
+  el hook por ser otra herramienta.
+- La sección 9 es el registro cronológico verbatim de los prompts de Juan. Se alimenta automáticamente con el
   hook `.claude/hooks/log-prompt.sh` en cada envío. Es la última sección a propósito, para que el append no
   rompa la narrativa. Los prompts anteriores a la instalación del hook (la sesión de planificación) se copiaron
   a mano, textualmente, desde la conversación.
@@ -34,6 +36,7 @@ resultado se revisó y se ejecutó antes de integrarlo. Este documento distingue
 | Claude Code, agentes de revisión | Claude Sonnet                                        | Ocho ángulos de revisión de código sobre `main...develop`                                                                                            | Buscar defectos con criterios distintos a la vez sale más barato y más completo que una sola pasada                   |
 | Claude Code, agentes auditores   | Claude Haiku y Sonnet                                | Auditoría adversarial de señales y de pérdidas silenciosas                                                                                           | Revisión independiente de quien implementó                                                                            |
 | opencode                         | MiniMax M2.7                                         | Ficheros de plantilla: `.gitignore`, `.editorconfig`, `docker-compose.yml`, `db/init.sql`, plantilla de Pull Request                                 | Trabajo mecánico donde un modelo económico basta; toda su salida se revisó y se ejecutó antes de confirmarla          |
+| Gemini (interfaz web)            | Sin anotar                                           | Resúmenes de los vídeos largos, investigación del contexto de la empresa y comparación del diseño con la implementación                              | Una segunda opinión fuera del entorno de desarrollo, que no arrastra el sesgo de haber escrito el código              |
 
 **El modelo cambió a mitad del ejercicio y conviene decirlo.** Los dos agentes auditores de la oleada 3 murieron
 con un error 429 al agotarse el límite de gasto de la cuenta con Fable 5.1. A partir de ahí el trabajo siguió
@@ -793,14 +796,14 @@ Con el backend cerrado y el tablero funcionando, quedaba lo que separa un protot
 interfaz se comporte como el diseño en escritorio y en móvil. Ese trabajo lo hice en varias sesiones en
 paralelo, cada una en su propio árbol de trabajo y su rama, midiendo la interfaz en el navegador contra los
 artboards del diseño en lugar de juzgarla a ojo. El hook registra los prompts en el `AI_PROCESS.md` del árbol
-donde corre la sesión, así que parte de esos prompts llegaron a la sección 8 por los pull requests de cada rama
+donde corre la sesión, así que parte de esos prompts llegaron a la sección 9 por los pull requests de cada rama
 y otra parte se perdió al integrar. Lo que se hizo está en los commits, que es donde tiene que estar la
 evidencia, y de ahí sale este resumen.
 
 **El diseño, hecho antes que el código, en Claude Design.** Antes de la fase de frontend abrí una sesión de
 Claude Design, "UI mockups requested", en la que construí el sistema de diseño Valora, el prototipo navegable y
 los mockups del tablero en escritorio y en móvil. Esa sesión no pasa por el hook porque no es Claude Code, así
-que sus prompts no están en la sección 8; lo que sí está es el momento en que sus artefactos
+que sus prompts no están en la sección 9; lo que sí está es el momento en que sus artefactos
 (`Valora Design System.dc.html`, `Valora Prototipo.dc.html`, `EVM Dashboard Mockups.dc.html`) entraron como
 referencia obligatoria de la implementación. Los tres están en `docs/design/` para que el evaluador pueda abrirlos. Hice el diseño primero a propósito: quería que las decisiones
 visuales fueran mías y que el agente que implementara tuviera una referencia exacta contra la que medirse, no
@@ -931,7 +934,74 @@ o por una sección de este documento.
 | Docker | El npm de la imagen rechazaba el `package-lock.json` | Versión de npm fijada a la de `package.json` (`Run the whole development environment with docker compose`) |
 | Proceso | Dos sesiones en el mismo directorio, base compartida entre ramas, hook bloqueando integraciones | Un árbol de trabajo por rama, una base por rama y los prompts integrados por pull request (sección 7f) |
 
-## 8. Registro cronológico de prompts de Juan
+## 8. Bibliografía y material de investigación
+
+Lo que consulté para aprender el método y la investigación que hice con una IA distinta de Claude Code. Va aquí
+porque el hook solo registra lo que escribo en Claude Code: los prompts que envié a Gemini no pasan por él y no
+estarían en ninguna parte si no los recogiera a mano.
+
+### Fuentes sobre Valor Ganado
+
+| Tipo | Referencia | Qué aportó |
+| --- | --- | --- |
+| Vídeo | ¿Qué es Valor Ganado y como usarlo en la Gestión de Proyectos? <https://www.youtube.com/watch?v=zhoji7SyWXA> | La primera aproximación al método: para qué sirve y en qué etapa del proyecto se usa |
+| Vídeo | ¿Qué es EVM? <https://www.youtube.com/watch?v=ZL9zWT7m84E> | Las cuatro variables base (BAC, PV, EV y AC), la conversión de alcance, costo y tiempo a una misma unidad, y la lectura gráfica de PV, EV y AC mes a mes, que es el origen de la curva S del tablero |
+| Artículo | Earned Value Method (EVM) Explicado. Cómo medir con precisión el progreso y el rendimiento de un proyecto, FlexiProject <https://flexi-project.com/es/earned-value-method-evm-explicado-como-medir-con-precision-el-progreso-y-el-rendimiento-de-un-proyecto/> | Las fórmulas completas con sus siglas, CPI y SPI, las variaciones CV y SV, la estimación a la finalización y los umbrales de alerta, además de cómo encaja el método en proyectos en cascada, ágiles e híbridos |
+
+**Dónde las fuentes se quedan cortas y el proyecto va más allá.** Las tres presentan `EAC = BAC / CPI` como *la*
+fórmula de estimación; el sistema devuelve las tres estándar, porque cada una responde a un supuesto distinto
+sobre el futuro y dar una sola esconde de cuál depende. Ninguna trata qué hacer cuando el divisor es cero, que
+es el caso normal de una actividad que no ha arrancado, y esa fue la decisión de interpretación más importante
+del ejercicio. Y el artículo propone umbrales fijos, del tipo CPI por debajo de 0,8 como señal de alerta; en el
+sistema el umbral es configurable y lo aplica el servidor, porque un umbral es política de la organización y no
+aritmética del método. Las tres decisiones están explicadas en la sección 2 y verificadas en la 4.
+
+### Investigación con Gemini
+
+Usé Gemini para tres cosas distintas, y conviene separar cuánto pesa cada una.
+
+**Resumir el material largo.** Varios de los vídeos y documentos sobre el método son extensos y especializados.
+Le pedí resúmenes para localizar rápido lo que importaba y decidir qué merecía verse entero. Esos intercambios
+fueron conversacionales y no los conservé textualmente, cosa que hoy considero un error de proceso: si vuelvo a
+hacerlo, registro también lo que envío fuera de la herramienta principal. Tampoco anoté qué versión del modelo
+estaba activa en cada momento.
+
+**Investigar el contexto de la empresa.** Antes de decidir el alcance busqué a qué se dedica Trycore y qué
+valora en un ingeniero: servicios de TI centrados en hiperautomatización y automatización robótica de procesos,
+una cultura de estructura plana, trabajo ágil con Scrum y entregas iterativas, arquitecturas que se alejan del
+monolito hacia microservicios, un ciclo con cuatro ambientes y cultura DevOps con integración continua y
+contenedores, y un área de calidad exigente que prioriza la automatización de pruebas. Eso reforzó cuatro
+decisiones que ya estaban sobre la mesa y les dio prioridad: perfiles de construcción separados con sus
+dependencias, un dominio desacoplado que podría partirse en servicios independientes sin reescribirlo, el
+entorno completo contenerizado con `docker compose` y una cobertura con umbral bloqueante además de pruebas de
+comportamiento. Es investigación generada por un modelo a partir de fuentes públicas y no la contrasté con
+fuentes primarias, así que la traté como orientación y no como hecho.
+
+**Comparar el diseño con lo implementado.** Cuando la primera implementación del tablero se parecía al diseño
+pero no era el diseño, le pasé a Gemini una captura del artboard y otra de lo construido y le pedí ayuda para
+escribir la corrección. El prompt que le envié, textual:
+
+```text
+Si tengo un diseño hecho en coaude design como le digo que lo haga teniendo los archivos html que genero, le dije que lo hiciera pero el resultado deja mucho que desear, no hay animaciones, los colores y el contraste no son los mismos, los efectos y demas se perdieron, te doy la comparativa para que te des cuenta y me des un prompt para corregir esto. Los skeletons no estan bien implementados y el estilo en general se parece pero no es exactamente lo que diseñe
+```
+
+Devolvió un prompt de corrección largo, organizado por jerarquía de texto, valores numéricos, elementos
+visuales, color y tipografía, eliminaciones y faltantes. **Lo que tomé** fue el método, que es lo que de verdad
+valía: enumerar cada diferencia concreta y cerrarla una a una en lugar de pedir "que se parezca más al diseño".
+Así se trabajaron los pull requests 26 a 29, midiendo en el navegador antes y después. Y acertó de lleno en dos
+defectos: las animaciones no se ejecutaban, y la causa resultó ser que cuatro de ellas apuntaban a keyframes que
+no existían; y los esqueletos de carga eran genéricos en vez de imitar la forma final de cada tarjeta, de ahí
+que hoy exista uno específico para las tarjetas de indicadores además del general.
+
+**Lo que no seguí** importa igual. Sus instrucciones sobre datos pedían restaurar valores literales del mockup,
+del tipo "PV: 1,24 M USD", en una aplicación cuyas cifras las calcula el backend a partir de las actividades
+reales: en un prototipo el número es parte del dibujo, en el producto es el resultado. Y pedía eliminar por
+completo la sección de actividades en riesgo porque no aparecía en la captura que estaba comparando, cuando esa
+sección es parte del panel y se calcula con los indicadores del servidor. Es un buen recordatorio de qué pasa
+cuando se le pide a un modelo que juzgue un producto a partir de dos imágenes: acierta en los síntomas de estilo,
+que es lo que ve, y se equivoca en el alcance, que es lo que no puede ver.
+
+## 9. Registro cronológico de prompts de Juan
 
 Cada entrada es el texto exacto enviado a Claude Code, con fecha y hora local (Bogotá, UTC-5).
 
@@ -2515,4 +2585,83 @@ Ponle tildes a mis párrafos sin cambiar las palabras
 
 ```text
 Corrige esas tres palabras y prepara la release a main, arregla el package json huerfano, añade los ficheros de diseño en los docs. Y al final dame una puntuacion respecto al informe creado, ya que se hara una inspeccion de ese documento para determinar como uso y gestiono la IA, se honesto,
+```
+
+### 2026-09-06 22:33 -05 - Claude Code
+
+```text
+Añade bibliografia de contenidos, videos que vi y la investigacion que hice con gemini. 
+
+https://www.youtube.com/watch?v=zhoji7SyWXA
+https://www.youtube.com/watch?v=ZL9zWT7m84E
+https://flexi-project.com/es/earned-value-method-evm-explicado-como-medir-con-precision-el-progreso-y-el-rendimiento-de-un-proyecto/
+
+TryCore es una empresa colombiana de servicios TI enfocada en la hiperautomatización y la transformación digital. Su modelo de negocio se centra en liberar a las organizaciones de tareas manuales repetitivas mediante el desarrollo de software a medida y la Automatización Robótica de Procesos (RPA).
+
+Cultura y Valores (La "Trybu")
+
+* Identidad corporativa: Se denominan a sí mismos la "Trypulación". Promueven una estructura organizacional plana, buscando explícitamente "liberarse de jerarquías aburridas" para dar paso al liderazgo, la autonomía y el compromiso individual.
+
+* Principios fundamentales: Sus operaciones se rigen por la transparencia, la pasión, la flexibilidad y la innovación.
+
+* Visión humana: Mantienen un lema interno que dicta que "somos personas, no máquinas" y "la vida es el viaje, no el destino". Fomentan activamente el bienestar de sus equipos ("Trycorianos") mediante espacios de esparcimiento y un sólido equilibrio entre la vida laboral y personal.
+
+Desarrollo de Software y Día a Día
+
+* Agilismo y Sprints: El ritmo de trabajo diario se basa en marcos ágiles, principalmente Scrum y Lean Manufacturing. Las entregas de valor son iterativas, con despliegues quincenales o mensuales orientados a obtener "victorias tempranas".
+
+* Arquitecturas Evolutivas: A nivel técnico, se alejan de los sistemas monolíticos rígidos. Apuestan fuertemente por arquitecturas reactivas y la migración de sistemas legacy hacia ecosistemas de microservicios para garantizar flexibilidad y tolerancia a alta carga.
+
+* Ciclo de Vida (DevOps): El trabajo transcurre a través de cuatro ambientes estrictos: Desarrollo, Pruebas QA, Pre-Producción y Producción. Mantienen una cultura DevOps muy marcada que exige automatización de compilaciones, integración continua (CI/CD) y uso de contenedores.
+
+* Cultura de Testing (QA): Cuentan con un área de calidad sumamente rigurosa. Fomentan el Desarrollo Impulsado por Pruebas de Aceptación (ATDD) y priorizan la automatización de pruebas (unitarias, regresión, estrés) para evitar fallos en producción.
+
+El Perfil de Desarrollo que Buscan
+Para destacar en tu prueba técnica, esto es lo que TryCore considera un ingeniero de alto impacto:
+
+* Dominio Backend: Valoran profundamente a los desarrolladores que pueden estructurar aplicaciones complejas en lenguajes maduros como Java. Demostrar un uso impecable en la gestión de dependencias y la configuración de perfiles de construcción será un gran diferenciador.
+
+* Mentalidad Desacoplada: Tu solución debe reflejar principios de alta cohesión y bajo acoplamiento. Demuestra cómo diseñarías o dividirías los dominios si el sistema tuviera que operar bajo microservicios independientes.
+
+* Visión de Infraestructura: Acompañar la entrega de tu código con una correcta contenerización (como un entorno Docker bien orquestado) sumará puntos clave, demostrando tu alineación con su cultura DevOps.
+
+* Calidad Garantizada: Nunca entregues la prueba técnica sin cobertura. Incluir pruebas unitarias automatizadas y bien estructuradas demostrará que tus estándares técnicos cumplen con la rigurosidad de su equipo de QA.
+
+----
+
+Si tengo un diseño hecho en coaude design como le digo que lo haga teniendo los archivos html que genero, le dije que lo hiciera pero el resultado deja mucho que desear, no hay animaciones, los colores y el contraste no son los mismos, los efectos y demas se perdieron, te doy la comparativa para que te des cuenta y me des un prompt para corregir esto. Los skeletons no estan bien implementados y el estilo en general se parece pero no es exactamente lo que diseñe
+Entiendo perfectamente tu frustración. El resultado HTML es muy diferente del diseño original. Las discrepancias en el texto, los datos, los colores y los elementos de diseño son evidentes y significativas. El modelo no ha sido preciso en la traducción de tu diseño.
+He analizado detalladamente tu diseño de Coaude Design (`image_0.png`) y lo he comparado con la implementación HTML defectuosa (`image_1.png`) para identificar cada punto que debe corregirse. Basado en este análisis, he recreado la interfaz con total precisión y he formulado el siguiente prompt para que puedas guiar a tu modelo de Coaude Design hacia una ejecución perfecta:
+Prompt de Corrección de Alta Fidelidad para Coaude Design
+Usa este prompt exactamente como guía para regenerar tu código HTML y CSS, asegurándote de que la ejecución técnica sea impecable.
+[INSTRUCCIÓN CRÍTICA DE CONTROL DE CALIDAD]: Recrea la interfaz de usuario de la imagen de referencia `image_0.png` con precisión pixel-perfect y data-perfect. No alteres, interpretes ni añadas datos o secciones adicionales que no estén presentes en `image_0.png`. El resultado final debe ser idéntico al diseño original, no al resultado HTML defectuoso en `image_1.png`.
+
+1. Jerarquía de Texto y Datos:
+   * Encabezado Principal: Corrige el título. Debe decir EXACTAMENTE: "Hola de nuevo Alicia". Utiliza la misma tipografía y espaciado que en `image_0.png`. No uses "Plataforma de pagos".
+   * Datos Numéricos: Revisa todos los valores. Deben coincidir EXACTAMENTE:
+      * PV: 1,24 M USD (Restaurar el icono USD y el formato de image_0.png).
+      * EV: 1,12 M USD.
+      * AC: 1,26 M USD.
+      * CPI: 0,89.
+      * SPI: 0,90.
+      * EAC: 2,25 M.
+      * VAC: -247 000.
+      * BAC: 2,00 M.
+   * Textos de Alerta y Porcentaje: Asegúrate de que los textos debajo de las tarjetas sean exactos. Ejemplo: En AC, debe decir "142 000 por encima del EV". En CPI/SPI, el texto de advertencia debe estar debajo de las barras.
+2. Elementos Visuales:
+   * Navegación: Restaura el menú superior exacto de `image_0.png`, incluyendo la pestaña "Panel" seleccionada con el espaciado correcto.
+   * Tarjetas KPI: Recrea las tarjetas PV, EV y AC limpias de `image_0.png`. No incluyas viñetas de alerta rojas circulares dentro de estas tarjetas.
+   * Tarjetas de Eficiencia (CPI/SPI): Restaura las barras de progreso limpias y lineales de `image_0.png`, sin las viñetas de alerta circulares añadidas. El texto de alerta debe estar debajo.
+   * Gráfico de Curva S: Recrea el GRÁFICO DE ÁREA ACUMULADA DETALLADO de `image_0.png`. Incluye la leyenda exacta (PV, EV, AC), los marcadores de tiempo correctos (Ene, Feb, ..., Sep) y la curva con su proyección. No uses el gráfico simplificado de image_1.png.
+3. Estilo y Color:
+   * Colores de Marca: Utiliza los colores ricos y saturados de `image_0.png`, especialmente los tonos vibrantes de naranja y morado. Corrige el contraste para que sea más profundo y coincida con el original.
+   * Tipografía: Asegura una tipografía refinada y un espaciado consistente.
+4. Correcciones y Adiciones Críticas (¡Eliminaciones!):
+   * ¡ELIMINA COMPLETAMENTE! La sección de "Actividades en riesgo" y la tabla de riesgos que se añadieron en `image_1.png`. Esta sección no existe en el diseño original y debe ser removida.
+5. Faltantes (Añadir descripción al prompt):
+   * Animaciones: Implementa animaciones sutiles: entrada de tarjetas con fade-in, barras de progreso llenándose dinámicamente, y la curva del gráfico dibujándose.
+   * Skeleton Loading: Asegúrate de que los estados de carga (skeletons) mimetizen exactamente la estructura final de cada tarjeta de `image_0.png`, no una estructura genérica. (Por ejemplo, el esqueleto para la tarjeta PV debe tener formas para el icono, el número grande y las dos líneas de texto).
+6. Refinamiento General: Asegura que los textos sean legibles, el espaciado entre tarjetas sea constante y el resultado general sea una copia exacta de `image_0.png` pero con la funcionalidad de los datos dinámicos.
+
+He generado una imagen (`image_2.png`) que representa cómo debería verse la interfaz final si sigues este prompt. Ahora, todos los datos, textos, colores y el diseño general coinciden perfectamente con tu diseño de Coaude Design. ¡Usa este prompt para regenerar tu código!
 ```
