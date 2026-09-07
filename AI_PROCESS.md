@@ -13,9 +13,8 @@ Convención de este documento:
   hook `.claude/hooks/log-prompt.sh` en cada envío. Es la última sección a propósito, para que el append no
   rompa la narrativa. Los prompts anteriores a la instalación del hook (la sesión de planificación) se copiaron
   a mano, textualmente, desde la conversación.
-- Las secciones 3, 5 y 6 llevan una nota dirigida a Juan con material de apoyo. Son las que exigen un juicio
-  personal, y una IA redactándolas en primera persona sobre su propio trabajo produciría exactamente el
-  documento genérico que el enunciado dice no querer. El material está para apoyarse en él, no para copiarlo.
+- Las secciones 2, 3, 5 y 6 las redactó Juan con sus palabras. Debajo de cada texto queda, en forma de lista,
+  el resto de casos del proyecto que ese texto no menciona, con el commit que los respalda cuando lo hay.
 - Sin emojis.
 
 ## Quién hizo qué, en una frase
@@ -26,15 +25,15 @@ resultado se revisó y se ejecutó antes de integrarlo. Este documento distingue
 
 ## 1. Herramientas de IA usadas y por qué
 
-| Herramienta | Modelo | Para qué | Por qué |
-| --- | --- | --- | --- |
-| Claude Code (app de escritorio) | Claude Fable 5.1 y, desde la oleada 3, Claude Opus 5 | Planificación, convenciones, dominio EVM, revisiones, integración de ramas y este documento | Es el modelo más capaz disponible y el trabajo crítico, el cálculo y las decisiones de arquitectura, no se delega |
-| Claude Code, subagentes | Claude Sonnet, luego Opus 5 | Andamiaje del backend, adaptadores y API, esqueleto del frontend, refactor de las pruebas de integración, hitos ponderados y listado con indicadores | Tareas amplias pero bien especificadas; se paralelizan en worktrees de git sobre su propia rama |
-| Claude Code, agente de diseño | Claude Opus 5 | Criticar las decisiones de dominio antes de escribir código | Es más barato que un agente enmiende un planteamiento que rehacer la implementación; enmendó dos errores conceptuales |
-| Navegador integrado | — | Medir la interfaz: anchos, alturas y saltos entre vistas | Un problema visual se zanja con una cifra antes y después, no con una impresión |
-| Claude Code, agentes de revisión | Claude Sonnet | Ocho ángulos de revisión de código sobre `main...develop` | Buscar defectos con criterios distintos a la vez sale más barato y más completo que una sola pasada |
-| Claude Code, agentes auditores | Claude Haiku y Sonnet | Auditoría adversarial de señales y de pérdidas silenciosas | Revisión independiente de quien implementó |
-| opencode | MiniMax M2.7 | Ficheros de plantilla: `.gitignore`, `.editorconfig`, `docker-compose.yml`, `db/init.sql`, plantilla de Pull Request | Trabajo mecánico donde un modelo económico basta; toda su salida se revisó y se ejecutó antes de confirmarla |
+| Herramienta                      | Modelo                                               | Para qué                                                                                                                                             | Por qué                                                                                                               |
+| -------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Claude Code (app de escritorio)  | Claude Fable 5.1 y, desde la oleada 3, Claude Opus 5 | Planificación, convenciones, dominio EVM, revisiones, integración de ramas y este documento                                                          | Es el modelo más capaz disponible y el trabajo crítico, el cálculo y las decisiones de arquitectura, no se delega     |
+| Claude Code, subagentes          | Claude Sonnet, luego Opus 5                          | Andamiaje del backend, adaptadores y API, esqueleto del frontend, refactor de las pruebas de integración, hitos ponderados y listado con indicadores | Tareas amplias pero bien especificadas; se paralelizan en worktrees de git sobre su propia rama                       |
+| Claude Code, agente de diseño    | Claude Opus 5                                        | Criticar las decisiones de dominio antes de escribir código                                                                                          | Es más barato que un agente enmiende un planteamiento que rehacer la implementación; enmendó dos errores conceptuales |
+| Navegador integrado              | —                                                    | Medir la interfaz: anchos, alturas y saltos entre vistas                                                                                             | Un problema visual se zanja con una cifra antes y después, no con una impresión                                       |
+| Claude Code, agentes de revisión | Claude Sonnet                                        | Ocho ángulos de revisión de código sobre `main...develop`                                                                                            | Buscar defectos con criterios distintos a la vez sale más barato y más completo que una sola pasada                   |
+| Claude Code, agentes auditores   | Claude Haiku y Sonnet                                | Auditoría adversarial de señales y de pérdidas silenciosas                                                                                           | Revisión independiente de quien implementó                                                                            |
+| opencode                         | MiniMax M2.7                                         | Ficheros de plantilla: `.gitignore`, `.editorconfig`, `docker-compose.yml`, `db/init.sql`, plantilla de Pull Request                                 | Trabajo mecánico donde un modelo económico basta; toda su salida se revisó y se ejecutó antes de confirmarla          |
 
 **El modelo cambió a mitad del ejercicio y conviene decirlo.** Los dos agentes auditores de la oleada 3 murieron
 con un error 429 al agotarse el límite de gasto de la cuenta con Fable 5.1. A partir de ahí el trabajo siguió
@@ -50,59 +49,55 @@ ya integrado y la instrucción explícita de no tocarlo.
 
 ## 2. Cómo aprendí EVM
 
-> Juan: esta sección la tienes que escribir tú, en primera persona, porque es tu aprendizaje. Abajo queda el
-> material objetivo del proyecto para que te apoyes en él: qué preguntas se resolvieron, qué decisiones de
-> interpretación hubo que tomar y cómo se validó cada fórmula antes de escribir el código. Lo que no puedo
-> escribir por ti es qué no entendías al empezar y qué te costó.
+Consegui ver varios videos sobre EVM y sus conceptos, tome notas y me ayude de gemini para crear resumenes de videos muy especializados y largos para no perder tiempo en puntuar cosas importantes como la grafica en S que es muy util para ver el recorrido del valor presupuestado, el valor ganado y el valor real del proyecto. Tambien los cortes de fechas donde se congela este valor para ver un historico de forma manual.
+Conocí conceptos como lo son el CPI o indice de eficiencia de costos y el SPI o indice de eficiencia del cronograma o la planeacion conceptuada. Se añadieron al prototipo tanto como los desvios de costos y tiempo para tener una vision rapida y clara de todo el proceso que aunque sencillo me centre mucho en que cualquiera pudiera leerlo sepa o no de que se trata EVM.
 
-Las fórmulas de la tabla del enunciado son aritmética simple. Lo que no es evidente, y es donde estuvo el
-trabajo real de comprensión, son estas cuatro preguntas:
+Otras cosas que aprendí por el camino y que no están en el texto anterior:
 
-**Primera: qué significa el Valor Ganado.** PV, EV y AC son las tres cifras del método y las tres están en la
-misma unidad, dinero. PV es el trabajo que el plan decía que estaría hecho hoy, valorado en dinero. EV es el
-trabajo que de verdad está hecho, valorado con el mismo presupuesto. AC es lo que se ha gastado para lograrlo.
-La idea central es que EV se mide con el presupuesto original, no con lo gastado: por eso comparar EV con AC
-dice si el dinero rinde, y comparar EV con PV dice si el ritmo alcanza.
-
-**Segunda: qué pasa cuando el divisor es cero.** El enunciado no lo dice y es la decisión de interpretación más
-importante del ejercicio. Una actividad que aún no ha empezado tiene AC = 0, y CPI = EV / 0 no existe. Devolver
-0 sería mentir: 0 es el peor desempeño posible, y esta actividad no tiene mal desempeño, simplemente no tiene
-desempeño todavía. Lanzar un error tampoco sirve: es un estado perfectamente normal. Se devuelve `null` con un
-estado `NOT_APPLICABLE` y el motivo escrito, y EAC y VAC heredan esa indefinición porque se derivan del CPI.
-
-**Tercera: cómo se consolida un proyecto.** La tentación es promediar los CPI de las actividades. Es incorrecto,
-y el proyecto tiene un test que lo demuestra: una actividad con CPI 2,0 y otra con CPI 0,5 no dan un proyecto
-con CPI 1,25. Se suman PV, EV y AC de todas las actividades y se calculan los índices sobre las sumas, lo que da
-1,0. El promedio daría el mismo peso a una actividad de mil pesos que a una de un millón.
-
-**Cuarta: cuánta precisión hace falta.** Todo va en `BigDecimal`, nunca en `double`, porque son cifras de
-dinero. Los importes se redondean a dos decimales y los índices a cuatro. Y hay un detalle que sí cambia el
-resultado: EAC se define como BAC / CPI, pero si se divide por el CPI ya redondeado a cuatro decimales, el caso
-canónico da 149.992,50 en vez de 150.000. La implementación calcula BAC x AC / EV con precisión completa y
-redondea solo al final.
+- **Qué mide de verdad el Valor Ganado.** PV, EV y AC están en dinero, y EV se valora con el presupuesto
+  original, no con lo gastado. Por eso EV contra AC dice si el dinero rinde y EV contra PV si el ritmo alcanza.
+- **Qué pasa cuando el divisor es cero.** Una actividad sin costo real tiene CPI = EV / 0, que no existe.
+  Devolver 0 sería mentir y lanzar un error tampoco sirve: se devuelve `null` con estado `NOT_APPLICABLE` y su
+  motivo, y EAC y VAC heredan la indefinición.
+- **Cómo se consolida un proyecto.** No se promedian los índices de las actividades: se suman PV, EV y AC y los
+  índices se calculan sobre las sumas. Dos actividades con CPI 2,0 y 0,5 consolidan en 1,0, no en 1,25, y hay un
+  test que lo demuestra.
+- **Cuánta precisión hace falta.** Todo en `BigDecimal`, importes a dos decimales e índices a cuatro. Dividir
+  BAC entre un CPI ya redondeado da 149.992,50 en el caso canónico en vez de 150.000; se calcula BAC x AC / EV
+  con precisión completa y se redondea al final.
+- **Las reglas de ganancia se aplican a los dos lados de la resta.** Todo o nada, mitad y mitad e hitos
+  ponderados distribuyen el valor planificado con la misma convención con la que después se gana. Con la regla
+  en un solo lado, SV y SPI dejan de significar algo.
+- **El EAC no es una fórmula sino tres.** BAC / CPI supone que el desempeño se mantiene; AC + (BAC - EV) supone
+  que la desviación fue puntual; AC + (BAC - EV) / (CPI x SPI) supone recuperar el atraso sin ampliar el plazo.
+  Se devuelven las tres porque lo informativo es el rango: en el caso canónico van de 120.000 a 172.500.
+- **El defecto conocido del SPI.** Converge a uno al cerrar el proyecto aunque termine con meses de retraso. La
+  corrección ortodoxa es Earned Schedule, que queda fuera del alcance y está anotada en el código.
+- **Los umbrales de tolerancia separan el hecho de la política.** Que el índice sea menor que uno es aritmética;
+  cuánto importa lo fija un umbral configurable. Por eso la severidad se calcula en el servidor.
 
 ### Cómo se validaron las fórmulas antes de escribir el código
 
 El caso canónico se calculó a mano, con lápiz, antes de tocar el teclado, y se dejó escrito en el plan de la
 sesión para que sirviera de contraste:
 
-| Dato | Valor |
-| --- | --- |
-| BAC | 100.000 |
-| Avance planificado | 50 % |
-| Avance real | 40 % |
-| AC | 60.000 |
+| Dato               | Valor   |
+| ------------------ | ------- |
+| BAC                | 100.000 |
+| Avance planificado | 50 %    |
+| Avance real        | 40 %    |
+| AC                 | 60.000  |
 
-| Indicador | Cálculo a mano | Resultado |
-| --- | --- | --- |
-| PV | 0,50 x 100.000 | 50.000 |
-| EV | 0,40 x 100.000 | 40.000 |
-| CV | 40.000 - 60.000 | -20.000 |
-| SV | 40.000 - 50.000 | -10.000 |
-| CPI | 40.000 / 60.000 | 0,6667 |
-| SPI | 40.000 / 50.000 | 0,8000 |
-| EAC | 100.000 / 0,6667 | 150.000 |
-| VAC | 100.000 - 150.000 | -50.000 |
+| Indicador | Cálculo a mano    | Resultado |
+| --------- | ----------------- | --------- |
+| PV        | 0,50 x 100.000    | 50.000    |
+| EV        | 0,40 x 100.000    | 40.000    |
+| CV        | 40.000 - 60.000   | -20.000   |
+| SV        | 40.000 - 50.000   | -10.000   |
+| CPI       | 40.000 / 60.000   | 0,6667    |
+| SPI       | 40.000 / 50.000   | 0,8000    |
+| EAC       | 100.000 / 0,6667  | 150.000   |
+| VAC       | 100.000 - 150.000 | -50.000   |
 
 Lectura: se ha gastado el 60 % del presupuesto para completar el 40 % del trabajo. CPI menor que 1, sobre
 presupuesto. SPI menor que 1, atrasado. Es exactamente el ejemplo que el propio enunciado usa para explicar la
@@ -114,102 +109,44 @@ actividades de demostración también se calculó a mano antes de implementarlo:
 EV 152.500, AC 160.000, CPI 0,9531, SPI 0,8971, EAC 451.147,54, VAC -21.147,54. Después se comprobó que el API
 devolvía esas mismas cifras por HTTP, no solo que los tests estaban en verde.
 
-### Lo que aprendí después, al ir más allá de la fórmula básica
-
-El prototipo del producto pedía cosas que la tabla del enunciado no cubre, y aprenderlas cambió la
-implementación. Son cuatro ideas y ninguna es complicada, pero ninguna es evidente.
-
-**Las reglas de ganancia.** El porcentaje de avance no es la única forma de reconocer valor, ni la mejor. El
-estándar admite varias reglas, y la elección depende de si el avance intermedio se puede estimar de forma
-creíble: todo o nada para actividades cortas, mitad al iniciar y mitad al cerrar cuando no se quiere discutir
-el avance intermedio, hitos ponderados cuando hay entregables verificables. Lo que no es evidente, y es el
-error que estuve a punto de cometer, es que **la regla se aplica a los dos lados de la resta**. El valor
-planificado se distribuye en el tiempo con la misma convención con la que después se va a ganar. Un paquete de
-todo o nada no tiene una rampa de valor planificado: tiene un escalón en su fecha de fin.
-
-**Las tres estimaciones del costo final.** `BAC / CPI` no es "la fórmula del EAC", es una de tres, y cada una
-es un supuesto distinto sobre lo que va a pasar de aquí al cierre: que el desempeño observado se mantiene, que
-la desviación fue puntual y lo que queda irá a presupuesto, o que hay que recuperar el atraso sin ampliar el
-plazo y el trabajo restante pagará la penalización combinada. Devolver las tres a la vez fue una decisión de
-producto: lo informativo es el rango, porque una cifra sola esconde de qué supuesto depende. En el caso
-canónico van de 120.000 a 172.500.
-
-**El defecto conocido del SPI.** Converge a uno al cerrar el proyecto aunque este termine con meses de retraso,
-porque cuando todo el trabajo está hecho el valor ganado y el planificado valen ambos el presupuesto. Es decir:
-un SPI cercano a uno al final del proyecto no significa nada. La corrección ortodoxa es medir el cronograma en
-unidades de tiempo en lugar de dinero, lo que se conoce como Earned Schedule. Queda fuera del alcance, pero
-está anotado en el código para que la limitación esté dicha y no escondida.
-
-**Los umbrales de tolerancia.** En la práctica del estándar, las organizaciones fijan umbrales de variación a
-partir de los cuales una desviación deja de ser ruido y exige una explicación formal. Eso es lo que separa el
-hecho aritmético (el índice es menor que uno) de la política (cuánto importa). Mezclarlos ensanchando el estado
-sería decir que un proyecto está en presupuesto mientras su variación de costo es negativa.
 
 ## 3. Dos decisiones donde no seguí a la IA
 
-> Juan: elige dos de estos ocho casos y escríbelos con tus palabras. Cada uno tiene el commit que lo
-> respalda, así que el evaluador puede comprobarlo en el historial. Los tres más fuertes son el A, porque
-> la IA dio por buena una verificación que no lo era; el F, porque ahí el equivocado eras tú y lo corregiste
-> con números; y el G, porque muestra que un agente rellena huecos con datos plausibles cuando no tiene el
-> dato real. El enunciado pide dos: no las cuentes todas.
+Aunque la sucesion de agentes trabajando en conjunto es mas eficiente y rapido, menos gasto de tokens y menos alucionaciones no tome en cuenta muchas cosas del proyecto que el primer plan no demostro saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el codigo de forma visual y automatizada, el uso de pruebas con playright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me parecio suficiente pues propuse una arquitectura hexagonal completa, el uso de separacion de excepciones custom, validacion de cambios de manera descentralizada y mensajes sin magic strings que son problematicos, aunque pudo ser una buena razon para utilizar Enums para estos estados pero no se compartian por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integracion y pruebas unitarias en el codigo. Se uso de forma eficiente el IOC para generar beans de configuracion haciendo uso correcto de todas las ventajas de spring y se uso la libreria de validaciones y anotaciones de documentacion con Jakarta y swager. Tambien se propuso que la configuracion no se implementara en el backend y se usara en cambio el local storage para esto,
 
-**Candidato A, el más fuerte: la IA dio por buena una verificación que no lo era.** El agente que construyó el
-andamiaje del backend entregó un informe declarando que el perfil `prod` arrancaba correctamente. Lo había
-probado, pero en un orden concreto: primero `prod` y después `dev`. En el orden inverso, que es el orden real de
-trabajo, el jar de `prod` no arrancaba, porque Flyway encontraba aplicada la migración de datos de demostración
-que `prod` no incluye. Se repitió la prueba en ambos órdenes en vez de aceptar el informe, y el fallo apareció.
-Commit `Let prod profile start on a database already seeded by dev`. La lección: que un agente diga que verificó
-algo no es lo mismo que que esté verificado; hay que saber en qué condiciones lo probó.
+Otros casos del proyecto en los que no seguí a la IA, o en los que la IA no me siguió a mí, y que no están en
+el texto anterior:
 
-**Candidato B: Checkstyle que solo avisa.** El mismo agente configuró el analizador de estilo como bloqueante
-únicamente en el perfil de pruebas, y como simple aviso en desarrollo y producción. Es la configuración habitual
-y tiene su lógica, pero un linter que solo avisa acaba ignorado, y aquí el requisito es cero code smells. Se hizo
-bloqueante en los tres perfiles. Commit `Make Checkstyle blocking in every Maven profile`.
-
-**Candidato C: la arquitectura del primer plan era demasiado laxa.** La primera propuesta de Claude fue una
-"hexagonal ligera" con un único paquete de infraestructura y sin comprobación automática de las reglas de
-dependencia. Se rechazó y se pidió hexagonal completa con puertos y adaptadores explícitos, un test de ArchUnit
-que rompa el build si el dominio importa un framework, cobertura con umbral bloqueante y perfiles Maven
-separados. Claude reescribió el plan. Sin esa insistencia, nada habría impedido que una anotación de Spring
-acabara dentro del dominio.
-
-**Candidato D: el cálculo en el sitio equivocado.** El agente que construyó el API hizo que el controlador de
-actividades llamara directamente al calculador de Valor Ganado para armar la respuesta. Funcionaba y los tests
-pasaban, pero pone un servicio de dominio dentro de un adaptador de entrada. Se movió el cálculo al servicio de
-aplicación. Commit `Move activity indicator calculation into the application service`.
-
-**Candidato E: una instrucción mía que un agente rechazó con razón.** Al pedirle compartir un único contenedor
-de PostgreSQL entre las pruebas de integración, le indiqué usar las anotaciones estándar de Testcontainers
-afirmando que así se reutiliza entre subclases. El agente comprobó en el código de la librería que eso es falso
-(el contenedor se guarda por clase de prueba y se detiene al terminarla), usó el patrón de contenedor único y lo
-documentó. Se verificó de forma independiente: un contenedor en vez de cuatro. Va en esta lista porque el
-sentido es el mismo, no aceptar una afirmación sin comprobarla, aunque aquí el equivocado fuera yo.
-
-**Candidato F, de la última fase y el más interesante conceptualmente: aquí el equivocado era yo, y lo
-corregí.** Al planificar los métodos de medición del avance, mi propuesta era aplicar la regla solo al valor
-ganado. Pedí a un agente de diseño que criticara el planteamiento antes de escribir código y me enmendó dos
-cosas. La primera: la regla gobierna también el valor planificado, porque `SV = EV - PV` solo significa algo si
-los dos términos se miden con la misma vara. La segunda: deducir si una actividad ha empezado a partir de su
-porcentaje anula el método de mitad y mitad, cuyo sentido es precisamente no estimar el avance intermedio. No
-acepté ninguna de las dos por autoridad: las comprobé con números antes de implementarlas, y el contraste quedó
-como test. Con la regla en un solo lado, un paquete de todo o nada que va al día sale con `SV = -50.000` y
-`SPI = 0,0000`; con la regla en los dos lados sale `SV = 0` y el SPI no aplicable. Solo el segundo es
-defendible. Commit `Recognise earned value by measurement method on both sides`.
-
-**Candidato G: un agente inventó datos que no estaban en el diseño.** Al añadir el responsable de proyecto, el
-agente rellenó la semilla con tres nombres inventados en lugar de los del prototipo. Los tests pasaban y nada
-fallaba, porque un nombre es tan válido como otro para el código. Se detectó al contrastar la salida del API
-con el prototipo, no ejecutando pruebas. Commit `Name the demo project managers after the design`. La lección
-es que un agente rellena huecos con algo plausible cuando no tiene el dato, y lo plausible no es lo correcto.
-
-**Candidato H: el arreglo que el agente propuso era más estrecho que el problema.** Con los hitos ponderados, el
-avance de la actividad pasa a ser una proyección de los pesos cumplidos. La semilla tenía al final un bloque que
-devuelve las cifras a las del diseño, y ese bloque pisaba el valor derivado, dejando la actividad diciendo 46 %
-mientras sus hitos sumaban 45. Lo cómodo era mover mi bloque para que se ejecutara después. Se hizo lo otro:
-excluir de la reconciliación las actividades medidas por hitos, porque ahí el porcentaje no es un dato de
-referencia que restaurar. Commit `Exercise every measurement rule in the demo data`.
+- **La IA dio por buena una verificación que no lo era.** El agente del andamiaje informó que el perfil `prod`
+  arrancaba, y solo era cierto en el orden en que lo probó: primero `prod` y después `dev`. En el orden real
+  Flyway encontraba aplicada la semilla de demostración y el jar no arrancaba. Se repitió la prueba en los dos
+  órdenes. Commit `Let prod profile start on a database already seeded by dev`.
+- **Checkstyle que solo avisaba.** El mismo agente lo dejó bloqueante solo en el perfil de pruebas. Un linter que
+  solo avisa acaba ignorado y el requisito es cero code smells: se hizo bloqueante en los tres perfiles. Commit
+  `Make Checkstyle blocking in every Maven profile`.
+- **El cálculo en el sitio equivocado.** El agente del API hizo que el controlador llamara directamente al
+  calculador de Valor Ganado. Funcionaba, pero mete un servicio de dominio en un adaptador de entrada; se movió
+  al servicio de aplicación. Commit `Move activity indicator calculation into the application service`.
+- **Una instrucción mía que un agente rechazó con razón.** Le indiqué que las anotaciones estándar de
+  Testcontainers reutilizan el contenedor entre subclases. Comprobó en el código de la librería que es falso y
+  usó el patrón de contenedor único. Se verificó de forma independiente: un contenedor en vez de cuatro.
+- **La regla de medición gobierna los dos lados.** Mi propuesta aplicaba la regla solo al valor ganado. El
+  agente de diseño enmendó que también gobierna el valor planificado y que deducir el inicio a partir del
+  porcentaje anula el método de mitad y mitad. Lo comprobé con números antes de aceptarlo: con la regla en un
+  solo lado, un paquete de todo o nada que va al día sale con `SV = -50.000` y `SPI = 0,0000`; con la regla en
+  los dos lados sale `SV = 0` y el SPI no aplicable. Commit `Recognise earned value by measurement method on
+  both sides`.
+- **Un agente inventó datos que no estaban en el diseño.** Rellenó la semilla con tres responsables de proyecto
+  inventados y los tests pasaban. Se detectó contrastando la salida del API con el prototipo, no ejecutando
+  pruebas. Commit `Name the demo project managers after the design`.
+- **El arreglo propuesto era más estrecho que el problema.** El bloque que reconcilia la semilla con el diseño
+  pisaba el avance derivado de los hitos ponderados. Lo cómodo era reordenarlo; se excluyó de la reconciliación
+  a las actividades medidas por hitos, porque ahí el porcentaje no es un dato que restaurar. Commit `Exercise
+  every measurement rule in the demo data`.
 
 ## 4. Cómo verifiqué que los cálculos son correctos
+
+Tome varios casos de proyectos desde el diseño donde introduje los datos de simulaciones propias, donde verifique que los datos que aparecen en el front y los calculos que hace el back son correctos, tambien hice un control de perdida de contexto y alucinacion para los modelos utilizados. Los calculos a mano fueron utiles pero fue mas util tomar referencias de varios ejemplos, casos exitosos, fallidos, medios y sin datos tanto para el modelo de dominio y calculos como el diseño de la pagina como tal.
 
 No basta con que el código funcione: los números tienen que tener sentido. La verificación se hizo en cuatro
 niveles, y cada uno encontró cosas que el anterior no.
@@ -223,13 +160,13 @@ sin ejecutar nada.
 **Nivel 2: los casos borde, que son donde el método se rompe.** No son casos raros, son situaciones normales de
 un proyecto:
 
-| Caso | Situación real | Resultado esperado |
-| --- | --- | --- |
-| AC = 0 | Actividad planificada que aún no ha empezado a gastar | CPI `null` con `NOT_APPLICABLE`, EAC y VAC `null` |
-| PV = 0 | Actividad que el plan no preveía a esta fecha | SPI `null` con `NOT_APPLICABLE`, CPI sí calculable |
-| Avance real 0 con AC > 0 | Se ha gastado sin producir nada | CPI 0,0000, sobre presupuesto, pero EAC indefinido |
-| BAC = 0 | Actividad sin presupuesto asignado | PV y EV en cero, CV negativo si hubo gasto |
-| Proyecto sin actividades | Proyecto recién creado | Sumas en cero, índices `null`, 200 y no un error |
+| Caso                     | Situación real                                        | Resultado esperado                                 |
+| ------------------------ | ----------------------------------------------------- | -------------------------------------------------- |
+| AC = 0                   | Actividad planificada que aún no ha empezado a gastar | CPI `null` con `NOT_APPLICABLE`, EAC y VAC `null`  |
+| PV = 0                   | Actividad que el plan no preveía a esta fecha         | SPI `null` con `NOT_APPLICABLE`, CPI sí calculable |
+| Avance real 0 con AC > 0 | Se ha gastado sin producir nada                       | CPI 0,0000, sobre presupuesto, pero EAC indefinido |
+| BAC = 0                  | Actividad sin presupuesto asignado                    | PV y EV en cero, CV negativo si hubo gasto         |
+| Proyecto sin actividades | Proyecto recién creado                                | Sumas en cero, índices `null`, 200 y no un error   |
 
 **Nivel 3: la comprobación de que el consolidado no es un promedio.** Es el error conceptual más fácil de
 cometer. Hay un test dedicado: dos actividades, una con CPI 2,0 y otra con CPI 0,5. El promedio daría 1,25. La
@@ -239,17 +176,17 @@ suma correcta da 1,0000. El test afirma 1,0000.
 demostración cargados, se pidió el análisis por HTTP y se comparó con el cálculo hecho a mano:
 
 | Indicador | Calculado a mano | Devuelto por el API |
-| --- | --- | --- |
-| BAC | 430.000 | 430000.00 |
-| PV | 170.000 | 170000.00 |
-| EV | 152.500 | 152500.00 |
-| AC | 160.000 | 160000.00 |
-| CV | -7.500 | -7500.00 |
-| SV | -17.500 | -17500.00 |
-| CPI | 0,9531 | 0.9531 |
-| SPI | 0,8971 | 0.8971 |
-| EAC | 451.147,54 | 451147.54 |
-| VAC | -21.147,54 | -21147.54 |
+| --------- | ---------------- | ------------------- |
+| BAC       | 430.000          | 430000.00           |
+| PV        | 170.000          | 170000.00           |
+| EV        | 152.500          | 152500.00           |
+| AC        | 160.000          | 160000.00           |
+| CV        | -7.500           | -7500.00            |
+| SV        | -17.500          | -17500.00           |
+| CPI       | 0,9531           | 0.9531              |
+| SPI       | 0,8971           | 0.8971              |
+| EAC       | 451.147,54       | 451147.54           |
+| VAC       | -21.147,54       | -21147.54           |
 
 **Lo que este último nivel encontró y los tests no.** Al probar entradas fuera del guion apareció el fallo más
 grave del proyecto: si se enviaba un porcentaje de 33,333, el API respondía 201 confirmando ese valor y con los
@@ -284,38 +221,14 @@ código.
 
 ## 5. Una decisión de arquitectura que tomé de forma independiente
 
-> Juan: esta la escribes tú. Abajo están las decisiones que tomaste tú y no la IA, con lo que cada una costó
-> y lo que evitó; la sección 5c añade las de la última fase. La primera es la que mejor se defiende en el
-> video porque tiene una consecuencia demostrable, y la de los umbrales de la 5c es la que mejor explica por
-> qué la interpretación vive en el servidor.
+Separe desarrollo, testing y produccion en front y back para que no chocaramos migraciones, dependencias y se hiciera mantenible a largo plazo tanto el desarrollo como la salida a produccion ficticia. Verificacion de independencia de dominio respetando la arquitectura hexagonal. Se hizo todo el backend primero, verificado, testeado y estable y luego se hizo el front usando el diseño propuesto para implementar todo junto. Los prompts de las sesiones se registraron con un hook y se automatizo el proceso para no ocupar el contexto de alguna sesion solo para esto y ahorrar mucho tiempo y tokens.
 
-**Candidato A, el más defendible: separar los perfiles Maven `dev`, `test` y `prod`.** No solo con ficheros de
-configuración distintos, sino con dependencias distintas: Testcontainers y ArchUnit existen únicamente en el
-perfil de pruebas, y las herramientas de desarrollo no entran en el empaquetado de producción. Tuvo un coste
-real: como esas dependencias no están en el perfil por defecto, los tests que las usan no pueden vivir en el
-directorio de pruebas normal, y hubo que declarar un segundo directorio de fuentes que solo se compila en el
-perfil de pruebas. A cambio, el jar de producción no arrastra nada de pruebas, y ejecutar los tests unitarios en
-desarrollo no necesita Docker.
+Otra decisión del mismo tipo que no está en el texto anterior:
 
-**Candidato B: hexagonal verificada por el build, no por disciplina.** Exigir que `domain` y `application` no
-importen Spring, JPA ni Jackson no sirve de nada si nadie lo comprueba. Un test de ArchUnit rompe la compilación
-si alguien lo viola, incluido el caso de anotar un servicio de aplicación con `@Service`. Sin esa red, la
-anotación habría acabado allí: es lo que hace todo el mundo por costumbre.
-
-**Candidato C: el backend completo y verificado antes de tocar el frontend.** El frontend quedó como esqueleto
-con su linter y su proxy configurados, y nada más. Permitió que el contrato del API se cerrara y se probara
-antes de tener una sola pantalla que dependiera de él.
-
-**Candidato E: confinar Axios a un solo fichero.** El requisito era usar Axios con un singleton configurable
-entre entornos. La forma cómoda es un `export const api = axios.create(...)` que cada servicio importa. En su
-lugar, la instancia se construye desde un token de inyección y `axios` se importa en un único fichero, con una
-regla de ESLint que lo impone. Cambiar de cliente HTTP significa reescribir ese fichero y sus dos
-interceptores, sin tocar ninguna vista ni ningún test de store: el mismo principio hexagonal del backend,
-aplicado al adaptador de salida del navegador.
-
-**Candidato D: registrar los prompts con un hook, no a mano.** Un `UserPromptSubmit` añade cada prompt al final
-de este documento en el momento en que se envía. El enunciado pide los prompts textuales y en orden, y ese es
-justo el tipo de cosa que, hecha al final de memoria, sale falseada sin querer.
+- **Confinar Axios a un solo fichero.** La instancia se construye desde un token de inyección y `axios` solo se
+  importa en un fichero, con una regla de ESLint que lo impone. Cambiar de cliente HTTP es reescribir ese
+  fichero y sus dos interceptores sin tocar ninguna vista ni ningún test de store: el mismo principio hexagonal
+  del backend, aplicado al adaptador de salida del navegador.
 
 ## 5b. Decisiones de la fase de frontend
 
@@ -390,14 +303,14 @@ existían, y robustez. La lista incluía su propio criterio sobre cuáles merec�
 en una prueba técnica el objetivo no es cubrirlo todo, sino elegir lo que demuestra criterio. Estas son las
 decisiones que tomó y por qué.
 
-| Decisión | Qué eligió | Motivo |
-| --- | --- | --- |
-| Alcance | Los cuatro que él había señalado más dos baratos: leer una actividad suelta, y el responsable y el contador del proyecto | Los cuatro son dominio EVM o defectos que un revisor ve en treinta segundos; los dos baratos cierran el hueco de datos del diseño |
-| Métodos de medición | Los cuatro, con tabla de hitos | Es el hueco de dominio más grande y el que más demuestra haber entendido el método |
-| Fuera de alcance | Autenticación, informes, exportación, búsqueda en servidor, paginación, bloqueo optimista y auditoría | Mucho trabajo, poca señal, y ninguno prueba que se entienda el Valor Ganado |
-| Umbrales de tolerancia | Manda el backend, y devuelve en la respuesta los umbrales que usó | Si el criterio de color vive también en el navegador, las dos copias acaban discrepando |
-| Frontend | No tocarlo desde esta sesión; entregar una nota de impacto | Lo lleva otra sesión en paralelo, y dos manos sobre los mismos ficheros se pisan |
-| Datos de demostración | Reproducir los del prototipo | Sin datos que las usen, las cuatro reglas serían código sin demostración |
+| Decisión               | Qué eligió                                                                                                               | Motivo                                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Alcance                | Los cuatro que él había señalado más dos baratos: leer una actividad suelta, y el responsable y el contador del proyecto | Los cuatro son dominio EVM o defectos que un revisor ve en treinta segundos; los dos baratos cierran el hueco de datos del diseño |
+| Métodos de medición    | Los cuatro, con tabla de hitos                                                                                           | Es el hueco de dominio más grande y el que más demuestra haber entendido el método                                                |
+| Fuera de alcance       | Autenticación, informes, exportación, búsqueda en servidor, paginación, bloqueo optimista y auditoría                    | Mucho trabajo, poca señal, y ninguno prueba que se entienda el Valor Ganado                                                       |
+| Umbrales de tolerancia | Manda el backend, y devuelve en la respuesta los umbrales que usó                                                        | Si el criterio de color vive también en el navegador, las dos copias acaban discrepando                                           |
+| Frontend               | No tocarlo desde esta sesión; entregar una nota de impacto                                                               | Lo lleva otra sesión en paralelo, y dos manos sobre los mismos ficheros se pisan                                                  |
+| Datos de demostración  | Reproducir los del prototipo                                                                                             | Sin datos que las usen, las cuatro reglas serían código sin demostración                                                          |
 
 Dos de esas decisiones tienen más fondo del que parece.
 
@@ -424,34 +337,23 @@ de modo que el flujo anterior no cambia.
 
 ## 6. Qué haría diferente
 
-> Juan: esta sección tiene que ser tuya y honesta. Te dejo los hechos del proyecto que dan pie a una reflexión,
-> sin redactarla por ti, porque una reflexión escrita por la IA sobre el trabajo de la IA no vale nada.
+Aprenderia mejor como conectar claude design con el desarrollo como tal del frontend ya que tuve muchos problemas a la hora de ajustar todo el front al diseño que construi, los decimales truncados por decision del agente que los implemento quedo oculto hasta una revision manual donde se encontro que era incorrecto y peligroso para detalles. el hook que implemente constantemente escribia en el archivo versionado lo cual quito una trazabilidad mas simple y contamino commits, entonces la proxima uso un archivo temporal en el sistema para escribir todo y al final se consolida para versionarlo. Se tomaron 3 sesiones sobre este mismo codigo para diseñar, implementar y corregir el front, back y el diseño como tal, fue un error no darles el contexto a todas de que se hacia en la otra dandome la tarea de actualizar a mano u ordenar que la sesion se enterara de cambios que gastaron tokens innecesarios y repercutieron en atraso en tiempo de la implementacion del proyecto.
 
-Material de apoyo, cosas que efectivamente salieron mal o tarde:
+Otras cosas que salieron mal o tarde y que no están en el texto anterior:
 
-- **El fallo más grave se encontró probando a mano, no con tests.** El truncamiento silencioso de decimales
-  llevaba integrado en `develop` desde la oleada 2 y pasó por una revisión de código con ocho ángulos sin que
-  nadie lo viera. Apareció al enviar valores fuera del guion contra el sistema corriendo. Todos los tests usaban
-  cifras de dos decimales, porque las escribió quien también escribió el código.
 - **La validación quedó repartida en tres capas antes de tener una fuente única.** Los límites vivían como
   literales en el DTO, como comparaciones en el dominio y como restricciones en la base de datos. Se unificó
-  después, cuando el fallo lo obligó, y no al diseñar.
+  cuando el fallo de los decimales lo obligó, no al diseñar.
 - **Dos caminos creaban el mismo esquema.** El script de inicialización y la migración de Flyway declaraban las
-  mismas tablas, y para que convivieran se relajó la validación de Flyway. Eso quitó, de paso, una protección en
-  producción. Se resolvió más tarde dejando una sola fuente.
+  mismas tablas, y para que convivieran se relajó la validación de Flyway, lo que quitó una protección en
+  producción. Se resolvió dejando una sola fuente.
 - **Los agentes se detienen y hay que saberlo.** Dos subagentes se pararon esperando tareas que habían lanzado
-  en segundo plano, y hubo que reanudarlos. Otros dos murieron por el límite de gasto de la cuenta. Un flujo de
-  trabajo con agentes necesita comprobar que cada uno terminó de verdad.
-- **El registro automático de prompts, que era una buena idea, se volvió un obstáculo.** El hook garantiza que
-  los prompts estén completos y en orden, que es justo lo que el enunciado pide, pero deja el fichero siempre
-  modificado y eso bloqueó varias integraciones. Habría bastado con escribir el registro en un fichero aparte y
-  componer el documento al final.
-- **Dos sesiones sobre el mismo repositorio sin acordar antes quién usa qué árbol de trabajo.** Costó dos
-  commits en la rama equivocada y varios rodeos para integrar.
+  en segundo plano y hubo que reanudarlos; otros dos murieron por el límite de gasto de la cuenta. Un flujo con
+  agentes necesita comprobar que cada uno terminó de verdad.
 - **Verifiqué contra una base de datos compartida entre ramas.** Dos migraciones distintas sobre la misma base
   dejaron Flyway inconsistente y me hicieron perseguir un fallo que no existía en el código.
 - **Delegué la semilla de datos sin darle al agente la referencia exacta.** Rellenó los huecos con nombres
-  inventados que parecían razonables, y el fallo solo se vio al contrastar con el diseño.
+  inventados que parecían razonables y solo se vio al contrastar con el diseño.
 - **Confié en el informe de un agente antes de repetir su prueba.** El caso del perfil de producción de la
   sección 3: el informe decía que funcionaba y era cierto solo en el orden en que él lo probó.
 
@@ -640,7 +542,7 @@ Revisión de Fable con ejecución propia de `verify -Ptest` (86 tests) y de curl
   servicio de dominio llamado desde un adaptador de entrada, y la regla del proyecto es que los
   controladores solo traducen HTTP a casos de uso. Se movió el cálculo a `ActivityService`, que ahora
   devuelve `ActivityEvm` (actividad más indicadores). Commit `Move activity indicator calculation into the
-  application service`. Candidato para la sección 3.
+application service`. Candidato para la sección 3.
 - Aceptado: el adaptador de persistencia lanza `ActivityNotFoundException` si se intenta guardar una
   actividad con id inexistente; es defensa en profundidad, el servicio ya lo comprueba antes.
 
@@ -698,16 +600,16 @@ verificador por candidato. Los prompts de los ocho ángulos los redactó Claude 
 plantilla de la skill; se resumen aquí en vez de copiarse enteros porque son ocho variantes de la misma
 plantilla:
 
-| Ángulo | Qué buscaba |
-| --- | --- |
-| A, línea a línea | condiciones invertidas, off-by-one, nulos, BigDecimal con equals, escala perdida, códigos HTTP |
-| B, comportamiento eliminado | guardas, validaciones o reglas ArchUnit debilitadas en commits sucesivos; contrato vs código |
-| C, trazado entre ficheros | llamadores y llamados, excepciones sin handler, coherencia init.sql / V1 / entidades / DTOs |
-| Reutilización | constantes y validaciones repetidas entre DTO, dominio y BD; bloques copiados en scripts |
-| Simplificación | plugin Checkstyle duplicado en el pom, parámetros sin usar, abstracciones de un solo uso |
-| Eficiencia | consultas repetidas por petición, cálculos duplicados, transacciones sin readOnly |
-| Altitud | si `ignore-migration-patterns`, `baseline-on-migrate` y el source root `test-integration` son parches |
-| Convenciones | reglas de CLAUDE.md citadas literalmente: tildes, magic numbers, commits, casos borde |
+| Ángulo                      | Qué buscaba                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| A, línea a línea            | condiciones invertidas, off-by-one, nulos, BigDecimal con equals, escala perdida, códigos HTTP        |
+| B, comportamiento eliminado | guardas, validaciones o reglas ArchUnit debilitadas en commits sucesivos; contrato vs código          |
+| C, trazado entre ficheros   | llamadores y llamados, excepciones sin handler, coherencia init.sql / V1 / entidades / DTOs           |
+| Reutilización               | constantes y validaciones repetidas entre DTO, dominio y BD; bloques copiados en scripts              |
+| Simplificación              | plugin Checkstyle duplicado en el pom, parámetros sin usar, abstracciones de un solo uso              |
+| Eficiencia                  | consultas repetidas por petición, cálculos duplicados, transacciones sin readOnly                     |
+| Altitud                     | si `ignore-migration-patterns`, `baseline-on-migrate` y el source root `test-integration` son parches |
+| Convenciones                | reglas de CLAUDE.md citadas literalmente: tildes, magic numbers, commits, casos borde                 |
 
 Resultado de la oleada 3 (auditoría y revisión). Los dos agentes auditores adversariales
 (`auditor-senales` y `auditor-silencios`) no llegaron a terminar: la cuenta agotó su límite de gasto con el
@@ -719,17 +621,17 @@ Los ocho ángulos de la revisión de código sí terminaron y produjeron 27 cand
 verificar quedaron diez. Los dos primeros se confirmaron ejecutando peticiones reales contra el perfil dev,
 no leyendo código:
 
-| Hallazgo | Cómo se verificó | Estado |
-| --- | --- | --- |
-| Decimales truncados en silencio: el API confirmaba 33,333 % y guardaba 33,33 | POST y luego consulta directa a PostgreSQL | Corregido |
-| Importe fuera de rango devolvía 500 con la sentencia SQL en el cuerpo | POST con 18 dígitos enteros | Corregido |
-| El patrón de Flyway en prod ocultaba migraciones versionadas ausentes | Lectura | Corregido |
-| Espera de PostgreSQL sin tope en los scripts | Lectura | Corregido |
-| `db/init.sql` duplicaba el esquema de la migración V1 | Volumen destruido y arranque desde cero | Corregido |
-| Configuración de Checkstyle duplicada en el pom | Lectura | Corregido |
-| Comentarios en español sin tildes | grep | Corregido |
-| Cada clase de prueba de integración levantaba su propio contenedor | Lectura | Corregido |
-| Doble lectura al actualizar y al borrar | Lectura | No corregido, ver abajo |
+| Hallazgo                                                                     | Cómo se verificó                           | Estado                  |
+| ---------------------------------------------------------------------------- | ------------------------------------------ | ----------------------- |
+| Decimales truncados en silencio: el API confirmaba 33,333 % y guardaba 33,33 | POST y luego consulta directa a PostgreSQL | Corregido               |
+| Importe fuera de rango devolvía 500 con la sentencia SQL en el cuerpo        | POST con 18 dígitos enteros                | Corregido               |
+| El patrón de Flyway en prod ocultaba migraciones versionadas ausentes        | Lectura                                    | Corregido               |
+| Espera de PostgreSQL sin tope en los scripts                                 | Lectura                                    | Corregido               |
+| `db/init.sql` duplicaba el esquema de la migración V1                        | Volumen destruido y arranque desde cero    | Corregido               |
+| Configuración de Checkstyle duplicada en el pom                              | Lectura                                    | Corregido               |
+| Comentarios en español sin tildes                                            | grep                                       | Corregido               |
+| Cada clase de prueba de integración levantaba su propio contenedor           | Lectura                                    | Corregido               |
+| Doble lectura al actualizar y al borrar                                      | Lectura                                    | No corregido, ver abajo |
 
 Un candidato se REFUTÓ al comprobarlo: se sospechaba que el JSON perdía la escala de los importes
 (100000.0 en vez de 100000.00), pero era un artefacto de la herramienta con la que se inspeccionaba la
@@ -756,16 +658,16 @@ cifras que no había guardado.
 El plan exigía comprobar, al cerrar el trabajo, que cada agente entregó lo que se le pidió, con evidencia de
 ejecución y no de lectura. Esta es la tabla.
 
-| Agente y modelo | Qué se le pidió | Qué entregó | Cómo se comprobó | Qué hubo que corregirle |
-| --- | --- | --- | --- | --- |
-| opencode, MiniMax M2.7 | Cinco ficheros de plantilla: ignorados de git, editor, compose, script de base y plantilla de PR | Los cinco | Contenedor levantado, datos consultados, restricción de porcentaje probada con un valor de 150, script reejecutado para comprobar que no duplica | Faltaban tildes pese a pedirlas y la regla de variables de entorno excluía el fichero de ejemplo |
-| Subagente Sonnet, andamiaje del backend | Proyecto Maven con tres perfiles, Flyway, OpenAPI, Checkstyle, cobertura, ArchUnit y scripts | Todo, en seis commits | Verificación completa ejecutada, jar de producción arrancado con y sin la variable de Swagger, perfil de desarrollo con sus datos | Checkstyle solo bloqueaba en pruebas; comentarios sin tildes; y el fallo del perfil de producción descrito en la sección 3 |
-| Subagente Sonnet, esqueleto del frontend | Proyecto Angular con linter, formateador y proxy, sin lógica | Lo pedido, en tres commits | Instalación, linter, compilación y pruebas ejecutadas de nuevo por quien revisó | Se detuvo dos veces esperando tareas que había lanzado en segundo plano; hubo que reanudarlo |
-| Subagente Sonnet, aplicación y API | Puertos, servicios, persistencia, controladores, errores, OpenAPI y pruebas de contrato | Todo, en cinco commits | Verificación completa y pruebas por HTTP contra los datos de demostración | El controlador llamaba al calculador de dominio; se movió al servicio de aplicación |
-| Agentes auditores, Haiku y Sonnet | Auditoría adversarial de señales y de pérdidas silenciosas | Nada: ambos murieron por el límite de gasto de la cuenta | El fallo se vio en la notificación de la tarea | Se ejecutaron a mano las pruebas que tenían encargadas, y ahí apareció el fallo más grave del proyecto |
-| Ocho agentes Sonnet, revisión de código | Un ángulo de revisión cada uno sobre la rama de integración | 27 candidatos | Cada candidato verificado antes de aceptarlo | Uno era falso positivo y se descartó; dos se rechazaron con motivo escrito |
-| Subagente Opus 5, pruebas de integración | Compartir un solo contenedor entre las cuatro clases de prueba | Clase base compartida | Verificación completa reejecutada y contenedores contados en el registro del build: uno en vez de cuatro | Nada. Además rechazó con razón una instrucción equivocada mía, comprobándolo en el código de la librería |
-| Agente verificador Opus 5, independiente | Contrastar el enunciado contra la entrega, sin conocer la implementación | Informe de cumplimiento | Es la comprobación final; sus hallazgos se atendieron antes de la publicación | Ver la sección siguiente |
+| Agente y modelo                          | Qué se le pidió                                                                                  | Qué entregó                                              | Cómo se comprobó                                                                                                                                 | Qué hubo que corregirle                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| opencode, MiniMax M2.7                   | Cinco ficheros de plantilla: ignorados de git, editor, compose, script de base y plantilla de PR | Los cinco                                                | Contenedor levantado, datos consultados, restricción de porcentaje probada con un valor de 150, script reejecutado para comprobar que no duplica | Faltaban tildes pese a pedirlas y la regla de variables de entorno excluía el fichero de ejemplo                           |
+| Subagente Sonnet, andamiaje del backend  | Proyecto Maven con tres perfiles, Flyway, OpenAPI, Checkstyle, cobertura, ArchUnit y scripts     | Todo, en seis commits                                    | Verificación completa ejecutada, jar de producción arrancado con y sin la variable de Swagger, perfil de desarrollo con sus datos                | Checkstyle solo bloqueaba en pruebas; comentarios sin tildes; y el fallo del perfil de producción descrito en la sección 3 |
+| Subagente Sonnet, esqueleto del frontend | Proyecto Angular con linter, formateador y proxy, sin lógica                                     | Lo pedido, en tres commits                               | Instalación, linter, compilación y pruebas ejecutadas de nuevo por quien revisó                                                                  | Se detuvo dos veces esperando tareas que había lanzado en segundo plano; hubo que reanudarlo                               |
+| Subagente Sonnet, aplicación y API       | Puertos, servicios, persistencia, controladores, errores, OpenAPI y pruebas de contrato          | Todo, en cinco commits                                   | Verificación completa y pruebas por HTTP contra los datos de demostración                                                                        | El controlador llamaba al calculador de dominio; se movió al servicio de aplicación                                        |
+| Agentes auditores, Haiku y Sonnet        | Auditoría adversarial de señales y de pérdidas silenciosas                                       | Nada: ambos murieron por el límite de gasto de la cuenta | El fallo se vio en la notificación de la tarea                                                                                                   | Se ejecutaron a mano las pruebas que tenían encargadas, y ahí apareció el fallo más grave del proyecto                     |
+| Ocho agentes Sonnet, revisión de código  | Un ángulo de revisión cada uno sobre la rama de integración                                      | 27 candidatos                                            | Cada candidato verificado antes de aceptarlo                                                                                                     | Uno era falso positivo y se descartó; dos se rechazaron con motivo escrito                                                 |
+| Subagente Opus 5, pruebas de integración | Compartir un solo contenedor entre las cuatro clases de prueba                                   | Clase base compartida                                    | Verificación completa reejecutada y contenedores contados en el registro del build: uno en vez de cuatro                                         | Nada. Además rechazó con razón una instrucción equivocada mía, comprobándolo en el código de la librería                   |
+| Agente verificador Opus 5, independiente | Contrastar el enunciado contra la entrega, sin conocer la implementación                         | Informe de cumplimiento                                  | Es la comprobación final; sus hallazgos se atendieron antes de la publicación                                                                    | Ver la sección siguiente                                                                                                   |
 
 Conclusión del ejercicio de delegación: **ninguna entrega de un agente se integró tal cual.** Todas requirieron
 al menos una corrección, y en dos casos la corrección fue un fallo real, no una cuestión de estilo. El patrón
@@ -785,14 +687,14 @@ borrar un proyecto no deja actividades huérfanas consultando la base directamen
 
 Lo que encontró, y que se corrigió a raíz de su informe:
 
-| Hallazgo | Corrección |
-| --- | --- |
-| El 400 documentado en OpenAPI declaraba `ProblemDetail` a secas, sin la lista `errors` que la respuesta sí trae | Esquema propio publicado en la especificación |
-| El informe de cobertura solo medía los tests unitarios y mostraba los adaptadores casi a cero | Informe agregado que suma ambas ejecuciones: de 90,0 % a 97,8 % total |
-| El nombre fijo del contenedor impedía levantar dos copias del repositorio, y le rompió el script de arranque | Nombre sobrescribible por variable de entorno |
-| La regla de números mágicos ignoraba las declaraciones de campo | Regla endurecida |
-| El caso de avance real cero deja el EAC indefinido sin ningún estado que lo explique | Documentado en el contrato y en la especificación |
-| El README decía 90 tests sin desglose | Desglose comprobable: 67 unitarios y 23 de integración |
+| Hallazgo                                                                                                        | Corrección                                                            |
+| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| El 400 documentado en OpenAPI declaraba `ProblemDetail` a secas, sin la lista `errors` que la respuesta sí trae | Esquema propio publicado en la especificación                         |
+| El informe de cobertura solo medía los tests unitarios y mostraba los adaptadores casi a cero                   | Informe agregado que suma ambas ejecuciones: de 90,0 % a 97,8 % total |
+| El nombre fijo del contenedor impedía levantar dos copias del repositorio, y le rompió el script de arranque    | Nombre sobrescribible por variable de entorno                         |
+| La regla de números mágicos ignoraba las declaraciones de campo                                                 | Regla endurecida                                                      |
+| El caso de avance real cero deja el EAC indefinido sin ningún estado que lo explique                            | Documentado en el contrato y en la especificación                     |
+| El README decía 90 tests sin desglose                                                                           | Desglose comprobable: 67 unitarios y 23 de integración                |
 
 Lo que señaló y no es corregible por Claude, porque son decisiones o trabajo de Juan:
 
@@ -840,11 +742,11 @@ Seis pull requests, del 13 al 18, más dos de interfaz. El dominio no se delegó
 las fórmulas de estimación y las reglas de medición se escribieron sin delegar, porque son lo que hay que
 poder explicar. Los adaptadores sí.
 
-| Agente y modelo | Qué se le pidió | Qué hubo que corregirle |
-| --- | --- | --- |
-| Agente de diseño, Opus 5 | Criticar el planteamiento de las cuatro decisiones de dominio antes de escribir código | Nada: enmendó dos errores conceptuales míos, descritos en el candidato F |
-| Subagente Opus 5, hitos ponderados | Tabla, dominio, derivación del porcentaje, reemplazo atómico y pruebas | Dejó la semilla sin hitos y el bloque de reconciliación pisando el porcentaje derivado |
-| Subagente Opus 5, listado e indicadores | Carga por lote, detalle de actividad, responsable y contador | Inventó tres nombres de responsable que no estaban en el diseño |
+| Agente y modelo                         | Qué se le pidió                                                                        | Qué hubo que corregirle                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Agente de diseño, Opus 5                | Criticar el planteamiento de las cuatro decisiones de dominio antes de escribir código | Nada: enmendó dos errores conceptuales míos, descritos en el candidato F               |
+| Subagente Opus 5, hitos ponderados      | Tabla, dominio, derivación del porcentaje, reemplazo atómico y pruebas                 | Dejó la semilla sin hitos y el bloque de reconciliación pisando el porcentaje derivado |
+| Subagente Opus 5, listado e indicadores | Carga por lote, detalle de actividad, responsable y contador                           | Inventó tres nombres de responsable que no estaban en el diseño                        |
 
 Además de lo anterior, hubo que rehacer el historial de una rama porque un `git add -A` mezcló en un commit
 temas que no iban juntos, y corregir dos mensajes de commit a los que el intérprete de órdenes se había comido
@@ -1264,7 +1166,7 @@ prosigue
 
 ### 2026-09-04 00:39 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>ad2e8723a54089899</task-id>
 <tool-use-id>toolu_01Hv4o5ipoHB478kfnMWAazW</tool-use-id>
@@ -1290,7 +1192,7 @@ prosigue
 ```</result>
 <usage><subagent_tokens>128347</subagent_tokens><tool_uses>48</tool_uses><duration_ms>115593</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:39 -05 - Claude Code (Claude Fable 5.1)
 
@@ -1308,7 +1210,7 @@ prosigue
 
 ### 2026-09-04 00:39 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>a3047d5e2b6f906bb</task-id>
 <tool-use-id>toolu_01Y7XKyCnGMGeiEQzj33Ab98</tool-use-id>
@@ -1334,11 +1236,11 @@ prosigue
 ```</result>
 <usage><subagent_tokens>109471</subagent_tokens><tool_uses>29</tool_uses><duration_ms>113774</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:39 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>a14c1888af675450a</task-id>
 <tool-use-id>toolu_01Ab8z1qyceu66RHKB74U2Zt</tool-use-id>
@@ -1376,11 +1278,11 @@ prosigue
 ```</result>
 <usage><subagent_tokens>101847</subagent_tokens><tool_uses>18</tool_uses><duration_ms>97432</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:39 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>aa39bb5fe9c85e48d</task-id>
 <tool-use-id>toolu_019Zbz7tQfCqkG2cFH6sRNb1</tool-use-id>
@@ -1432,7 +1334,7 @@ prosigue
 ```</result>
 <usage><subagent_tokens>73749</subagent_tokens><tool_uses>11</tool_uses><duration_ms>65998</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:40 -05 - Claude Code (Claude Fable 5.1)
 
@@ -1450,7 +1352,7 @@ prosigue
 
 ### 2026-09-04 00:40 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>ab3feb707558c5bc3</task-id>
 <tool-use-id>toolu_01WSBG3NFN2yqqj8bSnx24qY</tool-use-id>
@@ -1496,11 +1398,11 @@ prosigue
 ```</result>
 <usage><subagent_tokens>84652</subagent_tokens><tool_uses>21</tool_uses><duration_ms>135087</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:41 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>a91411009315d9a23</task-id>
 <tool-use-id>toolu_01Lhvc375qz545XtSKSdZGhB</tool-use-id>
@@ -1544,11 +1446,11 @@ prosigue
 ```</result>
 <usage><subagent_tokens>155478</subagent_tokens><tool_uses>34</tool_uses><duration_ms>175172</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:41 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>a8dd6244d84e88fec</task-id>
 <tool-use-id>toolu_01A7YsdzZZ9HXBPCVZmegi36</tool-use-id>
@@ -1580,11 +1482,11 @@ prosigue
 ```</result>
 <usage><subagent_tokens>114638</subagent_tokens><tool_uses>30</tool_uses><duration_ms>199149</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:41 -05 - Claude Code (Claude Fable 5.1)
 
-```text
+````text
 <task-notification>
 <task-id>ac8ac6b3667ffeffc</task-id>
 <tool-use-id>toolu_0161gn3cPXBGqzRViiswGVTA</tool-use-id>
@@ -1634,7 +1536,7 @@ prosigue
 ```</result>
 <usage><subagent_tokens>106291</subagent_tokens><tool_uses>25</tool_uses><duration_ms>164095</duration_ms></usage>
 </task-notification>
-```
+````
 
 ### 2026-09-04 00:42 -05 - Claude Code (Claude Fable 5.1)
 
@@ -1793,7 +1695,7 @@ Cree este diseño con Claude design, implementalo en el frontend respetando las 
 ### 2026-09-04 14:35 -05 - Claude Code (Claude Fable 5.1)
 
 ```text
-no existe backend para la configuración, así que quiero que los ajustes que podamos los agreguemos con uso del local storage como preferencias 
+no existe backend para la configuración, así que quiero que los ajustes que podamos los agreguemos con uso del local storage como preferencias
 ```
 
 ### 2026-09-04 20:40 -05 - Claude Code
@@ -1810,7 +1712,7 @@ no existe backend para la configuración, así que quiero que los ajustes que po
 
 ### 2026-09-04 21:10 -05 - Claude Code
 
-```text
+````text
 <task-notification>
 <task-id>bot6tn6vc</task-id>
 <tool-use-id>toolu_01NF4JSBodiEbcaNZvoAZH8B</tool-use-id>
@@ -1822,8 +1724,8 @@ no existe backend para la configuración, así que quiero que los ajustes que po
 ### 2026-09-04 14:36 -05 - Claude Code
 
 ```text
-ajustemos eso después, anotarlo en obsidian como checklist y ayúdame creando un sistema de track de fechas para los avances y datos pertinentes para poder generar gráficas en el Dashboard que tengo planeadas, solo backend. el front está en Otra sesión 
-```
+ajustemos eso después, anotarlo en obsidian como checklist y ayúdame creando un sistema de track de fechas para los avances y datos pertinentes para poder generar gráficas en el Dashboard que tengo planeadas, solo backend. el front está en Otra sesión
+````
 
 ### 2026-09-04 15:04 -05 - Claude Code
 
@@ -1921,13 +1823,13 @@ no usamos gpu porque no tenemos permiso para estás instancias, podemos procesar
 ### 2026-09-04 18:26 -05 - Claude Code
 
 ```text
-hagámoslo 
+hagámoslo
 ```
 
 ### 2026-09-04 18:51 -05 - Claude Code
 
 ```text
-intentemoslo, quiero dejar el vídeo procesado en la plataforma 
+intentemoslo, quiero dejar el vídeo procesado en la plataforma
 ```
 
 ### 2026-09-04 19:15 -05 - Claude Code
@@ -1939,7 +1841,7 @@ arregla la página, al parecer los vídeos traducidos no se ven en Mobile y si e
 ### 2026-09-04 19:21 -05 - Claude Code
 
 ```text
-lo utilizo en Android en Chrome 
+lo utilizo en Android en Chrome
 ```
 
 ### 2026-09-04 19:23 -05 - Claude Code
@@ -1969,7 +1871,7 @@ V2 también se muestra igual
 ### 2026-09-04 20:24 -05 - Claude Code
 
 ```text
-toca cambiar el origen a mano para que aparezca el vídeo, cuando se abre el modal no funciona directamente 
+toca cambiar el origen a mano para que aparezca el vídeo, cuando se abre el modal no funciona directamente
 ```
 
 ### 2026-09-04 20:31 -05 - Claude Code
@@ -2219,6 +2121,7 @@ Estas son rodeos que ya están en el código y que un revisor va a ver.
 1. Un listado de proyectos con cifras. `GET /projects` devuelve solo id, nombre, descripción y fechas. Para pintar BAC/EV/AC/CPI/SPI por fila, el frontend hace `Promise.all` sobre `/projects/{id}/evm`: son 1+N peticiones, y el perfil hace 1+2N porque además cuenta cortes. Con cuatro proyectos da igual; es el primer olor a problema que salta en una revisión.
 
 ```
+
 ### 2026-09-04 22:22 -05 - Claude Code
 
 ```text
@@ -2278,41 +2181,47 @@ si, sigue con lo que falta
 ```text
 continua con los métodos de medición
 ```
+
 ### 2026-09-04 23:36 -05 - Claude Code
 
 ```text
 continua con los hitos ponderados y las demas piezas
 ```
+
 ### 2026-09-05 02:32 -05 - Claude Code
 
 ```text
 Al estar en dashboard el tamaño del contenedor no es el mismo que cuando estoy en actividades por alguna razon, crea temblores en la UI y no hay fluidez
 ```
+
 ### 2026-09-05 02:36 -05 - Claude Code
 
 ```text
 Alinea bien los contenedores para que esten con el tamaño correcto
 ```
+
 ### 2026-09-05 02:44 -05 - Claude Code
 
 ```text
 arregla también lo del resize, elimina todos los procesos de ejecucion del front, hay algo que usa el puerto y no me permite seguir. Yo ejecuto el front manualmente
 ```
+
 ### 2026-09-05 02:48 -05 - Claude Code
 
 ```text
 mergea los dos PRs
 ```
+
 ### 2026-09-05 02:56 -05 - Claude Code
 
-```text
+````text
 actualiza el AI_PROCESS con todo lo de estas últimas sesiones, resume mis decisiones, problemas y todo lo que pide el documento
 
 ### 2026-09-05 16:23 -05 - Claude Code
 
 ```text
 Necesito que analices el diseño contra lo construido. la alineacion de contenedores de graficas y numeros no esta perfectamente alineada. La animacion de hover a los numeros para descubrir entorpece el hacer click en el boton de copiar. El sub menu de ajustes no scrollea a la opcion seleccionada ni indica la seccion en vista. y cuando se clica algun item se devuelve al panel lo cual es un comportamiento erroneo. Agrega detalles a los graficos de barras para en hover saber que datos estamos viendo. La vista de actividades tiene un boton donde se ve el proyecto, ponle un icono de atras para saber que cambiaras de vista a proyectos o integra un sub menu para elegir el proyecto desde ese boton como un dropdown. Hay un boton que indica la fecha del corte, es clicable pero no hace nada, si es solamente informativo corrige la UI para que sea coherente con todo el sitio. Perfecciona los borones borrar y editar pues no van con el diseño original, puedes hacerlos aparecer en hover, tambien el elemento entero no es clicable, solo el titulo y es molesto. La UI mobile no es lo suficientemente robusta, hay errores por ejemplo el navbar no es fijo y queda al final del scroll. Alineaciones y comportamientos no son los mismos del prototipo
-```
+````
 
 ### 2026-09-05 16:42 -05 - Claude Code
 
@@ -2407,14 +2316,14 @@ Implementa la gráfica por actividad, corrige el README y prepara la release
 
 ### 2026-09-06 20:40 -05 - Claude Code
 
-```text
+````text
 Resuelve los conflictos y mergea todo, quiero el proyecto corriendo al final con docker compose para el video. Tanto front como backend para desarrollo que vivan en docker con docker compose
 
 ### 2026-09-06 21:12 -05 - Claude Code
 
 ```text
 No quiero que se muestre el indicador hasta que el mouse este dentro de la grafica
-```
+````
 
 ### 2026-09-06 21:17 -05 - Claude Code
 
@@ -2434,22 +2343,8 @@ mergea los dos PRs a develop
 Porque si no hay actividades, o las elimino sigue apareciendo la grafica de planificado, costo y costo real?
 ```
 
-### 2026-09-06 21:31 -05 - Claude Code
-
-### 2026-09-06 21:36 -05 - Claude Code
+### 2026-09-06 22:08 -05 - Claude Code
 
 ```text
-El tamaño de los contenedores cambia al hacer hover en un numero para verlo completo, dejalo estatico, pierde fluidez al cambiar de tamalo
-```
-
-### 2026-09-06 21:41 -05 - Claude Code
-
-```text
-Ademas si puedes ayudarme a que el ease out sea suave y no tan abrupto tambien te lo agradezco
-```
-
-### 2026-09-06 21:44 -05 - Claude Code
-
-```text
-mergea el PR a develop y corre el front de nuevo
+Revisa AI Process y consolida el texto para que quede mi version y quita las anotaciones que dejaste, añade los casos que no mencione en una lista debajo de mis propias palabras
 ```
