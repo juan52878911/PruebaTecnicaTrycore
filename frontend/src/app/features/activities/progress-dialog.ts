@@ -45,7 +45,14 @@ const STEP = 1;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, Dialog, DualProgress, FormField, MilestoneEditor],
   template: `
-    <app-dialog title="Registrar avance" [subtitle]="activity().name" (dismiss)="dismissed.emit()">
+    <app-dialog
+      title="Registrar avance"
+      [subtitle]="activity().name"
+      primaryLabel="Guardar avance"
+      [primaryDisabled]="!canSave()"
+      (confirm)="submit()"
+      (dismiss)="dismissed.emit()"
+    >
       @if (milestoneDriven()) {
         <app-milestone-editor [(milestones)]="milestones" />
         <p class="hint">
@@ -123,13 +130,6 @@ const STEP = 1;
       @if (generalError()) {
         <p class="general-error" role="alert">{{ generalError() }}</p>
       }
-
-      <ng-container dialogActions>
-        <button type="button" class="secondary" (click)="dismissed.emit()">Cancelar</button>
-        <button type="button" class="primary" [disabled]="!canSave()" (click)="submit()">
-          Guardar avance
-        </button>
-      </ng-container>
     </app-dialog>
   `,
   styles: `
@@ -225,27 +225,6 @@ const STEP = 1;
       margin: 0;
       font-size: 12.5px;
       color: var(--danger);
-    }
-    .primary,
-    .secondary {
-      border-radius: var(--radius-pill);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 12px 22px;
-      border: 1px solid transparent;
-    }
-    .primary {
-      background: #fff;
-      color: var(--screen);
-    }
-    .primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .secondary {
-      background: var(--control-hover);
-      color: var(--text-muted);
-      font-weight: 600;
     }
   `,
 })

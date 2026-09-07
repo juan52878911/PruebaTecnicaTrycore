@@ -2315,6 +2315,44 @@ mergea el PR a develop
 La tabla de actividades no tiene la alineacion correcta, ademas los botones aparecen y ocultan en un espacio regulado, que queda vacio y ocupa espacio asi tengamos las herramientas ocultas de editar y eliminar
 ```
 
+### 2026-09-05 16:50 -05 - Claude Code
+
+```text
+Analiza a fondo el modo mobile ya que esta roto, el navbar aparece en frente de los modales, los anchos de los modales no estan bien, se salen del borde, todos los comportamientos del diseño deben ser tal cual en la pagina final, verifica y genera pruebas de comportamiento con playwright y corrige todos los bugs visuales
+```
+
+### 2026-09-05 17:05 -05 - Claude Code
+
+```text
+Apegate al diseño el boton de mas no esta en la posicion, la tipografia de titulos y dropdowns no son iguales y no sirven igual, ten en cuenta el diseño al 100%
+
+https://claude.ai/code/artifact/0bdd87dc-f617-4f1e-993f-ea29fb6a6ebd
+```
+
+### 2026-09-05 17:38 -05 - Claude Code
+
+```text
+La flecha esta supremamente alejada del texto solapando con el boton de el usuario, la alineacion de los bloques se rompe con un numero grande, algo que resolvi en el diseño
+```
+
+### 2026-09-05 17:40 -05 - Claude Code
+
+```text
+El boton cancelar esta escondido y no alineado correctamente, el scroll no genera el efecto correcto en mobile, ademas hay dos scrolls cuando estamos con cualquier modal. Esto no deberia pasar, solo funciona el scroll del modal mientras sea visible sin combinar con el scroll del fondo
+```
+
+### 2026-09-05 17:45 -05 - Claude Code
+
+```text
+al scrollear hacia arriba el navbar se oculta sutilmente, has que sea fijo en mobile
+```
+
+### 2026-09-05 17:49 -05 - Claude Code
+
+```text
+Ahoira hay 2 scroll, uno fuera del contenido y otro del contenido, el de fuera del contenido oculta o la barra superior con el perfil y demas y si subes el navbar se oculta
+```
+
 ### 2026-09-06 20:17 -05 - Claude Code
 
 ```text

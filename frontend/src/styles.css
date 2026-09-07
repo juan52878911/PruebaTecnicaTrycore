@@ -78,6 +78,21 @@
   box-sizing: border-box;
 }
 
+/* En móvil el documento no se desplaza: el marco mide la pantalla y solo se mueve <main>. */
+@media (max-width: 767px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Con una capa modal abierta solo se desplaza la capa; ver ScrollLock. En móvil desplaza <main>. */
+body.scroll-locked,
+body.scroll-locked main {
+  overflow: hidden;
+}
+
 html {
   /* Reserva siempre el hueco de la barra de desplazamiento. Sin esto, una vista que cabe en la
      ventana no la muestra y otra más alta sí, de modo que el ancho disponible cambia en 15 px al
@@ -242,8 +257,13 @@ textarea {
 }
 
 /* Entrada de vista: la usa cada página al montarse, como en el diseño. */
+/*
+ * "backwards" y no "both": con "both" la vista conserva el valor animado de transform al terminar,
+ * y un transform animado crea un contexto de apilamiento. Dentro de él, un diálogo fijo con
+ * z-index 40 no puede pasar por encima de la barra inferior, que vive fuera con z-index 30.
+ */
 .v-rise {
-  animation: vRise 0.26s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: vRise 0.26s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
 }
 
 /* Quien pide menos movimiento no debería recibir ninguno. */

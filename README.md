@@ -100,6 +100,14 @@ Para verificarlo entero (formato, lint, pruebas y build de producción):
 ./scripts/run-frontend-tests.sh
 ```
 
+Las pruebas de comportamiento (Playwright, en escritorio a 1360 px y en un móvil de 375 px) simulan el
+API desde el navegador, así que no necesitan el backend; si no hay un servidor de desarrollo en el 4200,
+lo levantan y lo apagan al terminar. La primera vez descargan Chromium:
+
+```bash
+./scripts/run-frontend-e2e.sh
+```
+
 Y para servir el build de producción desde su propio origen, en el puerto 4300, que es lo que ejercita
 CORS de verdad:
 
@@ -312,9 +320,9 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-385 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y 172 en el frontend. Los
-valores esperados de cada cálculo EVM están derivados a mano de la fórmula y escritos literalmente en el test,
-nunca copiados de la salida del código.
+401 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
+174 unitarios más 14 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
+derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |
 | --- | --- | --- |
@@ -322,6 +330,7 @@ nunca copiados de la salida del código.
 | Arquitectura | `backend/src/test-integration/java` | Reglas de dependencia entre capas con ArchUnit |
 | Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real, incluida la política CORS |
 | Frontend | `frontend/src/app/**/*.spec.ts` | Normalización de errores, cliente Axios, servicios del API, stores, formato, umbrales y componentes |
+| Comportamiento | `frontend/e2e/*.spec.ts` | Con Playwright y el API simulado: barra móvil fija y por debajo de las hojas, hojas a ancho de pantalla, ninguna vista con desborde horizontal, menú de Ajustes, columnas alineadas, herramientas de fila, botón de copiar, ficha de barras y selector de proyecto |
 
 Los tests del frontend no simulan el módulo de axios: sustituyen su adaptador de transporte, de modo que la
 petición recorre la tubería real, interceptores incluidos, sin levantar ningún servidor y sin añadir

@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 
 import { BreakpointService } from '../../core/layout/breakpoint.service';
+import { ScrollLock } from '../../core/layout/scroll-lock';
 
 /**
  * Diálogo modal en escritorio y hoja inferior en móvil.
@@ -40,7 +49,17 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
         <ng-content />
       </div>
       <footer>
-        <ng-content select="[dialogActions]" />
+        <button type="button" class="secondary" (click)="dismiss.emit()">
+          {{ secondaryLabel() }}
+        </button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="primaryDisabled()"
+          (click)="confirm.emit()"
+        >
+          {{ primaryLabel() }}
+        </button>
       </footer>
     </div>
   `,
@@ -64,12 +83,13 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
       width: min(460px, calc(100vw - 32px));
       max-height: calc(100vh - 48px);
       overflow-y: auto;
+      overscroll-behavior: contain;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 24px;
       padding: 26px 28px;
       box-shadow: var(--shadow-modal);
-      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+      animation: vPop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     :host:has(.sheet) {
       align-items: flex-end;
@@ -77,9 +97,12 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
     .panel.sheet {
       width: 100%;
       max-width: none;
+      max-height: calc(100dvh - 48px);
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 28px 28px 0 0;
-      padding: 10px 20px 22px;
-      animation: valora-sheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
+      padding: 10px 20px calc(26px + env(safe-area-inset-bottom, 0px));
+      animation: vSheet 240ms cubic-bezier(0.2, 0.85, 0.3, 1);
     }
     .grabber {
       display: block;
@@ -133,17 +156,81 @@ import { BreakpointService } from '../../core/layout/breakpoint.service';
       gap: 10px;
       margin-top: 22px;
     }
+    .primary,
+    .secondary {
+      border: 1px solid transparent;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 12px 22px;
+      transition: background var(--motion-veil);
+    }
+    .primary {
+      background: #fff;
+      color: var(--screen);
+    }
+    .primary:hover {
+      background: rgba(255, 255, 255, 0.88);
+    }
+    .primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .secondary {
+      background: var(--control-hover);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    /* Hoja: título a 19 px, botón principal a todo el ancho y "Cancelar" como texto, como en el diseño. */
+    .panel.sheet h2 {
+      font-size: 19px;
+      letter-spacing: -0.025em;
+    }
+    .panel.sheet .subtitle {
+      margin-top: 3px;
+      font-size: 12px;
+    }
+    .panel.sheet .body {
+      margin-top: 18px;
+    }
     .panel.sheet footer {
       flex-direction: column-reverse;
+      gap: 4px;
+      margin-top: 14px;
+    }
+    .panel.sheet .primary {
+      width: 100%;
+      font-size: 14px;
+      padding: 15px;
+      text-align: center;
+    }
+    .panel.sheet .secondary {
+      width: 100%;
+      background: none;
+      border-color: transparent;
+      font-size: 13.5px;
+      padding: 12px 4px 6px;
+      text-align: center;
     }
   `,
 })
 export class Dialog {
   private readonly breakpoint = inject(BreakpointService);
+  private readonly scrollLock = inject(ScrollLock);
 
   readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
+  /** Rótulo del botón principal; el pie lo pinta el diálogo para que escritorio y hoja coincidan. */
+  readonly primaryLabel = input.required<string>();
+  readonly primaryDisabled = input(false, { transform: booleanAttribute });
+  readonly secondaryLabel = input('Cancelar');
   readonly dismiss = output<void>();
+  readonly confirm = output<void>();
 
   protected readonly isDesktop = this.breakpoint.isDesktop;
+
+  constructor() {
+    this.scrollLock.lock();
+    inject(DestroyRef).onDestroy(() => this.scrollLock.unlock());
+  }
 }

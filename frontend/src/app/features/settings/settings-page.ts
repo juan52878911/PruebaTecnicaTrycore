@@ -43,6 +43,12 @@ const LAST_SECTION: SectionId = 'servidor';
 const READING_LINE = 0.3;
 /** Margen para dar por alcanzado el final del documento, en píxeles. */
 const BOTTOM_TOLERANCE = 2;
+/**
+ * Tiempo durante el que el seguimiento del scroll cede ante un salto desde el menú. El
+ * desplazamiento suave dispara eventos intermedios y, si la sección elegida queda al pie del
+ * documento, la regla del final la sustituiría por la última.
+ */
+const JUMP_SETTLE_MS = 900;
 
 /**
  * Ajustes de la aplicación.
@@ -64,6 +70,7 @@ const BOTTOM_TOLERANCE = 2;
     <app-page-header
       title="Ajustes"
       subtitle="del cálculo"
+      mobileKicker="Cálculo EVM"
       lead="Estas preferencias se guardan en este navegador. No viajan al servidor ni afectan a los datos del proyecto."
     >
       <button type="button" class="chip" (click)="restore()">Restablecer valores</button>
@@ -506,6 +513,7 @@ export class SettingsPage {
 
   protected readonly sections = SECTIONS;
   protected readonly activeSection = signal<SectionId>(FIRST_SECTION);
+  private jumpUntil = 0;
   /**
    * Store del proyecto activo, solo para leer los umbrales con los que el servidor clasificó su
    * última respuesta. Se provee a nivel de esta ruta: no se comparte con el panel.
@@ -606,6 +614,7 @@ export class SettingsPage {
   /** Desplaza hasta la sección y la marca al instante, sin esperar a que el scroll la alcance. */
   protected jumpTo(id: SectionId): void {
     this.activeSection.set(id);
+    this.jumpUntil = performance.now() + JUMP_SETTLE_MS;
     this.host.nativeElement
       .querySelector(`#${id}`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -618,6 +627,9 @@ export class SettingsPage {
    */
   private followScroll(): void {
     const update = (): void => {
+      if (performance.now() < this.jumpUntil) {
+        return;
+      }
       const line = window.innerHeight * READING_LINE;
       let current: SectionId = FIRST_SECTION;
       for (const section of SECTIONS) {
