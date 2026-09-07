@@ -74,7 +74,8 @@ test.describe('escritorio', () => {
     const card = page.locator('app-kpi-card').first();
     const button = card.getByRole('button', { name: /^Copiar / });
     const figure = card.locator('app-rolling-number');
-    await expect(figure).toHaveText('1,24 M');
+    const visible = figure.locator('.visible');
+    await expect(visible).toHaveText('1,24 M');
     // La vista entra con una animación corta; se mide cuando ya se ha asentado.
     await page.waitForTimeout(400);
 
@@ -82,13 +83,19 @@ test.describe('escritorio', () => {
       const box = (await button.boundingBox())!;
       return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     };
+    const unit = card.locator('.unit');
+    const unitBefore = await unit.boundingBox();
+    const cardBefore = await card.locator('article').boundingBox();
     const before = await center();
     await figure.hover();
-    await expect(figure).toHaveText('1 240 000');
+    await expect(visible).toHaveText('1 240 000');
     await expect(button).toBeVisible();
     const after = await center();
     expect(Math.abs(after.x - before.x)).toBeLessThan(1);
     expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+    // Ni la unidad ni la tarjeta cambian de sitio o de tamaño: el ancho de la cifra está reservado.
+    expect(await unit.boundingBox()).toEqual(unitBefore);
+    expect(await card.locator('article').boundingBox()).toEqual(cardBefore);
   });
 
   test('las barras por corte muestran su ficha al apuntar un corte', async ({ page }) => {
