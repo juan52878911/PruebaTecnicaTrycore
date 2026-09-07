@@ -104,6 +104,8 @@ function project(id: number, name: string, manager: string | null) {
 const PROJECTS = [
   project(1, 'Planta Solar Norte', 'Alicia Ramos'),
   project(2, 'Migración core bancario', 'Diego Muñoz'),
+  // Sin actividades pero con cortes: los cortes congelan cifras y sobreviven a borrar actividades.
+  project(3, 'Data warehouse fase II', null),
 ];
 
 const ACTIVITIES: Record<number, ReturnType<typeof activity>[]> = {

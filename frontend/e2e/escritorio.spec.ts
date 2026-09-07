@@ -74,7 +74,8 @@ test.describe('escritorio', () => {
     const card = page.locator('app-kpi-card').first();
     const button = card.getByRole('button', { name: /^Copiar / });
     const figure = card.locator('app-rolling-number');
-    await expect(figure).toHaveText('1,24 M');
+    const visible = figure.locator('.visible');
+    await expect(visible).toHaveText('1,24 M');
     // La vista entra con una animación corta; se mide cuando ya se ha asentado.
     await page.waitForTimeout(400);
 
@@ -82,13 +83,19 @@ test.describe('escritorio', () => {
       const box = (await button.boundingBox())!;
       return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     };
+    const unit = card.locator('.unit');
+    const unitBefore = await unit.boundingBox();
+    const cardBefore = await card.locator('article').boundingBox();
     const before = await center();
     await figure.hover();
-    await expect(figure).toHaveText('1 240 000');
+    await expect(visible).toHaveText('1 240 000');
     await expect(button).toBeVisible();
     const after = await center();
     expect(Math.abs(after.x - before.x)).toBeLessThan(1);
     expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+    // Ni la unidad ni la tarjeta cambian de sitio o de tamaño: el ancho de la cifra está reservado.
+    expect(await unit.boundingBox()).toEqual(unitBefore);
+    expect(await card.locator('article').boundingBox()).toEqual(cardBefore);
   });
 
   test('las barras por corte muestran su ficha al apuntar un corte', async ({ page }) => {
@@ -116,5 +123,43 @@ test.describe('escritorio', () => {
     const tag = page.locator('app-page-header .tag');
     await expect(tag).toHaveText(/Corte: /);
     await expect(page.getByRole('button', { name: /^Corte: / })).toHaveCount(0);
+  });
+});
+
+test.describe('escritorio · moneda', () => {
+  test.skip(({ isMobile }) => isMobile, 'solo en el proyecto de escritorio');
+
+  test('la moneda elegida en Ajustes rotula las cifras y los formularios', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/ajustes');
+    await page.getByRole('radio', { name: /COP/ }).click();
+
+    await page.goto('/panel');
+    await expect(page.locator('app-kpi-card .unit').first()).toHaveText('COP');
+
+    await page.goto('/proyectos/1/actividades');
+    await page.getByRole('button', { name: '+ Nueva actividad' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Nueva actividad' });
+    await expect(dialog.locator('.suffix').first()).toHaveText('COP');
+    await expect(dialog.locator('.suffix', { hasText: 'USD' })).toHaveCount(0);
+  });
+});
+
+test.describe('escritorio · proyecto sin actividades', () => {
+  test.skip(({ isMobile }) => isMobile, 'solo en el proyecto de escritorio');
+
+  test('sin actividades no se pinta la comparativa por corte aunque haya cortes', async ({
+    page,
+  }) => {
+    await mockApi(page);
+    await page.goto('/proyectos/3/actividades');
+    await expect(page.getByText('Aún no hay actividades')).toBeVisible();
+    await expect(page.locator('app-grouped-bars')).toHaveCount(0);
+
+    // El panel (que hereda el proyecto elegido) tampoco dibuja la curva: muestra su estado vacío.
+    await page.goto('/panel');
+    await expect(page.getByRole('button', { name: 'Data warehouse fase II' })).toBeVisible();
+    await expect(page.getByText('Aún no hay actividades')).toBeVisible();
+    await expect(page.locator('app-s-curve')).toHaveCount(0);
   });
 });

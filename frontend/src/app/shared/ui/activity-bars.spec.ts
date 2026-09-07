@@ -113,7 +113,7 @@ describe('ActivityBars', () => {
     const label = element.querySelector('.plot')?.getAttribute('aria-label') ?? '';
 
     expect(label).toContain('Desarrollo');
-    expect(label).toContain('300 000');
-    expect(label).toContain('260 000');
+    expect(label).toContain('300 000');
+    expect(label).toContain('260 000');
   });
 });

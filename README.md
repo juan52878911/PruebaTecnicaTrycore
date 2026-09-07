@@ -3,7 +3,7 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.3.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Versión 1.4.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
 Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
@@ -124,6 +124,10 @@ lo levantan y lo apagan al terminar. La primera vez descargan Chromium:
 ```bash
 ./scripts/run-frontend-e2e.sh
 ```
+
+Si el puerto 4200 ya lo ocupa otro proceso (por ejemplo el contenedor `evm-frontend`), `E2E_PORT=4300` levanta el
+servidor de desarrollo en otro puerto para las pruebas; sin esa variable, Playwright reutilizaría lo que haya en
+el 4200 y probaría ese código y no el del árbol de trabajo.
 
 Y para servir el build de producción desde su propio origen, en el puerto 4300, que es lo que ejercita
 CORS de verdad:
@@ -337,8 +341,8 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-401 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
-174 unitarios más 14 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
+407 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
+175 unitarios más 19 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
 derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |

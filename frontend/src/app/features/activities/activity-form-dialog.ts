@@ -30,6 +30,7 @@ import {
 import { isStarted, previewProgress } from '../../core/evm/progress-preview';
 import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
+import { PreferencesStore } from '../../core/preferences/preferences-store';
 import { Dialog } from '../../shared/ui/dialog';
 import { FormField } from '../../shared/ui/form-field';
 import { MilestoneEditor } from './milestone-editor';
@@ -87,7 +88,7 @@ function decimalsOf(value: number): number {
       <app-form-field
         [label]="'Presupuesto planificado · ' + labels.inline('BAC')"
         fieldId="activity-bac"
-        suffix="USD"
+        [suffix]="currency()"
         [error]="fieldError('budgetAtCompletion') ?? moneyError(budgetAtCompletion())"
       >
         <input
@@ -167,7 +168,7 @@ function decimalsOf(value: number): number {
       <app-form-field
         [label]="'Costo real incurrido · ' + labels.inline('AC')"
         fieldId="activity-ac"
-        suffix="USD"
+        [suffix]="currency()"
         [error]="fieldError('actualCost') ?? moneyError(actualCost())"
       >
         <input
@@ -323,6 +324,8 @@ function decimalsOf(value: number): number {
 })
 export class ActivityFormDialog {
   protected readonly labels = inject(IndicatorLabels);
+  /** Rótulo de moneda de las preferencias: el servidor guarda importes sin divisa. */
+  protected readonly currency = inject(PreferencesStore).currencyCode;
 
   readonly activity = input<Activity | null>(null);
   readonly serverError = input<ApiError | null>(null);
