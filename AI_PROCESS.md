@@ -2433,3 +2433,15 @@ mergea los dos PRs a develop
 ```text
 Porque si no hay actividades, o las elimino sigue apareciendo la grafica de planificado, costo y costo real?
 ```
+
+### 2026-09-06 21:36 -05 - Claude Code
+
+```text
+El tamaño de los contenedores cambia al hacer hover en un numero para verlo completo, dejalo estatico, pierde fluidez al cambiar de tamalo
+```
+
+### 2026-09-06 21:41 -05 - Claude Code
+
+```text
+Ademas si puedes ayudarme a que el ease out sea suave y no tan abrupto tambien te lo agradezco
+```
