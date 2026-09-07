@@ -3,7 +3,7 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.4.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Versión 1.4.1. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
 Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
@@ -361,6 +361,17 @@ Casos borde cubiertos: AC = 0, PV = 0, avance real 0, BAC = 0, proyecto sin acti
 fecha de corte futura o repetida, porcentajes fuera de rango, precisión mayor que la almacenable, importes que
 no caben en la columna, almacenamiento del navegador bloqueado o con datos corruptos, y respuesta de error que
 no tiene forma de RFC 7807.
+
+## Diseño
+
+El tablero se diseñó antes de escribir el frontend, en una sesión de Claude Design. Los tres artefactos están en
+`docs/design/` y se abren directamente en el navegador:
+
+| Fichero | Qué contiene |
+| --- | --- |
+| `valora-design-system.dc.html` | Sistema de diseño Valora: color, tipografía, espaciado y componentes |
+| `valora-prototipo.dc.html` | Prototipo navegable del tablero |
+| `evm-dashboard-mockups.dc.html` | Mockups de cada vista en escritorio y en móvil, la referencia que siguió la implementación |
 
 ## Documento de proceso
 
