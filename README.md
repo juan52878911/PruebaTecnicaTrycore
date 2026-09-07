@@ -3,7 +3,7 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.2.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Versión 1.3.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
 Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
@@ -61,6 +61,23 @@ Con el backend arriba:
 - Swagger UI: http://localhost:8080/swagger-ui
 - Especificación OpenAPI: http://localhost:8080/api-docs
 - Análisis del proyecto de demostración: http://localhost:8080/api/v1/projects/1/evm
+
+### Desarrollo con Docker
+
+```bash
+scripts/run-docker-dev.sh
+```
+
+Levanta los tres servicios en contenedores con `docker compose up --build`: PostgreSQL, el backend en el perfil
+`dev` y el frontend con `ng serve`. No hace falta tener Java ni Node instalados. El código se monta desde el
+repositorio, así que un cambio en el frontend se recarga solo y un cambio en el backend se aplica con
+`docker compose restart backend`. Las dependencias de Maven y de npm quedan en volúmenes con nombre: la
+primera ejecución tarda varios minutos en descargarlas y las siguientes arrancan directamente.
+
+Los puertos son los mismos que en el arranque local: backend en <http://localhost:8080> y frontend en
+<http://localhost:4200>, de modo que `run-dev.sh` y `run-docker-dev.sh` no pueden correr a la vez. Para parar
+todo, `docker compose down`; para borrar también la base y las dependencias descargadas,
+`docker compose down -v`.
 
 ### Verificación completa
 
