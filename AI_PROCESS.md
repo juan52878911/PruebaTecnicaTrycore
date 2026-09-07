@@ -112,7 +112,7 @@ devolvía esas mismas cifras por HTTP, no solo que los tests estaban en verde.
 
 ## 3. Dos decisiones donde no seguí a la IA
 
-Aunque la sucesión de agentes trabajando en conjunto es más eficiente y rápido, menos gasto de tokens y menos alucionaciones no tomé en cuenta muchas cosas del proyecto que el primer plan no demostró saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el código de forma visual y automatizada, el uso de pruebas con playright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me pareció suficiente pues propuse una arquitectura hexagonal completa, el uso de separación de excepciones custom, validación de cambios de manera descentralizada y mensajes sin magic strings que son problemáticos, aunque pudo ser una buena razón para utilizar Enums para estos estados pero no se compartían por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integración y pruebas unitarias en el código. Se usó de forma eficiente el IOC para generar beans de configuración haciendo uso correcto de todas las ventajas de spring y se usó la librería de validaciones y anotaciones de documentación con Jakarta y swager. También se propuso que la configuración no se implementara en el backend y se usara en cambio el local storage para esto, porque el backend no guarda preferencias de usuario y llevarlas allí habría añadido una tabla y un endpoint solo para eso.
+Aunque la sucesión de agentes trabajando en conjunto es más eficiente y rápido, menos gasto de tokens y menos alucinaciones no tomé en cuenta muchas cosas del proyecto que el primer plan no demostró saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el código de forma visual y automatizada, el uso de pruebas con Playwright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me pareció suficiente pues propuse una arquitectura hexagonal completa, el uso de separación de excepciones custom, validación de cambios de manera descentralizada y mensajes sin magic strings que son problemáticos, aunque pudo ser una buena razón para utilizar Enums para estos estados pero no se compartían por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integración y pruebas unitarias en el código. Se usó de forma eficiente el IOC para generar beans de configuración haciendo uso correcto de todas las ventajas de spring y se usó la librería de validaciones y anotaciones de documentación con Jakarta y Swagger. También se propuso que la configuración no se implementara en el backend y se usara en cambio el local storage para esto, porque el backend no guarda preferencias de usuario y llevarlas allí habría añadido una tabla y un endpoint solo para eso.
 
 Otros casos del proyecto en los que no seguí a la IA, o en los que la IA no me siguió a mí, y que no están en
 el texto anterior:
@@ -802,7 +802,7 @@ Claude Design, "UI mockups requested", en la que construí el sistema de diseño
 los mockups del tablero en escritorio y en móvil. Esa sesión no pasa por el hook porque no es Claude Code, así
 que sus prompts no están en la sección 8; lo que sí está es el momento en que sus artefactos
 (`Valora Design System.dc.html`, `Valora Prototipo.dc.html`, `EVM Dashboard Mockups.dc.html`) entraron como
-referencia obligatoria de la implementación. Hice el diseño primero a propósito: quería que las decisiones
+referencia obligatoria de la implementación. Los tres están en `docs/design/` para que el evaluador pueda abrirlos. Hice el diseño primero a propósito: quería que las decisiones
 visuales fueran mías y que el agente que implementara tuviera una referencia exacta contra la que medirse, no
 una descripción. Lo que aprendí en esa unión, y lo digo en la sección 6, es que la distancia entre un artboard
 y un componente real se cierra midiendo, y que eso costó más sesiones de las que había previsto.
@@ -2509,4 +2509,10 @@ Tambien hay una sesion "UI mockups requested" donde hice el diseño con claude d
 
 ```text
 Ponle tildes a mis párrafos sin cambiar las palabras
+```
+
+### 2026-09-06 22:27 -05 - Claude Code
+
+```text
+Corrige esas tres palabras y prepara la release a main, arregla el package json huerfano, añade los ficheros de diseño en los docs. Y al final dame una puntuacion respecto al informe creado, ya que se hara una inspeccion de ese documento para determinar como uso y gestiono la IA, se honesto,
 ```
