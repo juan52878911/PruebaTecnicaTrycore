@@ -226,7 +226,7 @@ const PERCENT_BASE = 100;
               [title]="labels.title('PV')"
               [acronym]="labels.showAcronymBadge() ? 'PV' : null"
               [value]="indicators.plannedValue"
-              unit="USD"
+              [unit]="currency()"
               compact
               [footnote]="plannedShare()"
             />
@@ -234,7 +234,7 @@ const PERCENT_BASE = 100;
               [title]="labels.title('EV')"
               [acronym]="labels.showAcronymBadge() ? 'EV' : null"
               [value]="indicators.earnedValue"
-              unit="USD"
+              [unit]="currency()"
               compact
               [footnote]="earnedShare()"
             />
@@ -242,7 +242,7 @@ const PERCENT_BASE = 100;
               [title]="labels.title('AC')"
               [acronym]="labels.showAcronymBadge() ? 'AC' : null"
               [value]="indicators.actualCost"
-              unit="USD"
+              [unit]="currency()"
               compact
               [footnote]="costGap()"
               [footnoteTone]="indicators.costVariance < 0 ? 'danger' : 'success'"
@@ -638,6 +638,8 @@ export class DashboardPage {
   protected readonly compact = formatCompact;
 
   protected readonly pickerOpen = signal(false);
+  /** Rótulo de moneda de las preferencias: el servidor guarda importes sin divisa. */
+  protected readonly currency = this.preferences.currencyCode;
   protected readonly measurementOpen = signal(false);
 
   protected readonly isDesktop = inject(BreakpointService).isDesktop;

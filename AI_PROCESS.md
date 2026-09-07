@@ -2409,4 +2409,21 @@ Implementa la gráfica por actividad, corrige el README y prepara la release
 
 ```text
 Resuelve los conflictos y mergea todo, quiero el proyecto corriendo al final con docker compose para el video. Tanto front como backend para desarrollo que vivan en docker con docker compose
+
+### 2026-09-06 21:12 -05 - Claude Code
+
+```text
+No quiero que se muestre el indicador hasta que el mouse este dentro de la grafica
+```
+
+### 2026-09-06 21:17 -05 - Claude Code
+
+```text
+Ademas aparece USD cuando tengo configurado COP en configuracion, si es mas barato quitar las divisas quita la configuracion de divisas por ahora.Si esta implementado en el backend implementalo
+```
+
+### 2026-09-06 21:21 -05 - Claude Code
+
+```text
+mergea los dos PRs a develop
 ```

@@ -130,16 +130,41 @@ describe('SCurve', () => {
     expect(labels).toEqual(['Jul', 'Ago']);
   });
 
-  it('muestra el globo del último corte por defecto, sin necesidad de apuntar', () => {
-    const element = render([
+  it('no muestra ningún globo hasta que el puntero entra en la gráfica', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.points.set([
       point('2026-07-31', 990_000, 920_000, 984_000),
       point('2026-08-31', 1_240_000, 1_117_500, 1_258_000),
     ]);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
 
+    expect(element.querySelector('.tooltip')).toBeNull();
+
+    // Al entrar en la zona del segundo corte aparece su ficha.
+    const zones = element.querySelectorAll('rect[fill="transparent"]');
+    zones[1]?.dispatchEvent(new Event('pointerenter'));
+    fixture.detectChanges();
     const tooltip = element.querySelector('.tooltip');
-
     expect(tooltip?.querySelector('.tip-label')?.textContent).toContain('AGO');
     expect(tooltip?.querySelector('.tip-value')?.textContent?.trim()).toBe('1,12 M');
+
+    // Y desaparece al salir del lienzo.
+    element.querySelector('svg')?.dispatchEvent(new Event('pointerleave'));
+    fixture.detectChanges();
+    expect(element.querySelector('.tooltip')).toBeNull();
+  });
+
+  it('no repite el mes cuando varios cortes caen en el mismo', () => {
+    const element = render([
+      point('2026-08-15', 900_000, 850_000, 900_000),
+      point('2026-08-31', 990_000, 920_000, 984_000),
+      point('2026-09-05', 1_240_000, 1_117_500, 1_258_000),
+    ]);
+
+    const labels = [...element.querySelectorAll('.axis span')].map((node) => node.textContent);
+
+    expect(labels).toEqual(['Ago', '', 'Sep']);
   });
 
   it('encabeza la tarjeta con el valor ganado acumulado', () => {

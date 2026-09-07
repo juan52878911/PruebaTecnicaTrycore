@@ -64,7 +64,8 @@ export class CopyValue {
 
   readonly value = input.required<string>();
   readonly label = input.required<string>();
-  readonly unit = input<string | null>('USD');
+  /** Rótulo que acompaña al valor copiado en el aviso; lo aporta quien conoce la preferencia. */
+  readonly unit = input<string | null>(null);
 
   protected async copy(): Promise<void> {
     const text = this.value();
