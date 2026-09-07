@@ -411,6 +411,17 @@ más útil que el propio cambio: nombra los dos sitios donde el código existent
 incorrecto, en particular la vista previa que reimplementa `EV = % x BAC` en el cliente y que deja de valer en
 cuanto la actividad usa cualquiera de las tres reglas nuevas.
 
+## 5d. Entorno de desarrollo completo en Docker
+
+Al preparar el video, Juan pidió que backend y frontend corrieran también en contenedores, no solo la base.
+La decisión fue no empaquetar el código en las imágenes de desarrollo: `Dockerfile.dev` de cada lado aporta
+solo el runtime (JDK 21, Node 22) y `docker-compose.yml` monta el fuente desde el repositorio y guarda las
+dependencias en volúmenes con nombre. Así un cambio se ve sin reconstruir y las descargas de Maven y npm
+ocurren una vez. El perfil `dev` del backend pasó a leer `DB_URL`, `DB_USER` y `DB_PASSWORD` con valores por
+defecto, las mismas variables que ya usaba `prod`, porque dentro de la red de compose la base se llama
+`postgres` y no `localhost`. Los scripts que solo necesitan la base siguen pidiendo únicamente ese servicio,
+de modo que el flujo anterior no cambia.
+
 ## 6. Qué haría diferente
 
 > Juan: esta sección tiene que ser tuya y honesta. Te dejo los hechos del proyecto que dan pie a una reflexión,

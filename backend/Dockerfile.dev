@@ -1,0 +1,15 @@
+# Imagen de desarrollo del backend.
+#
+# No copia el código: docker-compose monta backend/ en /app y el repositorio local de Maven en un
+# volumen con nombre, de modo que un cambio en el fuente se ve dentro del contenedor y las
+# dependencias solo se descargan la primera vez. La imagen aporta el JDK y nada más.
+FROM eclipse-temurin:21-jdk
+
+WORKDIR /app
+
+# El wrapper descarga Maven en el mismo volumen que las dependencias.
+ENV MAVEN_USER_HOME=/root/.m2
+
+EXPOSE 8080
+
+CMD ["./mvnw", "spring-boot:run", "-Pdev"]
