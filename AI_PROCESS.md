@@ -2445,3 +2445,9 @@ El tamaño de los contenedores cambia al hacer hover en un numero para verlo com
 ```text
 Ademas si puedes ayudarme a que el ease out sea suave y no tan abrupto tambien te lo agradezco
 ```
+
+### 2026-09-06 21:44 -05 - Claude Code
+
+```text
+mergea el PR a develop y corre el front de nuevo
+```
