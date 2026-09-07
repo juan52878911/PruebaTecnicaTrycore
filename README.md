@@ -3,7 +3,7 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.3.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Versión 1.4.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
 Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
