@@ -182,8 +182,12 @@ interface HoverPoint {
       gap: 20px;
       margin-bottom: 10px;
     }
+    .summary {
+      flex: none;
+    }
     .total {
       margin: 0;
+      white-space: nowrap;
       font-size: 44px;
       line-height: 1.1;
       font-weight: 700;
@@ -398,7 +402,11 @@ export class SCurve {
    * por el eje, porque con un corte al mes no caben todas en 335 px.
    */
   protected readonly axisLabels = computed(() => {
-    const labels = this.points().map((point) => formatMonth(point.cutoffDate));
+    // Varios cortes en el mismo mes no repiten la etiqueta: se rotula el primero y el resto queda
+    // en blanco, conservando su sitio en el eje.
+    const labels = this.points()
+      .map((point) => formatMonth(point.cutoffDate))
+      .map((label, index, all) => (index > 0 && all[index - 1] === label ? '' : label));
     if (!this.compact() || labels.length <= COMPACT_AXIS_LABELS) {
       return labels;
     }
@@ -418,13 +426,13 @@ export class SCurve {
     return this.points().map((_, index) => ({ index, x: index * width, width }));
   });
 
-  /** El corte señalado, o el último si el puntero no está sobre la gráfica. */
+  /** El corte señalado. Sin puntero sobre la gráfica no hay ficha: la cifra ya está en la cabecera. */
   protected readonly active = computed<HoverPoint | null>(() => {
     const points = this.points();
-    if (points.length === 0) {
+    const index = this.hoverIndex();
+    if (index === null) {
       return null;
     }
-    const index = this.hoverIndex() ?? points.length - 1;
     const point = points[index];
     if (point === undefined) {
       return null;
