@@ -341,8 +341,8 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-401 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
-174 unitarios más 14 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
+407 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
+175 unitarios más 19 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
 derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |
