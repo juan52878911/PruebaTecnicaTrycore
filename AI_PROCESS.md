@@ -2399,3 +2399,9 @@ Implementa la gráfica por actividad, corrige el README y prepara la release
 ```text
 No quiero que se muestre el indicador hasta que el mouse este dentro de la grafica
 ```
+
+### 2026-09-06 21:17 -05 - Claude Code
+
+```text
+Ademas aparece USD cuando tengo configurado COP en configuracion, si es mas barato quitar las divisas quita la configuracion de divisas por ahora.Si esta implementado en el backend implementalo
+```
