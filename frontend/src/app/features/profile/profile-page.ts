@@ -29,10 +29,7 @@ import { ProjectSummariesStore } from '../projects/project-summaries-store';
   host: { class: 'v-rise' },
   imports: [PageHeader, RouterLink],
   template: `
-    <app-page-header
-      [title]="isDesktop() ? 'Perfil' : 'Perfil'"
-      [subtitle]="isDesktop() ? 'del administrador' : 'Administrador'"
-    />
+    <app-page-header title="Perfil" subtitle="del administrador" mobileKicker="Administrador" />
 
     <div class="grid">
       <div class="column">
@@ -77,28 +74,30 @@ import { ProjectSummariesStore } from '../projects/project-summaries-store';
           </p>
         </section>
 
-        <section class="card">
-          <h2>Preferencias</h2>
-          <div class="tiles">
-            <div class="tile">
-              <span class="label">Moneda</span>
-              <p class="value">{{ preferences.currencyCode() }}</p>
+        @if (isDesktop()) {
+          <section class="card">
+            <h2>Preferencias</h2>
+            <div class="tiles">
+              <div class="tile">
+                <span class="label">Moneda</span>
+                <p class="value">{{ preferences.currencyCode() }}</p>
+              </div>
+              <div class="tile">
+                <span class="label">Formato de fecha</span>
+                <p class="value">{{ dateFormat() }}</p>
+              </div>
+              <div class="tile">
+                <span class="label">Indicadores</span>
+                <p class="value">{{ namingLabel() }}</p>
+              </div>
+              <div class="tile">
+                <span class="label">Interpretación</span>
+                <p class="value">{{ preferences.showInterpretation() ? 'Visible' : 'Oculta' }}</p>
+              </div>
             </div>
-            <div class="tile">
-              <span class="label">Formato de fecha</span>
-              <p class="value">{{ dateFormat() }}</p>
-            </div>
-            <div class="tile">
-              <span class="label">Indicadores</span>
-              <p class="value">{{ namingLabel() }}</p>
-            </div>
-            <div class="tile">
-              <span class="label">Interpretación</span>
-              <p class="value">{{ preferences.showInterpretation() ? 'Visible' : 'Oculta' }}</p>
-            </div>
-          </div>
-          <a class="link" routerLink="/ajustes">Cambiar en Ajustes</a>
-        </section>
+            <a class="link" routerLink="/ajustes">Cambiar en Ajustes</a>
+          </section>
+        }
 
         <section class="card">
           <h2>Alcance</h2>

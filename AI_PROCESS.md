@@ -411,6 +411,17 @@ más útil que el propio cambio: nombra los dos sitios donde el código existent
 incorrecto, en particular la vista previa que reimplementa `EV = % x BAC` en el cliente y que deja de valer en
 cuanto la actividad usa cualquiera de las tres reglas nuevas.
 
+## 5d. Entorno de desarrollo completo en Docker
+
+Al preparar el video, Juan pidió que backend y frontend corrieran también en contenedores, no solo la base.
+La decisión fue no empaquetar el código en las imágenes de desarrollo: `Dockerfile.dev` de cada lado aporta
+solo el runtime (JDK 21, Node 22) y `docker-compose.yml` monta el fuente desde el repositorio y guarda las
+dependencias en volúmenes con nombre. Así un cambio se ve sin reconstruir y las descargas de Maven y npm
+ocurren una vez. El perfil `dev` del backend pasó a leer `DB_URL`, `DB_USER` y `DB_PASSWORD` con valores por
+defecto, las mismas variables que ya usaba `prod`, porque dentro de la red de compose la base se llama
+`postgres` y no `localhost`. Los scripts que solo necesitan la base siguen pidiendo únicamente ese servicio,
+de modo que el flujo anterior no cambia.
+
 ## 6. Qué haría diferente
 
 > Juan: esta sección tiene que ser tuya y honesta. Te dejo los hechos del proyecto que dan pie a una reflexión,
@@ -2309,6 +2320,50 @@ Necesito que analices el diseño contra lo construido. la alineacion de contened
 mergea el PR a develop
 ```
 
+### 2026-09-05 16:44 -05 - Claude Code
+
+```text
+La tabla de actividades no tiene la alineacion correcta, ademas los botones aparecen y ocultan en un espacio regulado, que queda vacio y ocupa espacio asi tengamos las herramientas ocultas de editar y eliminar
+```
+
+### 2026-09-05 16:50 -05 - Claude Code
+
+```text
+Analiza a fondo el modo mobile ya que esta roto, el navbar aparece en frente de los modales, los anchos de los modales no estan bien, se salen del borde, todos los comportamientos del diseño deben ser tal cual en la pagina final, verifica y genera pruebas de comportamiento con playwright y corrige todos los bugs visuales
+```
+
+### 2026-09-05 17:05 -05 - Claude Code
+
+```text
+Apegate al diseño el boton de mas no esta en la posicion, la tipografia de titulos y dropdowns no son iguales y no sirven igual, ten en cuenta el diseño al 100%
+
+https://claude.ai/code/artifact/0bdd87dc-f617-4f1e-993f-ea29fb6a6ebd
+```
+
+### 2026-09-05 17:38 -05 - Claude Code
+
+```text
+La flecha esta supremamente alejada del texto solapando con el boton de el usuario, la alineacion de los bloques se rompe con un numero grande, algo que resolvi en el diseño
+```
+
+### 2026-09-05 17:40 -05 - Claude Code
+
+```text
+El boton cancelar esta escondido y no alineado correctamente, el scroll no genera el efecto correcto en mobile, ademas hay dos scrolls cuando estamos con cualquier modal. Esto no deberia pasar, solo funciona el scroll del modal mientras sea visible sin combinar con el scroll del fondo
+```
+
+### 2026-09-05 17:45 -05 - Claude Code
+
+```text
+al scrollear hacia arriba el navbar se oculta sutilmente, has que sea fijo en mobile
+```
+
+### 2026-09-05 17:49 -05 - Claude Code
+
+```text
+Ahoira hay 2 scroll, uno fuera del contenido y otro del contenido, el de fuera del contenido oculta o la barra superior con el perfil y demas y si subes el navbar se oculta
+```
+
 ### 2026-09-06 20:17 -05 - Claude Code
 
 ```text
@@ -2348,4 +2403,10 @@ Revisa si este ejercicio se completo de forma exitosa o falta algo por implement
 
 ```text
 Implementa la gráfica por actividad, corrige el README y prepara la release
+```
+
+### 2026-09-06 20:40 -05 - Claude Code
+
+```text
+Resuelve los conflictos y mergea todo, quiero el proyecto corriendo al final con docker compose para el video. Tanto front como backend para desarrollo que vivan en docker con docker compose
 ```

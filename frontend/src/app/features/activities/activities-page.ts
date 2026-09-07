@@ -72,7 +72,14 @@ function parseId(raw: string | null): number | undefined {
     StatusBadge,
   ],
   template: `
-    <app-page-header title="Actividades" [subtitle]="projectName()">
+    <app-page-header
+      title="Actividades"
+      [subtitle]="projectName()"
+      [mobileKicker]="projectName()"
+      mobileTitle="Actividades"
+      pickable
+      (pick)="pickerOpen.set(true)"
+    >
       <!-- El mismo selector del panel: cambiar de proyecto no obliga a volver al listado. -->
       <div class="anchor">
         <app-chip-button
@@ -80,7 +87,7 @@ function parseId(raw: string | null): number | undefined {
           [open]="pickerOpen()"
           (pressed)="pickerOpen.set(!pickerOpen())"
         />
-        @if (pickerOpen()) {
+        @if (pickerOpen() && isDesktop()) {
           <app-project-picker
             [options]="pickerOptions()"
             [selectedId]="projectId()"
@@ -116,33 +123,45 @@ function parseId(raw: string | null): number | undefined {
       }
     </app-page-header>
 
+    <!-- En móvil el selector es una hoja inferior que abre el título de la cabecera. -->
+    @if (pickerOpen() && !isDesktop()) {
+      <app-project-picker
+        [options]="pickerOptions()"
+        [selectedId]="projectId()"
+        (choose)="choose($event)"
+        (dismissed)="pickerOpen.set(false)"
+      />
+    }
+
     @if (evm.error(); as error) {
       <p class="banner" role="alert">{{ error.detail }}</p>
     }
 
     @if (evm.indicators(); as indicators) {
-      <div class="totals">
-        <div class="card small">
-          <span class="label">{{ labels.title('PV') }} consolidado</span>
-          <p class="figure">{{ compact(indicators.plannedValue) }}</p>
+      @if (isDesktop()) {
+        <div class="totals">
+          <div class="card small">
+            <span class="label">{{ labels.title('PV') }} consolidado</span>
+            <p class="figure">{{ compact(indicators.plannedValue) }}</p>
+          </div>
+          <div class="card small">
+            <span class="label">{{ labels.title('EV') }} consolidado</span>
+            <p class="figure accent">{{ compact(indicators.earnedValue) }}</p>
+          </div>
+          <div class="card small">
+            <span class="label">{{ labels.title('CV') }}</span>
+            <p [class]="'figure tone-' + (indicators.costVariance < 0 ? 'danger' : 'success')">
+              {{ money(indicators.costVariance) }}
+            </p>
+          </div>
+          <div class="card small">
+            <span class="label">{{ labels.title('SV') }}</span>
+            <p [class]="'figure tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')">
+              {{ money(indicators.scheduleVariance) }}
+            </p>
+          </div>
         </div>
-        <div class="card small">
-          <span class="label">{{ labels.title('EV') }} consolidado</span>
-          <p class="figure accent">{{ compact(indicators.earnedValue) }}</p>
-        </div>
-        <div class="card small">
-          <span class="label">{{ labels.title('CV') }}</span>
-          <p [class]="'figure tone-' + (indicators.costVariance < 0 ? 'danger' : 'success')">
-            {{ money(indicators.costVariance) }}
-          </p>
-        </div>
-        <div class="card small">
-          <span class="label">{{ labels.title('SV') }}</span>
-          <p [class]="'figure tone-' + (indicators.scheduleVariance < 0 ? 'warning' : 'success')">
-            {{ money(indicators.scheduleVariance) }}
-          </p>
-        </div>
-      </div>
+      }
     }
 
     @if (evm.isLoading() && rows().length === 0) {
@@ -162,11 +181,7 @@ function parseId(raw: string | null): number | undefined {
         (action)="openCreate()"
       />
     } @else if (!isDesktop()) {
-      <!-- Lista de tarjetas: la tabla de siete columnas no cabe en una pantalla estrecha. -->
-      <div class="mobile-bar">
-        <span class="count">{{ countLabel() }}</span>
-        <button type="button" class="primary" (click)="openCreate()">+ Nueva</button>
-      </div>
+      <!-- Lista de tarjetas, como el artboard móvil: el alta sale del "+" de la barra inferior. -->
       <ul class="cards">
         @for (row of rows(); track row.activity.id) {
           <li>
@@ -265,7 +280,7 @@ function parseId(raw: string | null): number | undefined {
       </div>
     }
 
-    @if (evm.hasActivities()) {
+    @if (isDesktop() && evm.hasActivities()) {
       <section class="card comparison">
         <h2>
           {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }} por
@@ -286,7 +301,7 @@ function parseId(raw: string | null): number | undefined {
       </section>
     }
 
-    @if (evm.hasTimeline()) {
+    @if (isDesktop() && evm.hasTimeline()) {
       <section class="card comparison">
         <h2>
           {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }} por corte
@@ -297,6 +312,7 @@ function parseId(raw: string | null): number | undefined {
         </p>
         <app-grouped-bars
           [points]="evm.timeline()"
+          [maxGroups]="isDesktop() ? maxGroupsDesktop : maxGroupsMobile"
           [plannedLabel]="labels.short('PV')"
           [earnedLabel]="labels.short('EV')"
           [actualCostLabel]="labels.short('AC')"
@@ -331,7 +347,7 @@ function parseId(raw: string | null): number | undefined {
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 18px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
-      animation: valora-pop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+      animation: vPop 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     .status-menu button {
       border: none;
@@ -437,15 +453,33 @@ function parseId(raw: string | null): number | undefined {
     .figure.accent {
       color: var(--accent-text);
     }
+    /*
+     * Cada fila es su propia rejilla, así que las pistas llevan un mínimo de cero: sin él, el
+     * contenido más ancho de cada fila (un distintivo largo, un nombre) ensanchaba su columna
+     * solo en esa fila y las columnas dejaban de coincidir entre filas.
+     */
     .row {
+      position: relative;
       display: grid;
-      grid-template-columns: 2.3fr 0.85fr 1.6fr 0.95fr 0.78fr 0.78fr 1.5fr;
+      grid-template-columns:
+        minmax(0, 2.2fr) minmax(0, 0.85fr) minmax(0, 1.45fr) minmax(0, 0.95fr) minmax(0, 0.75fr)
+        minmax(0, 0.75fr) minmax(0, 1.8fr);
       gap: 14px;
       align-items: center;
       padding: 14px 12px;
       border-radius: var(--radius-tile);
       min-width: 1000px;
       transition: background var(--motion-veil);
+    }
+    .row > * {
+      min-width: 0;
+    }
+    /* Las herramientas flotan sobre el borde derecho: no reservan hueco mientras están ocultas. */
+    .row app-row-tools {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
     }
     .row.clickable {
       cursor: pointer;
@@ -495,8 +529,7 @@ function parseId(raw: string | null): number | undefined {
     .actions {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      min-width: 0;
     }
     .mobile-bar {
       display: flex;
@@ -587,6 +620,8 @@ export class ActivitiesPage {
   protected readonly money = formatMoneyRounded;
   protected readonly compact = formatCompact;
   protected readonly placeholders = [0, 1, 2, 3];
+  protected readonly maxGroupsDesktop = 8;
+  protected readonly maxGroupsMobile = 4;
 
   private readonly projects = inject(ProjectSummariesStore);
 
@@ -675,11 +710,27 @@ export class ActivitiesPage {
     });
   });
 
+  /**
+   * El "+" de las barras abre el alta desde cualquier vista pasando `?nueva=1`. Se observa el
+   * parámetro y no su instantánea porque, si ya se está en esta vista, el enrutador reutiliza el
+   * componente; y se retira de la URL al abrir para que el siguiente "+" vuelva a cambiarla.
+   */
+  private readonly wantsNew = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.has('nueva'))),
+    { initialValue: this.route.snapshot.queryParamMap.has('nueva') },
+  );
+
   constructor() {
-    // El botón "+" de la barra superior abre el alta desde cualquier vista pasando ?nueva=1.
-    if (this.route.snapshot.queryParamMap.has('nueva')) {
-      this.formOpen.set(true);
-    }
+    effect(() => {
+      if (this.wantsNew()) {
+        this.openCreate();
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {},
+          replaceUrl: true,
+        });
+      }
+    });
     effect(() => {
       const projectId = this.projectId();
       this.evm.select(projectId);

@@ -31,6 +31,10 @@ describe('formato de indicadores', () => {
 
   it('usa coma decimal en los índices', () => {
     expect(formatIndex(0.8883)).toBe('0,89');
+    // A partir de 10 pierde un decimal, como en el diseño: cabe en la tarjeta sin partirse.
+    expect(formatIndex(9.99)).toBe('9,99');
+    expect(formatIndex(25)).toBe('25,0');
+    expect(formatIndex(1234.56)).toBe('1 234,6');
     expect(formatIndex(1.0533)).toBe('1,05');
   });
 

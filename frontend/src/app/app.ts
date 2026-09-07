@@ -43,10 +43,31 @@ import { ToastHost } from './shared/ui/toast-host';
     main {
       flex: 1;
     }
+    /*
+     * Móvil, con la estructura del artboard: el marco mide lo que la pantalla, solo se desplaza el
+     * contenido y la barra inferior queda en su sitio. Una barra "fixed" se mueve cuando el
+     * navegador muestra u oculta su propia barra; en un flujo de altura fija, no.
+     */
     @media (max-width: 767px) {
       .shell {
-        /* Hueco para la barra inferior fija, más el borde seguro de los móviles con gesto. */
-        padding: 14px 20px calc(112px + env(safe-area-inset-bottom, 0px));
+        /* min-height a cero: el 100vh de escritorio supera al alto real con la barra del navegador
+           visible, y ese exceso era un segundo scroll fuera del contenido. */
+        min-height: 0;
+        height: 100vh;
+        height: 100dvh;
+        padding: 14px 20px 0;
+        overflow: hidden;
+      }
+      main {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-bottom: 20px;
+        /* Sin barra visible: en el móvil real es superpuesta y el artboard no la dibuja. */
+        scrollbar-width: none;
+      }
+      main::-webkit-scrollbar {
+        display: none;
       }
     }
   `,

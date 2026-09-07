@@ -33,6 +33,9 @@ import { FormField } from '../../shared/ui/form-field';
     <app-dialog
       [title]="isEdit() ? 'Editar proyecto' : 'Nuevo proyecto'"
       subtitle="El nombre identifica al proyecto en el panel y en los informes."
+      [primaryLabel]="isEdit() ? 'Guardar cambios' : 'Crear proyecto'"
+      [primaryDisabled]="!canSave()"
+      (confirm)="submit()"
       (dismiss)="dismissed.emit()"
     >
       <app-form-field
@@ -85,13 +88,6 @@ import { FormField } from '../../shared/ui/form-field';
       @if (generalError()) {
         <p class="general-error" role="alert">{{ generalError() }}</p>
       }
-
-      <ng-container dialogActions>
-        <button type="button" class="secondary" (click)="dismissed.emit()">Cancelar</button>
-        <button type="button" class="primary" [disabled]="!canSave()" (click)="submit()">
-          {{ isEdit() ? 'Guardar cambios' : 'Crear proyecto' }}
-        </button>
-      </ng-container>
     </app-dialog>
   `,
   styles: `
@@ -99,27 +95,6 @@ import { FormField } from '../../shared/ui/form-field';
       margin: 0;
       font-size: 12.5px;
       color: var(--danger);
-    }
-    .primary,
-    .secondary {
-      border-radius: var(--radius-pill);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 12px 22px;
-      border: 1px solid transparent;
-    }
-    .primary {
-      background: #fff;
-      color: var(--screen);
-    }
-    .primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .secondary {
-      background: var(--control-hover);
-      color: var(--text-muted);
-      font-weight: 600;
     }
   `,
 })

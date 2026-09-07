@@ -3,7 +3,7 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.2.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Versión 1.3.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
 Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
@@ -62,6 +62,23 @@ Con el backend arriba:
 - Especificación OpenAPI: http://localhost:8080/api-docs
 - Análisis del proyecto de demostración: http://localhost:8080/api/v1/projects/1/evm
 
+### Desarrollo con Docker
+
+```bash
+scripts/run-docker-dev.sh
+```
+
+Levanta los tres servicios en contenedores con `docker compose up --build`: PostgreSQL, el backend en el perfil
+`dev` y el frontend con `ng serve`. No hace falta tener Java ni Node instalados. El código se monta desde el
+repositorio, así que un cambio en el frontend se recarga solo y un cambio en el backend se aplica con
+`docker compose restart backend`. Las dependencias de Maven y de npm quedan en volúmenes con nombre: la
+primera ejecución tarda varios minutos en descargarlas y las siguientes arrancan directamente.
+
+Los puertos son los mismos que en el arranque local: backend en <http://localhost:8080> y frontend en
+<http://localhost:4200>, de modo que `run-dev.sh` y `run-docker-dev.sh` no pueden correr a la vez. Para parar
+todo, `docker compose down`; para borrar también la base y las dependencias descargadas,
+`docker compose down -v`.
+
 ### Verificación completa
 
 ```bash
@@ -98,6 +115,14 @@ Para verificarlo entero (formato, lint, pruebas y build de producción):
 
 ```bash
 ./scripts/run-frontend-tests.sh
+```
+
+Las pruebas de comportamiento (Playwright, en escritorio a 1360 px y en un móvil de 375 px) simulan el
+API desde el navegador, así que no necesitan el backend; si no hay un servidor de desarrollo en el 4200,
+lo levantan y lo apagan al terminar. La primera vez descargan Chromium:
+
+```bash
+./scripts/run-frontend-e2e.sh
 ```
 
 Y para servir el build de producción desde su propio origen, en el puerto 4300, que es lo que ejercita
@@ -312,9 +337,9 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-385 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y 172 en el frontend. Los
-valores esperados de cada cálculo EVM están derivados a mano de la fórmula y escritos literalmente en el test,
-nunca copiados de la salida del código.
+401 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
+174 unitarios más 14 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
+derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |
 | --- | --- | --- |
@@ -322,6 +347,7 @@ nunca copiados de la salida del código.
 | Arquitectura | `backend/src/test-integration/java` | Reglas de dependencia entre capas con ArchUnit |
 | Integración | `backend/src/test-integration/java` | Contrato de cada endpoint contra PostgreSQL real, incluida la política CORS |
 | Frontend | `frontend/src/app/**/*.spec.ts` | Normalización de errores, cliente Axios, servicios del API, stores, formato, umbrales y componentes |
+| Comportamiento | `frontend/e2e/*.spec.ts` | Con Playwright y el API simulado: barra móvil fija y por debajo de las hojas, hojas a ancho de pantalla, ninguna vista con desborde horizontal, menú de Ajustes, columnas alineadas, herramientas de fila, botón de copiar, ficha de barras y selector de proyecto |
 
 Los tests del frontend no simulan el módulo de axios: sustituyen su adaptador de transporte, de modo que la
 petición recorre la tubería real, interceptores incluidos, sin levantar ningún servidor y sin añadir

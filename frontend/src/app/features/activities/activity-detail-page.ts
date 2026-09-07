@@ -60,7 +60,8 @@ import { ProgressDialog } from './progress-dialog';
         }
       </app-page-header>
     } @else if (activity(); as current) {
-      <!-- En móvil la cabecera es una barra de acción: volver, estado y la acción principal. -->
+      <!-- Móvil, como el artboard: cabecera con el proyecto de rótulo y, debajo, la barra de acción. -->
+      <app-page-header [title]="current.name" [mobileKicker]="projectName()" />
       <div class="mobile-bar">
         <a
           class="back"
@@ -79,10 +80,6 @@ import { ProgressDialog } from './progress-dialog';
           Registrar avance
         </button>
       </div>
-      <h1 class="mobile-title">{{ current.name }}</h1>
-      @if (dateRange(); as range) {
-        <p class="mobile-dates">{{ range }}</p>
-      }
     }
 
     @if (evm.error(); as error) {
@@ -113,57 +110,64 @@ import { ProgressDialog } from './progress-dialog';
           </div>
         </div>
       }
-      <div class="grid">
-        <section class="card">
-          <h2>Datos registrados</h2>
-          <dl class="records">
-            <div>
-              <dt>{{ labels.title('BAC') }}</dt>
-              <dd>{{ money(current.budgetAtCompletion) }}</dd>
-            </div>
-            <div>
-              <dt>% avance planificado</dt>
-              <dd>{{ percent(current.plannedProgressPercent) }}</dd>
-            </div>
-            <div>
-              <dt>% avance real</dt>
-              <dd>{{ percent(current.actualProgressPercent) }}</dd>
-            </div>
-            <div>
-              <dt>{{ labels.title('AC') }}</dt>
-              <dd>{{ money(current.actualCost) }}</dd>
-            </div>
-          </dl>
-          <!--
-            Con las reglas de umbral lo reconocido no es lo declarado: sin este dato, un valor
-            ganado de cero sobre un avance del 65 % parecería un error del sistema.
-          -->
-          <p class="rule">
-            Regla de medición: {{ current.measurementMethodDescription }}.
-            @if (recognisesLessThanDeclared(current)) {
-              Reconoce {{ percent(current.effectivePlannedProgressPercent) }} del avance planificado
-              y {{ percent(current.effectiveActualProgressPercent) }} del real.
-            }
-          </p>
-        </section>
-
+      @if (!isDesktop()) {
         <section class="card">
           <h2>{{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }}</h2>
           <app-metric-bars [bars]="bars()" [reference]="current.budgetAtCompletion" />
         </section>
-      </div>
+      } @else {
+        <div class="grid">
+          <section class="card">
+            <h2>Datos registrados</h2>
+            <dl class="records">
+              <div>
+                <dt>{{ labels.title('BAC') }}</dt>
+                <dd>{{ money(current.budgetAtCompletion) }}</dd>
+              </div>
+              <div>
+                <dt>% avance planificado</dt>
+                <dd>{{ percent(current.plannedProgressPercent) }}</dd>
+              </div>
+              <div>
+                <dt>% avance real</dt>
+                <dd>{{ percent(current.actualProgressPercent) }}</dd>
+              </div>
+              <div>
+                <dt>{{ labels.title('AC') }}</dt>
+                <dd>{{ money(current.actualCost) }}</dd>
+              </div>
+            </dl>
+            <!--
+              Con las reglas de umbral lo reconocido no es lo declarado: sin este dato, un valor
+              ganado de cero sobre un avance del 65 % parecería un error del sistema.
+            -->
+            <p class="rule">
+              Regla de medición: {{ current.measurementMethodDescription }}.
+              @if (recognisesLessThanDeclared(current)) {
+                Reconoce {{ percent(current.effectivePlannedProgressPercent) }} del avance
+                planificado y {{ percent(current.effectiveActualProgressPercent) }} del real.
+              }
+            </p>
+          </section>
 
-      <section class="card indicators">
-        <h2>Indicadores calculados</h2>
-        <div class="tiles">
-          @for (tile of tiles(); track tile.key) {
-            <div class="tile">
-              <span class="formula">{{ tile.formula }}</span>
-              <p [class]="'value tone-' + tile.tone">{{ tile.text }}</p>
-            </div>
-          }
+          <section class="card">
+            <h2>{{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }}</h2>
+            <app-metric-bars [bars]="bars()" [reference]="current.budgetAtCompletion" />
+          </section>
         </div>
-      </section>
+
+        <section class="card indicators">
+          <h2>Indicadores calculados</h2>
+          <div class="tiles">
+            @for (tile of tiles(); track tile.key) {
+              <div class="tile">
+                <span class="formula">{{ tile.formula }}</span>
+                <p [class]="'value tone-' + tile.tone">{{ tile.text }}</p>
+              </div>
+            }
+          </div>
+        </section>
+      }
 
       @if (current.milestones.length > 0) {
         <section class="card milestones">
@@ -245,18 +249,6 @@ import { ProgressDialog } from './progress-dialog';
       flex: none;
       font-size: 12px;
       padding: 9px 15px;
-    }
-    .mobile-title {
-      margin: 0 0 4px;
-      font-size: 24px;
-      line-height: 1.15;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-    }
-    .mobile-dates {
-      margin: 0 0 16px;
-      font-size: 12.5px;
-      color: var(--text-dim);
     }
     .mini-grid {
       display: grid;

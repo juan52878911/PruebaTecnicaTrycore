@@ -22,7 +22,7 @@ import { NAV_ITEMS } from './navigation';
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="item.icon" /></svg>
           <span>{{ item.label }}</span>
         </a>
-        <!-- El botón de alta va en el centro de la barra, elevado sobre ella. -->
+        <!-- El botón de alta va en el centro de la barra, dentro de ella, como en el diseño. -->
         @if (index === centerIndex) {
           <button type="button" class="fab" (click)="newActivity()" aria-label="Nueva actividad">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -35,18 +35,18 @@ import { NAV_ITEMS } from './navigation';
   `,
   styles: `
     /*
-     * Fija a la ventana, no al final del documento: la barra tiene que estar a mano en cualquier
-     * punto del scroll. El marco reserva sitio abajo para que no tape el último contenido.
+     * En flujo, al pie del marco de altura fija: el contenido se desplaza dentro de <main> y la
+     * barra no se mueve nunca, tampoco cuando el navegador muestra u oculta su propia barra.
      */
+    :host {
+      display: block;
+      flex: none;
+      padding: 12px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    }
     nav {
-      position: fixed;
-      left: 16px;
-      right: 16px;
-      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-      /* Por debajo de diálogos (40) y avisos (50): una hoja inferior debe taparla. */
-      z-index: 30;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 4px;
       padding: 10px;
       background: rgba(16, 16, 18, 0.94);
@@ -61,18 +61,18 @@ import { NAV_ITEMS } from './navigation';
       flex-direction: column;
       align-items: center;
       gap: 4px;
-      min-height: 44px;
-      padding: 9px 0;
-      border-radius: var(--radius-tile);
+      min-width: 0;
+      padding: 9px 9px;
+      border-radius: 16px;
       text-decoration: none;
       color: var(--text-dim);
       font-size: 10px;
       font-weight: 600;
+      transition: background var(--motion-veil);
     }
     a.active {
-      background: var(--accent-soft);
+      background: rgba(139, 111, 224, 0.14);
       color: var(--accent-text);
-      font-weight: 700;
     }
     a.active span {
       color: var(--text);
@@ -88,11 +88,14 @@ import { NAV_ITEMS } from './navigation';
       place-items: center;
       width: 54px;
       height: 54px;
-      margin-top: -24px;
+      margin: 0 4px;
       border: none;
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+      transition: background var(--motion-veil);
+    }
+    .fab:hover {
+      background: rgba(255, 255, 255, 0.88);
     }
     .fab svg {
       width: 27px;
@@ -135,8 +138,14 @@ export class MobileTabBar {
     return -1;
   });
 
+  /**
+   * Abre el alta en el proyecto de la vista actual si la URL lo lleva, y si no en el seleccionado.
+   * Leer primero la URL evita una carrera al entrar en Actividades: la selección se actualiza en
+   * el primer ciclo de la vista y una pulsación muy temprana la encontraría vacía.
+   */
   protected newActivity(): void {
-    const projectId = this.selection.projectId();
+    const fromUrl = /\/proyectos\/(\d+)/.exec(this.url())?.[1];
+    const projectId = fromUrl === undefined ? this.selection.projectId() : Number(fromUrl);
     if (projectId === undefined) {
       void this.router.navigate(['/proyectos']);
       return;

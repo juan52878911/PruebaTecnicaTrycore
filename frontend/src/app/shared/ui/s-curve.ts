@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  signal,
+} from '@angular/core';
 
 import { MeasurementPoint } from '../../core/api/models/measurement';
 import { formatCompact, formatIndex, formatMonth } from '../../core/format/evm-format';
@@ -9,6 +16,7 @@ const PADDING_TOP = 12;
 const PADDING_BOTTOM = 22;
 const GRID_LINES = 4;
 const HALF = 2;
+const COMPACT_AXIS_LABELS = 5;
 const HEADROOM = 1.12;
 
 interface Coordinate {
@@ -50,13 +58,13 @@ interface HoverPoint {
   selector: 'app-s-curve',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="head">
+    <div class="head" [class.compact]="compact()">
       <div class="summary">
         <p class="total">{{ latestEarned() }}</p>
         <p class="caption">{{ earnedLabel() }} acumulado</p>
       </div>
       <div class="legend">
-        @for (series of series(); track series.key) {
+        @for (series of visibleSeries(); track series.key) {
           <span class="entry">
             <span
               class="dash"
@@ -72,6 +80,7 @@ interface HoverPoint {
     <div class="plot">
       <svg
         class="chart"
+        [class.compact]="compact()"
         [attr.viewBox]="'0 0 ' + viewWidth + ' ' + viewHeight"
         preserveAspectRatio="none"
         role="img"
@@ -91,7 +100,7 @@ interface HoverPoint {
           }
         </g>
 
-        @for (series of series(); track series.key) {
+        @for (series of visibleSeries(); track series.key) {
           @if (series.area) {
             <path class="area" [attr.d]="series.area" fill="url(#valora-ev-fill)" />
           }
@@ -119,7 +128,7 @@ interface HoverPoint {
           />
         }
 
-        @for (series of series(); track series.key) {
+        @for (series of visibleSeries(); track series.key) {
           @if (series.last) {
             <circle
               [attr.cx]="series.last.x"
@@ -146,14 +155,16 @@ interface HoverPoint {
       </svg>
 
       @if (active(); as point) {
-        <div class="tooltip" [style.left.%]="tooltipLeft(point)">
-          <span class="tip-label">{{ point.monthLabel }} · {{ earnedLabel() }} ACUMULADO</span>
-          <p class="tip-value">{{ point.earnedValue }}</p>
-          <div class="tip-indices">
-            <span class="cost">{{ costLabel() }} {{ point.costIndex }}</span>
-            <span class="schedule">{{ scheduleLabel() }} {{ point.scheduleIndex }}</span>
+        @if (!compact()) {
+          <div class="tooltip" [style.left.%]="tooltipLeft(point)">
+            <span class="tip-label">{{ point.monthLabel }} · {{ earnedLabel() }} ACUMULADO</span>
+            <p class="tip-value">{{ point.earnedValue }}</p>
+            <div class="tip-indices">
+              <span class="cost">{{ costLabel() }} {{ point.costIndex }}</span>
+              <span class="schedule">{{ scheduleLabel() }} {{ point.scheduleIndex }}</span>
+            </div>
           </div>
-        </div>
+        }
       }
     </div>
 
@@ -210,6 +221,26 @@ interface HoverPoint {
       width: 100%;
       height: 236px;
       display: block;
+    }
+    /* Móvil: sin el resumen (la tarjeta ya muestra la cifra), dos series y 112 px de alto. */
+    .head.compact .summary {
+      display: none;
+    }
+    .head.compact {
+      margin-bottom: 10px;
+    }
+    .head.compact .legend {
+      padding-top: 0;
+      gap: 16px;
+    }
+    .head.compact .entry {
+      font-size: 11px;
+    }
+    .head.compact .dash {
+      width: 14px;
+    }
+    .chart.compact {
+      height: 112px;
     }
     .area {
       animation: valora-fade 600ms ease both 200ms;
@@ -297,6 +328,8 @@ export class SCurve {
   readonly actualCostLabel = input('AC');
   readonly costLabel = input('CPI');
   readonly scheduleLabel = input('SPI');
+  /** Versión de móvil del diseño: solo planificado y ganado, más baja y sin resumen propio. */
+  readonly compact = input(false, { transform: booleanAttribute });
 
   protected readonly viewWidth = VIEW_WIDTH;
   protected readonly viewHeight = VIEW_HEIGHT;
@@ -350,15 +383,31 @@ export class SCurve {
     ];
   });
 
+  /** En compacto el costo real no se dibuja: el artboard móvil compara solo plan y ganado. */
+  protected readonly visibleSeries = computed(() =>
+    this.compact() ? this.series().filter((series) => series.key !== 'ac') : this.series(),
+  );
+
   protected readonly latestEarned = computed(() => {
     const last = this.points().at(-1);
     return last === undefined ? '—' : formatCompact(last.totals.earnedValue);
   });
 
-  /** Etiquetas de mes, como en el diseño: una por corte. */
-  protected readonly axisLabels = computed(() =>
-    this.points().map((point) => formatMonth(point.cutoffDate)),
-  );
+  /**
+   * Etiquetas de mes, como en el diseño: una por corte en escritorio y, en móvil, cinco repartidas
+   * por el eje, porque con un corte al mes no caben todas en 335 px.
+   */
+  protected readonly axisLabels = computed(() => {
+    const labels = this.points().map((point) => formatMonth(point.cutoffDate));
+    if (!this.compact() || labels.length <= COMPACT_AXIS_LABELS) {
+      return labels;
+    }
+    const step = (labels.length - 1) / (COMPACT_AXIS_LABELS - 1);
+    return Array.from(
+      { length: COMPACT_AXIS_LABELS },
+      (_, index) => labels[Math.round(index * step)] ?? '',
+    );
+  });
 
   protected readonly hoverZones = computed(() => {
     const total = this.points().length;
