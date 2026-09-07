@@ -49,8 +49,8 @@ ya integrado y la instrucción explícita de no tocarlo.
 
 ## 2. Cómo aprendí EVM
 
-Consegui ver varios videos sobre EVM y sus conceptos, tome notas y me ayude de gemini para crear resumenes de videos muy especializados y largos para no perder tiempo en puntuar cosas importantes como la grafica en S que es muy util para ver el recorrido del valor presupuestado, el valor ganado y el valor real del proyecto. Tambien los cortes de fechas donde se congela este valor para ver un historico de forma manual.
-Conocí conceptos como lo son el CPI o indice de eficiencia de costos y el SPI o indice de eficiencia del cronograma o la planeacion conceptuada. Se añadieron al prototipo tanto como los desvios de costos y tiempo para tener una vision rapida y clara de todo el proceso que aunque sencillo me centre mucho en que cualquiera pudiera leerlo sepa o no de que se trata EVM.
+Conseguí ver varios videos sobre EVM y sus conceptos, tomé notas y me ayudé de gemini para crear resúmenes de videos muy especializados y largos para no perder tiempo en puntuar cosas importantes como la gráfica en S que es muy útil para ver el recorrido del valor presupuestado, el valor ganado y el valor real del proyecto. También los cortes de fechas donde se congela este valor para ver un histórico de forma manual.
+Conocí conceptos como lo son el CPI o índice de eficiencia de costos y el SPI o índice de eficiencia del cronograma o la planeación conceptuada. Se añadieron al prototipo tanto como los desvíos de costos y tiempo para tener una visión rápida y clara de todo el proceso que aunque sencillo me centré mucho en que cualquiera pudiera leerlo sepa o no de qué se trata EVM.
 
 Otras cosas que aprendí por el camino y que no están en el texto anterior:
 
@@ -112,7 +112,7 @@ devolvía esas mismas cifras por HTTP, no solo que los tests estaban en verde.
 
 ## 3. Dos decisiones donde no seguí a la IA
 
-Aunque la sucesion de agentes trabajando en conjunto es mas eficiente y rapido, menos gasto de tokens y menos alucionaciones no tome en cuenta muchas cosas del proyecto que el primer plan no demostro saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el codigo de forma visual y automatizada, el uso de pruebas con playright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me parecio suficiente pues propuse una arquitectura hexagonal completa, el uso de separacion de excepciones custom, validacion de cambios de manera descentralizada y mensajes sin magic strings que son problematicos, aunque pudo ser una buena razon para utilizar Enums para estos estados pero no se compartian por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integracion y pruebas unitarias en el codigo. Se uso de forma eficiente el IOC para generar beans de configuracion haciendo uso correcto de todas las ventajas de spring y se uso la libreria de validaciones y anotaciones de documentacion con Jakarta y swager. Tambien se propuso que la configuracion no se implementara en el backend y se usara en cambio el local storage para esto, porque el backend no guarda preferencias de usuario y llevarlas allí habría añadido una tabla y un endpoint solo para eso.
+Aunque la sucesión de agentes trabajando en conjunto es más eficiente y rápido, menos gasto de tokens y menos alucionaciones no tomé en cuenta muchas cosas del proyecto que el primer plan no demostró saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el código de forma visual y automatizada, el uso de pruebas con playright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me pareció suficiente pues propuse una arquitectura hexagonal completa, el uso de separación de excepciones custom, validación de cambios de manera descentralizada y mensajes sin magic strings que son problemáticos, aunque pudo ser una buena razón para utilizar Enums para estos estados pero no se compartían por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integración y pruebas unitarias en el código. Se usó de forma eficiente el IOC para generar beans de configuración haciendo uso correcto de todas las ventajas de spring y se usó la librería de validaciones y anotaciones de documentación con Jakarta y swager. También se propuso que la configuración no se implementara en el backend y se usara en cambio el local storage para esto, porque el backend no guarda preferencias de usuario y llevarlas allí habría añadido una tabla y un endpoint solo para eso.
 
 Otros casos del proyecto en los que no seguí a la IA, o en los que la IA no me siguió a mí, y que no están en
 el texto anterior:
@@ -146,7 +146,7 @@ el texto anterior:
 
 ## 4. Cómo verifiqué que los cálculos son correctos
 
-Tome varios casos de proyectos desde el diseño donde introduje los datos de simulaciones propias, donde verifique que los datos que aparecen en el front y los calculos que hace el back son correctos, tambien hice un control de perdida de contexto y alucinacion para los modelos utilizados. Los calculos a mano fueron utiles pero fue mas util tomar referencias de varios ejemplos, casos exitosos, fallidos, medios y sin datos tanto para el modelo de dominio y calculos como el diseño de la pagina como tal.
+Tomé varios casos de proyectos desde el diseño donde introduje los datos de simulaciones propias, donde verifiqué que los datos que aparecen en el front y los cálculos que hace el back son correctos, también hice un control de pérdida de contexto y alucinación para los modelos utilizados. Los cálculos a mano fueron útiles pero fue más útil tomar referencias de varios ejemplos, casos exitosos, fallidos, medios y sin datos tanto para el modelo de dominio y cálculos como el diseño de la página como tal.
 
 No basta con que el código funcione: los números tienen que tener sentido. La verificación se hizo en cuatro
 niveles, y cada uno encontró cosas que el anterior no.
@@ -221,7 +221,7 @@ código.
 
 ## 5. Una decisión de arquitectura que tomé de forma independiente
 
-Separe desarrollo, testing y produccion en front y back para que no chocaramos migraciones, dependencias y se hiciera mantenible a largo plazo tanto el desarrollo como la salida a produccion ficticia. Verificacion de independencia de dominio respetando la arquitectura hexagonal. Se hizo todo el backend primero, verificado, testeado y estable y luego se hizo el front usando el diseño propuesto para implementar todo junto. Los prompts de las sesiones se registraron con un hook y se automatizo el proceso para no ocupar el contexto de alguna sesion solo para esto y ahorrar mucho tiempo y tokens.
+Separé desarrollo, testing y producción en front y back para que no chocáramos migraciones, dependencias y se hiciera mantenible a largo plazo tanto el desarrollo como la salida a producción ficticia. Verificación de independencia de dominio respetando la arquitectura hexagonal. Se hizo todo el backend primero, verificado, testeado y estable y luego se hizo el front usando el diseño propuesto para implementar todo junto. Los prompts de las sesiones se registraron con un hook y se automatizó el proceso para no ocupar el contexto de alguna sesión solo para esto y ahorrar mucho tiempo y tokens.
 
 Otra decisión del mismo tipo que no está en el texto anterior:
 
@@ -337,7 +337,7 @@ de modo que el flujo anterior no cambia.
 
 ## 6. Qué haría diferente
 
-Aprenderia mejor como conectar claude design con el desarrollo como tal del frontend ya que tuve muchos problemas a la hora de ajustar todo el front al diseño que construi, los decimales truncados por decision del agente que los implemento quedo oculto hasta una revision manual donde se encontro que era incorrecto y peligroso para detalles. el hook que implemente constantemente escribia en el archivo versionado lo cual quito una trazabilidad mas simple y contamino commits, entonces la proxima uso un archivo temporal en el sistema para escribir todo y al final se consolida para versionarlo. Se tomaron 3 sesiones sobre este mismo codigo para diseñar, implementar y corregir el front, back y el diseño como tal, fue un error no darles el contexto a todas de que se hacia en la otra dandome la tarea de actualizar a mano u ordenar que la sesion se enterara de cambios que gastaron tokens innecesarios y repercutieron en atraso en tiempo de la implementacion del proyecto.
+Aprendería mejor cómo conectar claude design con el desarrollo como tal del frontend ya que tuve muchos problemas a la hora de ajustar todo el front al diseño que construí, los decimales truncados por decisión del agente que los implementó quedó oculto hasta una revisión manual donde se encontró que era incorrecto y peligroso para detalles. el hook que implementé constantemente escribía en el archivo versionado lo cual quitó una trazabilidad más simple y contaminó commits, entonces la próxima uso un archivo temporal en el sistema para escribir todo y al final se consolida para versionarlo. Se tomaron 3 sesiones sobre este mismo código para diseñar, implementar y corregir el front, back y el diseño como tal, fue un error no darles el contexto a todas de qué se hacía en la otra dándome la tarea de actualizar a mano u ordenar que la sesión se enterara de cambios que gastaron tokens innecesarios y repercutieron en atraso en tiempo de la implementación del proyecto.
 
 Otras cosas que salieron mal o tarde y que no están en el texto anterior:
 
@@ -2503,4 +2503,10 @@ Corrige mis frases cortadas y prepara la release a main. Ahora quiero que consol
 
 ```text
 Tambien hay una sesion "UI mockups requested" donde hice el diseño con claude design.
+```
+
+### 2026-09-06 22:23 -05 - Claude Code
+
+```text
+Ponle tildes a mis párrafos sin cambiar las palabras
 ```
