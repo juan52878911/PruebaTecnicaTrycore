@@ -2691,3 +2691,63 @@ Añade la inspiracion para el diseño que construi con Claude https://www.outcro
 https://dribbble.com/shots/23462040-Holdwork-Website-design-for-the-video-interaction-platform
 https://fundex.gg/
 ```
+
+### 2026-09-06 22:41 -05 - Claude Code
+
+```text
+quita las firmas y el emoji de los commits y PRs
+```
+
+### 2026-09-06 22:43 -05 - Claude Code
+
+```text
+Necesito esto en el video, que decision compleja podria poner segun mi informe? Juan, tu video debe ser una grabación de pantalla de máximo 10 minutos sin edición elaborada.
+
+* Explicación de EVM: Debes aparecer en cámara (verte y escucharte) explicando qué es el Valor Ganado y cómo funciona, usando tus propias palabras como si le hablaras a un colega, sin leer un guion.
+
+* Arquitectura: Muestra y explica la estructura de tu solución.
+
+* Decisión Técnica: Detalla una decisión técnica específica que te haya resultado difícil de resolver.
+
+* Demo en Vivo: Presenta el sistema funcionando, mostrando obligatoriamente al menos un proyecto con tres actividades registradas.
+
+* Flujo con IA: Muestra tu documento de proceso y explica cómo integraste las herramientas de IA en tu flujo de trabajo.
+
+La fluidez para explicar lo que aprendiste tiene un peso fundamental en la evaluación, demostrando comprensión real por encima de la memorización o la lectura. ¿Ya decidiste qué decisión técnica compleja vas a exponer en la presentación?
+```
+
+### 2026-09-06 22:47 -05 - Claude Code
+
+```text
+dame un guion de puntos para los 10 minutos del video
+```
+
+### 2026-09-06 22:56 -05 - Claude Code
+
+```text
+explicame para niños como fue la decision mas dificil.
+```
+
+### 2026-09-06 22:58 -05 - Claude Code
+
+```text
+explicamelo ahora con un proyecto del dataset
+```
+
+### 2026-09-06 23:40 -05 - Claude Code
+
+```text
+Esto se esta usando? no veo cambios al cambiar el checkbox. como lo verifico?
+```
+
+### 2026-09-07 00:13 -05 - Claude Code
+
+```text
+resetea los datos de la bd para el ejemplo
+```
+
+### 2026-09-07 03:19 -05 - Claude Code
+
+```text
+commitea todo, ya esta listo?
+```
