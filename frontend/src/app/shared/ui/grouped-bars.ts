@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 
 import { MeasurementPoint } from '../../core/api/models/measurement';
 import { formatIndex, formatMoneyRounded, formatShortDate } from '../../core/format/evm-format';
+import { barHeight, sharedScale } from './bar-scale';
 
-const FULL_PERCENT = 100;
 const DEFAULT_MAX_GROUPS = 8;
 
 /**
@@ -240,26 +240,24 @@ export class GroupedBars {
   /** Con muchos cortes las barras se vuelven ilegibles; se muestran los más recientes. */
   private readonly visible = computed(() => this.points().slice(-this.maxGroups()));
 
-  private readonly scale = computed(() => {
-    const values = this.visible().flatMap((point) => [
-      point.totals.plannedValue,
-      point.totals.earnedValue,
-      point.totals.actualCost,
-    ]);
-    const highest = values.length === 0 ? 0 : Math.max(...values);
-    return highest === 0 ? 1 : highest;
-  });
+  private readonly scale = computed(() =>
+    sharedScale(
+      this.visible().flatMap((point) => [
+        point.totals.plannedValue,
+        point.totals.earnedValue,
+        point.totals.actualCost,
+      ]),
+    ),
+  );
 
   protected readonly groups = computed(() => {
     const scale = this.scale();
-    const height = (value: number): number =>
-      Math.min(FULL_PERCENT, (value / scale) * FULL_PERCENT);
     return this.visible().map((point) => ({
       cutoffDate: point.cutoffDate,
       label: formatShortDate(point.cutoffDate),
-      plannedHeight: height(point.totals.plannedValue),
-      earnedHeight: height(point.totals.earnedValue),
-      costHeight: height(point.totals.actualCost),
+      plannedHeight: barHeight(point.totals.plannedValue, scale),
+      earnedHeight: barHeight(point.totals.earnedValue, scale),
+      costHeight: barHeight(point.totals.actualCost, scale),
       plannedText: formatMoneyRounded(point.totals.plannedValue),
       earnedText: formatMoneyRounded(point.totals.earnedValue),
       costText: formatMoneyRounded(point.totals.actualCost),

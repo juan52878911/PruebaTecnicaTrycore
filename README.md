@@ -3,7 +3,7 @@
 Herramienta interna para que un líder de proyecto registre el avance de sus actividades y sepa, con los
 indicadores de Valor Ganado (Earned Value Management), si su proyecto va bien o mal en cronograma y presupuesto.
 
-Versión 1.1.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
+Versión 1.2.0. Backend y frontend completos y verificados: el API calcula los indicadores y el tablero
 Valora los presenta en escritorio y móvil.
 
 ## El problema en una frase
@@ -143,7 +143,7 @@ frontend/src/app/
   core/format      Formato de dinero, índices, porcentajes y fechas
   core/labels      Siglas del estándar o español claro, conmutables en Ajustes
   core/status      Traducción del estado del servidor a color y a nivel de riesgo
-  shared/ui        Componentes presentacionales: tarjetas, curva S, diálogos, avisos
+  shared/ui        Componentes presentacionales: tarjetas, curva S, barras por actividad y por corte, diálogos, avisos
   features/        Una carpeta por vista, con su store
   layout/          Marco y navegación
 ```
@@ -320,9 +320,9 @@ las segundas solo mapean columnas.
 
 ## Pruebas
 
-269 tests: 135 en el backend (97 unitarios y 38 de integración) y, en el frontend, 166 unitarios más 14 de comportamiento con Playwright. Los valores esperados de
-cada cálculo EVM están derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la
-salida del código.
+401 tests: 213 en el backend (151 unitarios, 10 de arquitectura y 52 de integración) y, en el frontend,
+174 unitarios más 14 de comportamiento con Playwright. Los valores esperados de cada cálculo EVM están
+derivados a mano de la fórmula y escritos literalmente en el test, nunca copiados de la salida del código.
 
 | Tipo | Dónde | Qué cubre |
 | --- | --- | --- |

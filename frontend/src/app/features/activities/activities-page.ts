@@ -27,6 +27,7 @@ import {
   scheduleTone,
 } from '../../core/status/status-tone';
 import { DualProgress } from '../../shared/ui/dual-progress';
+import { ActivityBars } from '../../shared/ui/activity-bars';
 import { ChipButton } from '../../shared/ui/chip-button';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { GroupedBars } from '../../shared/ui/grouped-bars';
@@ -59,6 +60,7 @@ function parseId(raw: string | null): number | undefined {
   imports: [
     ActivityFormDialog,
     ChipButton,
+    ActivityBars,
     DualProgress,
     EmptyState,
     GroupedBars,
@@ -276,6 +278,27 @@ function parseId(raw: string | null): number | undefined {
           }
         </div>
       </div>
+    }
+
+    @if (isDesktop() && evm.hasActivities()) {
+      <section class="card comparison">
+        <h2>
+          {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }} por
+          actividad
+        </h2>
+        <p class="lead">
+          Cada actividad con sus tres cifras en dinero sobre una misma escala: una barra de
+          {{ labels.short('AC') }} por encima de la de {{ labels.short('EV') }} es una actividad que
+          gasta más de lo que gana, y una de {{ labels.short('EV') }} por debajo de la de
+          {{ labels.short('PV') }} va por detrás de lo previsto.
+        </p>
+        <app-activity-bars
+          [activities]="evm.activityList()"
+          [plannedLabel]="labels.short('PV')"
+          [earnedLabel]="labels.short('EV')"
+          [actualCostLabel]="labels.short('AC')"
+        />
+      </section>
     }
 
     @if (isDesktop() && evm.hasTimeline()) {
