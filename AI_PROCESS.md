@@ -2296,4 +2296,15 @@ mergea los dos PRs
 
 ```text
 actualiza el AI_PROCESS con todo lo de estas últimas sesiones, resume mis decisiones, problemas y todo lo que pide el documento
+
+### 2026-09-05 16:23 -05 - Claude Code
+
+```text
+Necesito que analices el diseño contra lo construido. la alineacion de contenedores de graficas y numeros no esta perfectamente alineada. La animacion de hover a los numeros para descubrir entorpece el hacer click en el boton de copiar. El sub menu de ajustes no scrollea a la opcion seleccionada ni indica la seccion en vista. y cuando se clica algun item se devuelve al panel lo cual es un comportamiento erroneo. Agrega detalles a los graficos de barras para en hover saber que datos estamos viendo. La vista de actividades tiene un boton donde se ve el proyecto, ponle un icono de atras para saber que cambiaras de vista a proyectos o integra un sub menu para elegir el proyecto desde ese boton como un dropdown. Hay un boton que indica la fecha del corte, es clicable pero no hace nada, si es solamente informativo corrige la UI para que sea coherente con todo el sitio. Perfecciona los borones borrar y editar pues no van con el diseño original, puedes hacerlos aparecer en hover, tambien el elemento entero no es clicable, solo el titulo y es molesto. La UI mobile no es lo suficientemente robusta, hay errores por ejemplo el navbar no es fijo y queda al final del scroll. Alineaciones y comportamientos no son los mismos del prototipo
+```
+
+### 2026-09-05 16:42 -05 - Claude Code
+
+```text
+mergea el PR a develop
 ```

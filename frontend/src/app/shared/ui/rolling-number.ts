@@ -32,7 +32,6 @@ const RADIX = 10;
     '(focus)': 'start()',
     '(blur)': 'stop()',
     '[attr.tabindex]': 'rolls() ? 0 : null',
-    '[attr.title]': 'rolls() ? exact() : null',
     '[class.rolling]': 'rolling()',
   },
   template: `{{ text() }}`,
