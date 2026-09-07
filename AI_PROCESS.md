@@ -112,7 +112,7 @@ devolvía esas mismas cifras por HTTP, no solo que los tests estaban en verde.
 
 ## 3. Dos decisiones donde no seguí a la IA
 
-Aunque la sucesion de agentes trabajando en conjunto es mas eficiente y rapido, menos gasto de tokens y menos alucionaciones no tome en cuenta muchas cosas del proyecto que el primer plan no demostro saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el codigo de forma visual y automatizada, el uso de pruebas con playright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me parecio suficiente pues propuse una arquitectura hexagonal completa, el uso de separacion de excepciones custom, validacion de cambios de manera descentralizada y mensajes sin magic strings que son problematicos, aunque pudo ser una buena razon para utilizar Enums para estos estados pero no se compartian por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integracion y pruebas unitarias en el codigo. Se uso de forma eficiente el IOC para generar beans de configuracion haciendo uso correcto de todas las ventajas de spring y se uso la libreria de validaciones y anotaciones de documentacion con Jakarta y swager. Tambien se propuso que la configuracion no se implementara en el backend y se usara en cambio el local storage para esto,
+Aunque la sucesion de agentes trabajando en conjunto es mas eficiente y rapido, menos gasto de tokens y menos alucionaciones no tome en cuenta muchas cosas del proyecto que el primer plan no demostro saber de ante mano, por ejemplo el usar JaCoCo para verificar el cubrimiento de test en el codigo de forma visual y automatizada, el uso de pruebas con playright para mejorar el flujo automatizado del desarrollo del frontend, la arquitectura que el plan me dio no me parecio suficiente pues propuse una arquitectura hexagonal completa, el uso de separacion de excepciones custom, validacion de cambios de manera descentralizada y mensajes sin magic strings que son problematicos, aunque pudo ser una buena razon para utilizar Enums para estos estados pero no se compartian por el principio de la arquitectura hexagonal en el dominio, se desarrollaron tanto pruebas e2e, integracion y pruebas unitarias en el codigo. Se uso de forma eficiente el IOC para generar beans de configuracion haciendo uso correcto de todas las ventajas de spring y se uso la libreria de validaciones y anotaciones de documentacion con Jakarta y swager. Tambien se propuso que la configuracion no se implementara en el backend y se usara en cambio el local storage para esto, porque el backend no guarda preferencias de usuario y llevarlas allí habría añadido una tabla y un endpoint solo para eso.
 
 Otros casos del proyecto en los que no seguí a la IA, o en los que la IA no me siguió a mí, y que no están en
 el texto anterior:
@@ -786,6 +786,150 @@ algo sobre una base recreada, comprobar primero que la base está realmente vac�
 redimensionar la ventana. El arreglo que se hizo es correcto y el servicio pasó de no tener ninguna prueba a
 tener siete, pero no puedo descartar que el síntoma que observé fuera un artefacto de la emulación de ventana
 del navegador que usé. Queda dicho así en el pull request en lugar de presentarlo como reproducido.
+
+## 7g. Ajuste del frontend al diseño: las sesiones en árboles de trabajo paralelos
+
+Con el backend cerrado y el tablero funcionando, quedaba lo que separa un prototipo de un producto: que la
+interfaz se comporte como el diseño en escritorio y en móvil. Ese trabajo lo hice en varias sesiones en
+paralelo, cada una en su propio árbol de trabajo y su rama, midiendo la interfaz en el navegador contra los
+artboards del diseño en lugar de juzgarla a ojo. El hook registra los prompts en el `AI_PROCESS.md` del árbol
+donde corre la sesión, así que parte de esos prompts llegaron a la sección 8 por los pull requests de cada rama
+y otra parte se perdió al integrar. Lo que se hizo está en los commits, que es donde tiene que estar la
+evidencia, y de ahí sale este resumen.
+
+**El diseño, hecho antes que el código, en Claude Design.** Antes de la fase de frontend abrí una sesión de
+Claude Design, "UI mockups requested", en la que construí el sistema de diseño Valora, el prototipo navegable y
+los mockups del tablero en escritorio y en móvil. Esa sesión no pasa por el hook porque no es Claude Code, así
+que sus prompts no están en la sección 8; lo que sí está es el momento en que sus artefactos
+(`Valora Design System.dc.html`, `Valora Prototipo.dc.html`, `EVM Dashboard Mockups.dc.html`) entraron como
+referencia obligatoria de la implementación. Hice el diseño primero a propósito: quería que las decisiones
+visuales fueran mías y que el agente que implementara tuviera una referencia exacta contra la que medirse, no
+una descripción. Lo que aprendí en esa unión, y lo digo en la sección 6, es que la distancia entre un artboard
+y un componente real se cierra midiendo, y que eso costó más sesiones de las que había previsto.
+
+**Pulido contra el prototipo, PR 26.** El análisis del diseño contra lo construido sacó una lista de
+diferencias concretas y cada una se cerró con su commit. El menú de ajustes usaba anclas `href="#seccion"`, que
+el router tomaba como navegación a la raíz y devolvía al panel: pasaron a botones que desplazan a su sección y
+resaltan la que está a la vista. El botón de copiar huía del cursor porque la cifra, al rodar de la forma corta
+a la exacta, cambiaba de anchura: se ancló al borde de la tarjeta. Las tarjetas de indicadores no llenaban su
+columna y la primera terminaba 17 píxeles antes que las otras. Las barras por corte ganaron una tarjeta al pasar
+el ratón con la fecha, las tres cifras y los índices de ese día. Los listados se rehicieron con filas clicables,
+herramientas de icono y el mismo selector de proyecto que el panel. Y la barra de pestañas móvil, que era
+`sticky` al final del documento y solo aparecía al llegar abajo, pasó a fija a la ventana.
+
+**Alineación de los listados, PR 28.** Cada fila era su propia rejilla, así que una fila con una insignia de
+estado larga ensanchaba su última columna y las columnas dejaban de coincidir entre filas. Las pistas pasaron a
+mínimo cero, puramente proporcionales e idénticas en todas las filas, y las herramientas de editar y borrar
+dejaron de reservar espacio: flotan sobre el borde derecho como una píldora que solo aparece al pasar el ratón o
+al enfocar con el teclado.
+
+**Móvil y pruebas de comportamiento, PR 29.** El modo móvil estaba roto y la causa principal no era de CSS
+sino de apilamiento: la animación de entrada de cada vista conservaba su transformación al terminar
+(`fill-mode: both`), lo que convierte cada página en un contexto de apilamiento, y un diálogo con `z-index` 40
+dentro de ella nunca podía subir por encima de la barra de pestañas que está fuera. La barra tapaba las hojas.
+La animación pasó a rellenar solo hacia atrás. Además, las fichas de cabecera y la gráfica de barras eran más
+anchas que la pantalla y la vista crecía a 452 píxeles; el selector de proyecto se abría fuera de pantalla y pasó
+a ser una hoja inferior; y cuatro animaciones apuntaban a keyframes que no existían, así que nunca se habían
+ejecutado. Después se siguió el artboard móvil: cabecera con el título como selector, barra de pestañas con el
+botón de más en el centro, tarjetas compactas, curva de dos series y hojas con su pie. Por el camino aparecieron
+tres errores más, y los tres tienen su commit: la página se seguía desplazando por debajo de una hoja abierta,
+así que un `ScrollLock` compartido cuenta las capas abiertas y bloquea el documento mientras exista alguna; una
+barra `fixed` se movía cada vez que el navegador mostraba u ocultaba su propia barra, y se resolvió dando al
+marco la altura de la pantalla y dejando que solo `<main>` se desplace; y quedaban dos scrolls porque el marco
+heredaba el `min-height: 100vh` de escritorio, que en móvil supera la altura real con la barra del navegador
+visible. Para que nada de esto volviera a romperse sin que nadie lo viera, la rama añadió catorce pruebas de
+comportamiento con Playwright, en un proyecto de escritorio a 1360 píxeles y uno móvil a 375, con el API simulado
+desde el navegador: la barra queda fija y por debajo de las hojas, ninguna vista desborda en horizontal, las
+columnas alinean entre filas, las herramientas no reservan espacio, el botón de copiar no se mueve y el
+documento no se desplaza en ningún eje.
+
+**Los últimos detalles, PRs 36, 37 y 39.** La tarjeta de la curva S mostraba el último corte aunque el puntero
+estuviera fuera, lo que se leía como una etiqueta perdida sobre la gráfica: ahora solo aparece con el puntero
+dentro, y los cortes consecutivos del mismo mes ya no repiten la etiqueta del eje. Los diálogos, el panel y el
+aviso de copiado tenían "USD" escrito a mano, así que elegir COP en ajustes no cambiaba nada; como el backend
+guarda importes sin moneda, la etiqueta es una preferencia del cliente y todos los importes la leen del
+almacén. Un corte congela las cifras del proyecto, así que un corte registrado con actividades sobrevivía a
+borrarlas y la gráfica por corte seguía dibujándose debajo del estado vacío de "sin actividades": la gráfica
+exige ahora actividades además de cortes, como la curva del panel, y una prueba de comportamiento lo cubre. Y la
+cifra que rueda al pasar el ratón empujaba la unidad y podía partirse en dos líneas: reserva la anchura del
+valor exacto con una copia invisible y separa los millares con un espacio fino indivisible.
+
+Cada uno de esos pull requests se integró con las pruebas unitarias, el lint, Prettier y el build en verde, y
+los que tocaban comportamiento visible con la suite de Playwright además. Ninguno se mergeó sobre una
+impresión: cada diferencia con el diseño se midió antes y después.
+
+## 7h. Sesión de cierre: auditoría contra el enunciado, gráfica por actividad, Docker y releases
+
+La última sesión larga empezó por una pregunta distinta: no "qué falta por construir" sino "qué pide el
+enunciado que todavía no está". Primero contrasté el dominio con las cuatro variables del método (BAC, PV, EV y
+AC) y con la lectura gráfica que describe el material de estudio. El proyecto las cumple y va más allá, y la
+auditoría dejó dos límites escritos con honestidad: el valor planificado lo escribe el usuario, no se deriva del
+calendario de la actividad, y la curva S termina en el último corte en vez de proyectar la línea base hasta el
+fin del proyecto. Después contrasté el repositorio con el documento de la prueba, requisito por requisito,
+ejecutando la verificación completa (`mvnw verify -Ptest`, tests del frontend, lint y build) en vez de darla
+por buena. El código cumplía todo; lo que faltaba era otra cosa: las secciones personales de este documento
+seguían con mis notas sin redactar, no existía la gráfica que compara PV, EV y AC por actividad que el
+enunciado pide de forma literal, el README declaraba un número de tests que ya no era cierto y `develop` iba
+cuatro pull requests por delante de `main`.
+
+**La gráfica por actividad, PR 30.** La comparativa existente era por corte de fecha, y las barras por actividad
+solo vivían en el detalle de una actividad. El componente nuevo dibuja una columna por actividad con sus tres
+cifras sobre una escala común y se desplaza en horizontal antes que ocultar ninguna. La escala y la altura de
+barra se extrajeron a un módulo que comparten las dos gráficas, para no tener la misma regla escrita dos veces.
+Seis pruebas nuevas: sin actividades, tres barras por actividad, escala común, todo a cero, muchas actividades
+sin recorte y el resumen accesible. Al verificarla en el navegador descubrí que el servidor de desarrollo que
+corría en el puerto 4200 servía un árbol de trabajo antiguo de otra sesión, por eso la gráfica no aparecía; se
+levantó otro servidor en el 4300, que CORS ya admitía. La captura de pantalla salía negra porque el panel del
+navegador estaba oculto, así que la verificación fue por el DOM: quince barras con las alturas y colores
+esperados.
+
+**Integrar lo que venía de otras sesiones, PRs 28 y 29.** Los dos conflictaban con `develop`. El del registro
+de prompts se resolvió ordenando las entradas por fecha; el de la gráfica por corte, conservando las dos cosas
+que cada lado había cambiado, la tarjeta al pasar el ratón y la escala compartida; y el de la vista de
+actividades, dejando las dos gráficas solo en escritorio, que era el criterio del layout móvil. Cada merge se
+verificó antes de publicarse.
+
+**Todo el entorno de desarrollo en Docker, PR 33.** Para grabar el video quería el proyecto entero levantado
+con un solo comando. La decisión fue no empaquetar el código en las imágenes de desarrollo: cada `Dockerfile.dev`
+aporta solo el runtime, `docker-compose.yml` monta el fuente desde el repositorio y guarda las dependencias de
+Maven y npm en volúmenes con nombre, y el perfil `dev` del backend pasó a leer las mismas variables que `prod`
+con los valores anteriores por defecto. Hubo un error de por medio que vale la pena contar: el npm 10 que trae
+la imagen de Node 22 rechazaba el `package-lock.json` por una dependencia opcional que resuelve de otra forma
+que el npm 11 con el que se generó; la imagen fija ahora la versión de npm que declara `package.json`. La imagen
+del JDK tampoco trae `curl`, así que el healthcheck del backend abre el puerto con bash. Se verificó de punta a
+punta: los tres contenedores arriba, el API respondiendo, el preflight de CORS aceptado desde el origen del
+frontend y el tablero cargando las cinco actividades del proyecto de demostración desde el backend en
+contenedor.
+
+**Releases y este documento.** Cada bloque de trabajo cerró con su rama `release/*`, su pull request a `main`,
+su etiqueta y el back-merge a `develop`: 1.2.0 con la gráfica, 1.3.0 con el móvil y Docker. Al final consolidé
+este documento: mis secciones con mis palabras y, debajo de cada una, la lista de casos que no menciono, para
+que nada de lo que pasó quede fuera por haberlo resumido.
+
+## 7i. Índice de errores y cómo se resolvió cada uno
+
+Una lista corta de lo que salió mal en cada implementación y qué se hizo. Todos están respaldados por un commit
+o por una sección de este documento.
+
+| Implementación | Error | Cómo se resolvió |
+| --- | --- | --- |
+| Andamiaje backend | El informe del agente daba por arrancado el perfil `prod`; solo era cierto en un orden de arranque | Se repitió la prueba en los dos órdenes y se toleró la semilla repetible de `dev` (`Let prod profile start on a database already seeded by dev`) |
+| Andamiaje backend | Checkstyle solo avisaba fuera del perfil de pruebas | Bloqueante en los tres perfiles (`Make Checkstyle blocking in every Maven profile`) |
+| API REST | El controlador llamaba al calculador de dominio | Cálculo movido al servicio de aplicación (`Move activity indicator calculation into the application service`) |
+| API REST | Decimales truncados en silencio y un importe de 18 dígitos que rompía la persistencia | Validación con una única fuente de límites y respuesta 400 que nombra el campo (sección 4) |
+| Reglas de medición | Mi propuesta aplicaba la regla solo al valor ganado | Regla en los dos lados, comprobada con números antes de implementar (`Recognise earned value by measurement method on both sides`) |
+| Semilla de demostración | Responsables inventados y avance de hitos pisado por la reconciliación | Nombres del diseño y actividades por hitos excluidas de la reconciliación (`Name the demo project managers after the design`, `Exercise every measurement rule in the demo data`) |
+| Listado de proyectos | Una petición por proyecto para pintar sus indicadores | Indicadores calculados en el backend en una sola consulta (`Return project indicators in the list without an N+1`) |
+| Frontend, layout | El servicio de punto de ruptura perdía su `MediaQueryList` y la vista dejaba de seguir la ventana | La consulta es un campo del servicio, con siete pruebas (`Keep the media query alive so the layout follows the window`) |
+| Frontend, layout | El contenido saltaba 7,5 píxeles entre vistas por la barra de desplazamiento | Hueco de la barra reservado siempre (`Reserve the scrollbar gutter so views stop shifting sideways`) |
+| Frontend, ajustes | Las anclas del menú devolvían al panel | Botones que desplazan y resaltan la sección (`Fix the settings menu and highlight the section in view`) |
+| Frontend, listados | Columnas desalineadas entre filas y herramientas que reservaban espacio | Pistas proporcionales y píldora flotante (`Align listing columns across rows and float the row tools`) |
+| Frontend, móvil | La barra de pestañas tapaba las hojas por un contexto de apilamiento creado por la animación | `fill-mode` solo hacia atrás y keyframes corregidos (`Fix the mobile layer order, the sheets and the activities overflow`) |
+| Frontend, móvil | Doble scroll y barra que se movía con la del navegador | Marco a la altura de la pantalla, solo `<main>` se desplaza, documento bloqueado (`Keep the mobile tab bar still with a fixed-height frame`, `Stop the document from scrolling on mobile`) |
+| Frontend, preferencias | "USD" escrito a mano; elegir COP no cambiaba nada | Etiqueta leída del almacén de preferencias (`Label amounts with the currency chosen in the preferences`) |
+| Frontend, gráficas | La gráfica por corte se dibujaba sin actividades | Exige actividades además de cortes (`Hide the cutoff comparison when the project has no activities`) |
+| Docker | El npm de la imagen rechazaba el `package-lock.json` | Versión de npm fijada a la de `package.json` (`Run the whole development environment with docker compose`) |
+| Proceso | Dos sesiones en el mismo directorio, base compartida entre ramas, hook bloqueando integraciones | Un árbol de trabajo por rama, una base por rama y los prompts integrados por pull request (sección 7f) |
 
 ## 8. Registro cronológico de prompts de Juan
 
@@ -2347,4 +2491,16 @@ Porque si no hay actividades, o las elimino sigue apareciendo la grafica de plan
 
 ```text
 Revisa AI Process y consolida el texto para que quede mi version y quita las anotaciones que dejaste, añade los casos que no mencione en una lista debajo de mis propias palabras
+```
+
+### 2026-09-06 22:14 -05 - Claude Code
+
+```text
+Corrige mis frases cortadas y prepara la release a main. Ahora quiero que consolides lo que se hizo en las sesiones de frontend que no estan en el hook y las de esta sesion. Mi idea es dar la impresion de que se que hago y que tuve errores pero los corregi, tambien al final coloca un indice de errores en cada implementacion y que hice para resolverlo, una seccion pequeña
+```
+
+### 2026-09-06 22:18 -05 - Claude Code
+
+```text
+Tambien hay una sesion "UI mockups requested" donde hice el diseño con claude design.
 ```
