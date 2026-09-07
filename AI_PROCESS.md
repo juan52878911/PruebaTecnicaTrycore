@@ -29,7 +29,9 @@ resultado se revisó y se ejecutó antes de integrarlo. Este documento distingue
 | Herramienta | Modelo | Para qué | Por qué |
 | --- | --- | --- | --- |
 | Claude Code (app de escritorio) | Claude Fable 5.1 y, desde la oleada 3, Claude Opus 5 | Planificación, convenciones, dominio EVM, revisiones, integración de ramas y este documento | Es el modelo más capaz disponible y el trabajo crítico, el cálculo y las decisiones de arquitectura, no se delega |
-| Claude Code, subagentes | Claude Sonnet, luego Opus 5 | Andamiaje del backend, adaptadores y API, esqueleto del frontend, refactor de las pruebas de integración | Tareas amplias pero bien especificadas; se paralelizan en worktrees de git sobre su propia rama |
+| Claude Code, subagentes | Claude Sonnet, luego Opus 5 | Andamiaje del backend, adaptadores y API, esqueleto del frontend, refactor de las pruebas de integración, hitos ponderados y listado con indicadores | Tareas amplias pero bien especificadas; se paralelizan en worktrees de git sobre su propia rama |
+| Claude Code, agente de diseño | Claude Opus 5 | Criticar las decisiones de dominio antes de escribir código | Es más barato que un agente enmiende un planteamiento que rehacer la implementación; enmendó dos errores conceptuales |
+| Navegador integrado | — | Medir la interfaz: anchos, alturas y saltos entre vistas | Un problema visual se zanja con una cifra antes y después, no con una impresión |
 | Claude Code, agentes de revisión | Claude Sonnet | Ocho ángulos de revisión de código sobre `main...develop` | Buscar defectos con criterios distintos a la vez sale más barato y más completo que una sola pasada |
 | Claude Code, agentes auditores | Claude Haiku y Sonnet | Auditoría adversarial de señales y de pérdidas silenciosas | Revisión independiente de quien implementó |
 | opencode | MiniMax M2.7 | Ficheros de plantilla: `.gitignore`, `.editorconfig`, `docker-compose.yml`, `db/init.sql`, plantilla de Pull Request | Trabajo mecánico donde un modelo económico basta; toda su salida se revisó y se ejecutó antes de confirmarla |
@@ -112,11 +114,44 @@ actividades de demostración también se calculó a mano antes de implementarlo:
 EV 152.500, AC 160.000, CPI 0,9531, SPI 0,8971, EAC 451.147,54, VAC -21.147,54. Después se comprobó que el API
 devolvía esas mismas cifras por HTTP, no solo que los tests estaban en verde.
 
+### Lo que aprendí después, al ir más allá de la fórmula básica
+
+El prototipo del producto pedía cosas que la tabla del enunciado no cubre, y aprenderlas cambió la
+implementación. Son cuatro ideas y ninguna es complicada, pero ninguna es evidente.
+
+**Las reglas de ganancia.** El porcentaje de avance no es la única forma de reconocer valor, ni la mejor. El
+estándar admite varias reglas, y la elección depende de si el avance intermedio se puede estimar de forma
+creíble: todo o nada para actividades cortas, mitad al iniciar y mitad al cerrar cuando no se quiere discutir
+el avance intermedio, hitos ponderados cuando hay entregables verificables. Lo que no es evidente, y es el
+error que estuve a punto de cometer, es que **la regla se aplica a los dos lados de la resta**. El valor
+planificado se distribuye en el tiempo con la misma convención con la que después se va a ganar. Un paquete de
+todo o nada no tiene una rampa de valor planificado: tiene un escalón en su fecha de fin.
+
+**Las tres estimaciones del costo final.** `BAC / CPI` no es "la fórmula del EAC", es una de tres, y cada una
+es un supuesto distinto sobre lo que va a pasar de aquí al cierre: que el desempeño observado se mantiene, que
+la desviación fue puntual y lo que queda irá a presupuesto, o que hay que recuperar el atraso sin ampliar el
+plazo y el trabajo restante pagará la penalización combinada. Devolver las tres a la vez fue una decisión de
+producto: lo informativo es el rango, porque una cifra sola esconde de qué supuesto depende. En el caso
+canónico van de 120.000 a 172.500.
+
+**El defecto conocido del SPI.** Converge a uno al cerrar el proyecto aunque este termine con meses de retraso,
+porque cuando todo el trabajo está hecho el valor ganado y el planificado valen ambos el presupuesto. Es decir:
+un SPI cercano a uno al final del proyecto no significa nada. La corrección ortodoxa es medir el cronograma en
+unidades de tiempo en lugar de dinero, lo que se conoce como Earned Schedule. Queda fuera del alcance, pero
+está anotado en el código para que la limitación esté dicha y no escondida.
+
+**Los umbrales de tolerancia.** En la práctica del estándar, las organizaciones fijan umbrales de variación a
+partir de los cuales una desviación deja de ser ruido y exige una explicación formal. Eso es lo que separa el
+hecho aritmético (el índice es menor que uno) de la política (cuánto importa). Mezclarlos ensanchando el estado
+sería decir que un proyecto está en presupuesto mientras su variación de costo es negativa.
+
 ## 3. Dos decisiones donde no seguí a la IA
 
-> Juan: elige dos de estos cinco casos y escríbelos con tus palabras. Están ordenados de más a menos
-> significativo. Cada uno tiene el commit que lo respalda, así que el evaluador puede comprobarlo en el
-> historial.
+> Juan: elige dos de estos ocho casos y escríbelos con tus palabras. Cada uno tiene el commit que lo
+> respalda, así que el evaluador puede comprobarlo en el historial. Los tres más fuertes son el A, porque
+> la IA dio por buena una verificación que no lo era; el F, porque ahí el equivocado eras tú y lo corregiste
+> con números; y el G, porque muestra que un agente rellena huecos con datos plausibles cuando no tiene el
+> dato real. El enunciado pide dos: no las cuentes todas.
 
 **Candidato A, el más fuerte: la IA dio por buena una verificación que no lo era.** El agente que construyó el
 andamiaje del backend entregó un informe declarando que el perfil `prod` arrancaba correctamente. Lo había
@@ -149,6 +184,30 @@ afirmando que así se reutiliza entre subclases. El agente comprobó en el códi
 (el contenedor se guarda por clase de prueba y se detiene al terminarla), usó el patrón de contenedor único y lo
 documentó. Se verificó de forma independiente: un contenedor en vez de cuatro. Va en esta lista porque el
 sentido es el mismo, no aceptar una afirmación sin comprobarla, aunque aquí el equivocado fuera yo.
+
+**Candidato F, de la última fase y el más interesante conceptualmente: aquí el equivocado era yo, y lo
+corregí.** Al planificar los métodos de medición del avance, mi propuesta era aplicar la regla solo al valor
+ganado. Pedí a un agente de diseño que criticara el planteamiento antes de escribir código y me enmendó dos
+cosas. La primera: la regla gobierna también el valor planificado, porque `SV = EV - PV` solo significa algo si
+los dos términos se miden con la misma vara. La segunda: deducir si una actividad ha empezado a partir de su
+porcentaje anula el método de mitad y mitad, cuyo sentido es precisamente no estimar el avance intermedio. No
+acepté ninguna de las dos por autoridad: las comprobé con números antes de implementarlas, y el contraste quedó
+como test. Con la regla en un solo lado, un paquete de todo o nada que va al día sale con `SV = -50.000` y
+`SPI = 0,0000`; con la regla en los dos lados sale `SV = 0` y el SPI no aplicable. Solo el segundo es
+defendible. Commit `Recognise earned value by measurement method on both sides`.
+
+**Candidato G: un agente inventó datos que no estaban en el diseño.** Al añadir el responsable de proyecto, el
+agente rellenó la semilla con tres nombres inventados en lugar de los del prototipo. Los tests pasaban y nada
+fallaba, porque un nombre es tan válido como otro para el código. Se detectó al contrastar la salida del API
+con el prototipo, no ejecutando pruebas. Commit `Name the demo project managers after the design`. La lección
+es que un agente rellena huecos con algo plausible cuando no tiene el dato, y lo plausible no es lo correcto.
+
+**Candidato H: el arreglo que el agente propuso era más estrecho que el problema.** Con los hitos ponderados, el
+avance de la actividad pasa a ser una proyección de los pesos cumplidos. La semilla tenía al final un bloque que
+devuelve las cifras a las del diseño, y ese bloque pisaba el valor derivado, dejando la actividad diciendo 46 %
+mientras sus hitos sumaban 45. Lo cómodo era mover mi bloque para que se ejecutara después. Se hizo lo otro:
+excluir de la reconciliación las actividades medidas por hitos, porque ahí el porcentaje no es un dato de
+referencia que restaurar. Commit `Exercise every measurement rule in the demo data`.
 
 ## 4. Cómo verifiqué que los cálculos son correctos
 
@@ -203,6 +262,20 @@ do not fit the stored precision`.
 En la misma tanda apareció que un importe demasiado grande devolvía un 500 con la sentencia SQL y el mensaje de
 PostgreSQL en el cuerpo de la respuesta. Commit `Return RFC 7807 instead of a stack trace on integrity errors`.
 
+**Nivel 5: medir en lugar de opinar, también en la interfaz.** En la última fase aparecieron dos problemas que
+no eran de cálculo sino de comportamiento observable, y ninguno se podía zanjar mirando el código:
+
+- El listado de proyectos hacía una petición por proyecto. En vez de discutir si eso era un problema, se
+  contaron las sentencias en el registro del servidor: diez por el camino antiguo con cinco proyectos, dos con
+  la carga por lote. La forma general pasó de 1 + 2N a una constante.
+- El tablero temblaba al cambiar de vista. Medido en el navegador: el panel cabía en la ventana y las
+  actividades no, así que la barra de desplazamiento aparecía y desaparecía, el ancho disponible cambiaba
+  quince píxeles y el contenido centrado saltaba siete y medio. Se aplicó el arreglo candidato en caliente y se
+  volvió a medir antes de tocar el código: de siete y medio a cero. Lo mismo con las columnas desalineadas del
+  panel, que terminaban en 726, 776 y 777, y pasaron a terminar las tres en 777.
+
+La regla es la misma que con los indicadores: una cifra medida antes y después, no una impresión.
+
 **Un falso positivo, que también cuenta.** En un momento pareció que el JSON perdía la escala de los importes,
 devolviendo 100000.0 en vez de 100000.00. Antes de reportarlo se comprobó con la respuesta cruda: era la
 herramienta con la que se inspeccionaba el JSON la que convertía los números a coma flotante. El API era
@@ -211,9 +284,10 @@ código.
 
 ## 5. Una decisión de arquitectura que tomé de forma independiente
 
-> Juan: esta la escribes tú. Abajo están las cuatro decisiones que tomaste tú y no la IA, con lo que cada una
-> costó y lo que evitó. La primera es la que mejor se defiende en el video porque tiene una consecuencia
-> demostrable.
+> Juan: esta la escribes tú. Abajo están las decisiones que tomaste tú y no la IA, con lo que cada una costó
+> y lo que evitó; la sección 5c añade las de la última fase. La primera es la que mejor se defiende en el
+> video porque tiene una consecuencia demostrable, y la de los umbrales de la 5c es la que mejor explica por
+> qué la interpretación vive en el servidor.
 
 **Candidato A, el más defendible: separar los perfiles Maven `dev`, `test` y `prod`.** No solo con ficheros de
 configuración distintos, sino con dependencias distintas: Testcontainers y ArchUnit existen únicamente en el
@@ -308,6 +382,35 @@ la plantilla en vez de mostrar el aviso. Los stores leen a través de `hasValue(
 solo uno se ejercitaría. Ahora el frontend habla con `http://localhost:8080/api/v1` en los tres entornos, de
 modo que el camino que se prueba en local es el mismo que en producción, con su preflight y sus cabeceras.
 
+## 5c. Decisiones de la fase de cierre con el prototipo
+
+Después de la primera release, Juan revisó el tablero contra el backend y escribió él mismo un inventario de
+catorce huecos, ordenados en tres niveles: rodeos que el frontend ya estaba dando, funciones del diseño que no
+existían, y robustez. La lista incluía su propio criterio sobre cuáles merecían la pena, con este argumento:
+en una prueba técnica el objetivo no es cubrirlo todo, sino elegir lo que demuestra criterio. Estas son las
+decisiones que tomó y por qué.
+
+| Decisión | Qué eligió | Motivo |
+| --- | --- | --- |
+| Alcance | Los cuatro que él había señalado más dos baratos: leer una actividad suelta, y el responsable y el contador del proyecto | Los cuatro son dominio EVM o defectos que un revisor ve en treinta segundos; los dos baratos cierran el hueco de datos del diseño |
+| Métodos de medición | Los cuatro, con tabla de hitos | Es el hueco de dominio más grande y el que más demuestra haber entendido el método |
+| Fuera de alcance | Autenticación, informes, exportación, búsqueda en servidor, paginación, bloqueo optimista y auditoría | Mucho trabajo, poca señal, y ninguno prueba que se entienda el Valor Ganado |
+| Umbrales de tolerancia | Manda el backend, y devuelve en la respuesta los umbrales que usó | Si el criterio de color vive también en el navegador, las dos copias acaban discrepando |
+| Frontend | No tocarlo desde esta sesión; entregar una nota de impacto | Lo lleva otra sesión en paralelo, y dos manos sobre los mismos ficheros se pisan |
+| Datos de demostración | Reproducir los del prototipo | Sin datos que las usen, las cuatro reglas serían código sin demostración |
+
+Dos de esas decisiones tienen más fondo del que parece.
+
+**Que los umbrales los mande el backend** no es una preferencia de reparto: es lo que hace que la severidad
+signifique algo. El frontend ya tenía sus propios umbrales configurables, así que un CPI de 0,90 habría sido
+crítico para el servidor y solo un aviso para el cliente, en la misma pantalla. Devolver los umbrales usados
+junto al resultado permite que el cliente explique el color en lugar de repetir números.
+
+**Que el frontend no se tocara** obligó a escribir la nota de impacto de `docs/frontend-impact.md`, que resultó
+más útil que el propio cambio: nombra los dos sitios donde el código existente quedaría silenciosamente
+incorrecto, en particular la vista previa que reimplementa `EV = % x BAC` en el cliente y que deja de valer en
+cuanto la actividad usa cualquiera de las tres reglas nuevas.
+
 ## 6. Qué haría diferente
 
 > Juan: esta sección tiene que ser tuya y honesta. Te dejo los hechos del proyecto que dan pie a una reflexión,
@@ -328,6 +431,16 @@ Material de apoyo, cosas que efectivamente salieron mal o tarde:
 - **Los agentes se detienen y hay que saberlo.** Dos subagentes se pararon esperando tareas que habían lanzado
   en segundo plano, y hubo que reanudarlos. Otros dos murieron por el límite de gasto de la cuenta. Un flujo de
   trabajo con agentes necesita comprobar que cada uno terminó de verdad.
+- **El registro automático de prompts, que era una buena idea, se volvió un obstáculo.** El hook garantiza que
+  los prompts estén completos y en orden, que es justo lo que el enunciado pide, pero deja el fichero siempre
+  modificado y eso bloqueó varias integraciones. Habría bastado con escribir el registro en un fichero aparte y
+  componer el documento al final.
+- **Dos sesiones sobre el mismo repositorio sin acordar antes quién usa qué árbol de trabajo.** Costó dos
+  commits en la rama equivocada y varios rodeos para integrar.
+- **Verifiqué contra una base de datos compartida entre ramas.** Dos migraciones distintas sobre la misma base
+  dejaron Flyway inconsistente y me hicieron perseguir un fallo que no existía en el código.
+- **Delegué la semilla de datos sin darle al agente la referencia exacta.** Rellenó los huecos con nombres
+  inventados que parecían razonables, y el fallo solo se vio al contrastar con el diseño.
 - **Confié en el informe de un agente antes de repetir su prueba.** El caso del perfil de producción de la
   sección 3: el informe decía que funcionaba y era cierto solo en el orden en que él lo probó.
 
@@ -709,6 +822,57 @@ no tocar el dominio. El efecto era que su prueba unitaria afirmaba cosas distint
 que la de integración usaba fechas fijas que habrían fallado con el reloj de la máquina por detrás de ellas. Se
 inyectó un reloj por constructor, la prueba unitaria lo fija y la de integración calcula sus fechas desde el
 día de ejecución. Commit `Take the current date from an injected clock`.
+
+## 7e. Cierre del hueco con el prototipo: qué entregó cada agente
+
+Seis pull requests, del 13 al 18, más dos de interfaz. El dominio no se delegó en ningún caso: la severidad,
+las fórmulas de estimación y las reglas de medición se escribieron sin delegar, porque son lo que hay que
+poder explicar. Los adaptadores sí.
+
+| Agente y modelo | Qué se le pidió | Qué hubo que corregirle |
+| --- | --- | --- |
+| Agente de diseño, Opus 5 | Criticar el planteamiento de las cuatro decisiones de dominio antes de escribir código | Nada: enmendó dos errores conceptuales míos, descritos en el candidato F |
+| Subagente Opus 5, hitos ponderados | Tabla, dominio, derivación del porcentaje, reemplazo atómico y pruebas | Dejó la semilla sin hitos y el bloque de reconciliación pisando el porcentaje derivado |
+| Subagente Opus 5, listado e indicadores | Carga por lote, detalle de actividad, responsable y contador | Inventó tres nombres de responsable que no estaban en el diseño |
+
+Además de lo anterior, hubo que rehacer el historial de una rama porque un `git add -A` mezcló en un commit
+temas que no iban juntos, y corregir dos mensajes de commit a los que el intérprete de órdenes se había comido
+las tildes de dos apellidos. Nada de eso es grave, pero forma parte de lo que cuesta de verdad trabajar así.
+
+Balance de la fase, en la misma línea que el de la primera: **ninguna entrega de un agente se integró tal cual**.
+Todas necesitaron al menos una corrección, y en dos casos la corrección era de fondo, no de forma.
+
+## 7f. Incidentes de proceso, que también enseñan
+
+Estos no son fallos del producto sino de la manera de trabajar, y son los que más tiempo costaron.
+
+**Dos sesiones sobre el mismo repositorio.** Mientras esta sesión trabajaba en una rama, otra hizo `checkout` a
+`develop` en el mismo directorio de trabajo. Dos commits acabaron en la rama equivocada. El registro de
+referencias lo dejó claro y se arreglaron moviendo punteros, sin tocar ningún fichero. A partir de ahí, cada
+rama se trabajó en su propio árbol de trabajo. La regla que quedó: si dos manos tocan un repositorio a la vez,
+cada una necesita su árbol.
+
+**El registro de prompts bloqueando las integraciones.** El hook que añade cada prompt al final de este
+documento hace que el fichero tenga siempre cambios sin confirmar, y eso impedía traer `develop`. Se resolvió
+preservando las líneas añadidas, integrando, y reaplicando solo los prompts de Juan. En la primera reaplicación
+se duplicó una entrada por comparar textos que diferían en un detalle; se detectó comparando el contenido de
+cada bloque y no su fecha.
+
+**Probar dos ramas con migraciones distintas contra la misma base.** Una rama aplicó su migración a la base
+local y la otra traía una anterior, así que Flyway se negó a arrancar por un historial inconsistente. No era un
+fallo del código: las pruebas de integración, que levantan una base limpia por ejecución, siempre estuvieron en
+verde. Desde entonces cada rama verifica contra su propia base, y al terminar se recreó la de desarrollo.
+
+**Un `DROP DATABASE` que falló en silencio.** Al recrear la base para una comprobación, el borrado no se
+ejecutó porque quedaban conexiones abiertas, y el error estaba redirigido a la nada. La comprobación siguiente
+se hizo sobre datos viejos y dio un resultado que parecía un fallo del código. La causa se encontró mirando el
+historial de Flyway, que mostraba dos ejecuciones de la semilla donde debía haber una. Lección: al comprobar
+algo sobre una base recreada, comprobar primero que la base está realmente vacía.
+
+**Una observación que no pude confirmar, y lo digo.** Al medir la interfaz vi que la vista no reaccionaba al
+redimensionar la ventana. El arreglo que se hizo es correcto y el servicio pasó de no tener ninguna prueba a
+tener siete, pero no puedo descartar que el síntoma que observé fuera un artefacto de la emulación de ventana
+del navegador que usé. Queda dicho así en el pull request en lugar de presentarlo como reproducido.
 
 ## 8. Registro cronológico de prompts de Juan
 
@@ -2096,4 +2260,92 @@ Intentar nuevamente
 
 ```text
 si, sigue con lo que falta
+```
+
+### 2026-09-04 23:26 -05 - Claude Code
+
+```text
+continua con los métodos de medición
+```
+### 2026-09-04 23:36 -05 - Claude Code
+
+```text
+continua con los hitos ponderados y las demas piezas
+```
+### 2026-09-05 02:32 -05 - Claude Code
+
+```text
+Al estar en dashboard el tamaño del contenedor no es el mismo que cuando estoy en actividades por alguna razon, crea temblores en la UI y no hay fluidez
+```
+### 2026-09-05 02:36 -05 - Claude Code
+
+```text
+Alinea bien los contenedores para que esten con el tamaño correcto
+```
+### 2026-09-05 02:44 -05 - Claude Code
+
+```text
+arregla también lo del resize, elimina todos los procesos de ejecucion del front, hay algo que usa el puerto y no me permite seguir. Yo ejecuto el front manualmente
+```
+### 2026-09-05 02:48 -05 - Claude Code
+
+```text
+mergea los dos PRs
+```
+### 2026-09-05 02:56 -05 - Claude Code
+
+```text
+actualiza el AI_PROCESS con todo lo de estas últimas sesiones, resume mis decisiones, problemas y todo lo que pide el documento
+
+### 2026-09-05 16:23 -05 - Claude Code
+
+```text
+Necesito que analices el diseño contra lo construido. la alineacion de contenedores de graficas y numeros no esta perfectamente alineada. La animacion de hover a los numeros para descubrir entorpece el hacer click en el boton de copiar. El sub menu de ajustes no scrollea a la opcion seleccionada ni indica la seccion en vista. y cuando se clica algun item se devuelve al panel lo cual es un comportamiento erroneo. Agrega detalles a los graficos de barras para en hover saber que datos estamos viendo. La vista de actividades tiene un boton donde se ve el proyecto, ponle un icono de atras para saber que cambiaras de vista a proyectos o integra un sub menu para elegir el proyecto desde ese boton como un dropdown. Hay un boton que indica la fecha del corte, es clicable pero no hace nada, si es solamente informativo corrige la UI para que sea coherente con todo el sitio. Perfecciona los borones borrar y editar pues no van con el diseño original, puedes hacerlos aparecer en hover, tambien el elemento entero no es clicable, solo el titulo y es molesto. La UI mobile no es lo suficientemente robusta, hay errores por ejemplo el navbar no es fijo y queda al final del scroll. Alineaciones y comportamientos no son los mismos del prototipo
+```
+
+### 2026-09-05 16:42 -05 - Claude Code
+
+```text
+mergea el PR a develop
+```
+
+### 2026-09-06 20:17 -05 - Claude Code
+
+```text
+Evalua si el proyecto cumple con las caracteristicas de EVM Este video explica la Técnica de Gestión del Valor Ganado (EVM, por las siglas en inglés de Earned Value Management), un método fundamental en la gestión de proyectos para medir el desempeño y el progreso de un trabajo.
+
+Aquí tienes el resumen de los conceptos clave:
+
+¿Qué es la técnica EVM?
+El EVM es una herramienta que compara el trabajo que se había planificado con el trabajo que realmente se ha ejecutado en un momento dado. Su objetivo es decirte si el proyecto va por buen camino en cuanto a tiempos y presupuesto, o si se necesita hacer algún ajuste.
+
+Esta técnica se utiliza en la etapa de seguimiento y control del proyecto y unifica tres líneas base (alcance, costo y tiempo) en un marco matemático común. Para poder comparar estas distintas variables, el método convierte todo a una misma unidad: el dinero.
+
+Las 4 variables principales
+Para evaluar el estado del proyecto, el EVM utiliza cuatro métricas básicas de las cuales nacen todos los cálculos:
+
+1. BAC (Presupuesto a la Conclusión): Es el presupuesto total planificado para el proyecto. Es la suma de todos los valores presupuestados para el trabajo que se va a realizar.
+
+2. PV (Valor Planeado): Indica el valor del trabajo que se esperaba tener terminado en un momento específico del calendario.
+
+3. EV (Valor Ganado): Representa el trabajo que realmente se ha logrado ejecutar hasta ese momento, traducido a dinero (calculando el porcentaje completado sobre el presupuesto de esa tarea).
+
+4. AC (Costo Real): Es el gasto real y efectivo que la empresa ya ha desembolsado para realizar el trabajo hecho hasta la fecha (pago de horas, materiales, licencias, etc.).
+
+El video concluye mostrando cómo, al combinar y graficar estas variables (PV, EV y AC) a lo largo de los meses, un director de proyecto puede ver visualmente y de forma rápida si el proyecto está gastando más de lo previsto o si se está atrasando en el cronograma.
+
+(Puedes encontrar el video original aquí: https://www.youtube.com/watch?v=ZL9zWT7m84E)
+```
+
+### 2026-09-06 20:21 -05 - Claude Code
+
+```text
+@"/Users/juanbedoya/Downloads/Ingeniero de Desarrollo — Trycore Colombia (1) (1) (1).md"
+Revisa si este ejercicio se completo de forma exitosa o falta algo por implementar segun lo que nos piden en el documento
+```
+
+### 2026-09-06 20:26 -05 - Claude Code
+
+```text
+Implementa la gráfica por actividad, corrige el README y prepara la release
 ```

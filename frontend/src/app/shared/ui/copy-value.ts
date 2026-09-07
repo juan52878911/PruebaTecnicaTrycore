@@ -46,6 +46,12 @@ import { ToastService } from './toast.service';
     button:hover {
       background: rgba(255, 255, 255, 0.14);
     }
+    @media (hover: none) {
+      button {
+        opacity: 1;
+        transform: none;
+      }
+    }
     svg {
       width: 14px;
       height: 14px;

@@ -11,6 +11,7 @@ import { ChipOption } from '../../shared/ui/chip-group';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { PageHeader } from '../../shared/ui/page-header';
+import { RowTools } from '../../shared/ui/row-tools';
 import { IndexValue } from '../../shared/ui/index-value';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
@@ -37,6 +38,7 @@ const EMPTY_CELL = '—';
   // Entrada de vista del diseño: cada pantalla sube y aparece al montarse.
   host: { class: 'v-rise' },
   imports: [
+    RowTools,
     ChipButton,
     EmptyState,
     IndexValue,
@@ -135,8 +137,14 @@ const EMPTY_CELL = '—';
           <span role="columnheader">Estado</span>
         </div>
         @for (row of visibleRows(); track row.project.id) {
-          <div class="row" role="row">
-            <button type="button" class="name" role="cell" (click)="openActivities(row.project.id)">
+          <!--
+          La fila entera responde al puntero por comodidad; el camino accesible es el botón del
+          nombre, que recibe el foco y cuyo Enter sube hasta aquí como clic.
+          -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <div class="row clickable" role="row" (click)="openActivities(row.project.id)">
+            <!-- Sin manejador propio: su clic sube a la fila, y sigue siendo el foco de teclado. -->
+            <button type="button" class="name" role="cell">
               <span class="title">{{ row.project.name }}</span>
               <span class="meta">{{ row.meta }}</span>
             </button>
@@ -159,24 +167,11 @@ const EMPTY_CELL = '—';
             </span>
             <span class="actions" role="cell">
               <app-status-badge [label]="row.statusLabel" [tone]="row.statusTone" />
-              <span class="row-tools">
-                <button
-                  type="button"
-                  class="icon"
-                  [attr.aria-label]="'Editar ' + row.project.name"
-                  (click)="openEdit(row.project)"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  class="icon danger"
-                  [attr.aria-label]="'Borrar ' + row.project.name"
-                  (click)="confirmRemove(row.project)"
-                >
-                  Borrar
-                </button>
-              </span>
+              <app-row-tools
+                [name]="row.project.name"
+                (edit)="openEdit(row.project)"
+                (remove)="confirmRemove(row.project)"
+              />
             </span>
           </div>
         }
@@ -267,6 +262,9 @@ const EMPTY_CELL = '—';
       min-width: 900px;
       transition: background var(--motion-veil);
     }
+    .row.clickable {
+      cursor: pointer;
+    }
     .row:not(.head):hover {
       background: rgba(255, 255, 255, 0.045);
     }
@@ -302,38 +300,12 @@ const EMPTY_CELL = '—';
     .actions {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
       flex-wrap: wrap;
     }
     /* Las herramientas de fila aparecen al apuntar: el diseño deja la fila limpia. Siguen siendo
        alcanzables con el teclado gracias a focus-within. */
-    .row-tools {
-      display: flex;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity var(--motion-veil);
-    }
-    .row:hover .row-tools,
-    .row:focus-within .row-tools {
-      opacity: 1;
-    }
-    .icon {
-      border: 1px solid var(--border-control);
-      border-radius: var(--radius-pill);
-      background: var(--control);
-      color: var(--text-muted);
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 6px 12px;
-    }
-    .icon:hover {
-      background: var(--control-hover);
-      color: var(--text);
-    }
-    .icon.danger:hover {
-      color: var(--danger);
-      border-color: rgba(255, 138, 107, 0.4);
-    }
     .cards {
       list-style: none;
       margin: 0;
