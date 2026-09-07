@@ -362,6 +362,17 @@ fecha de corte futura o repetida, porcentajes fuera de rango, precisión mayor q
 no caben en la columna, almacenamiento del navegador bloqueado o con datos corruptos, y respuesta de error que
 no tiene forma de RFC 7807.
 
+## Diseño
+
+El tablero se diseñó antes de escribir el frontend, en una sesión de Claude Design. Los tres artefactos están en
+`docs/design/` y se abren directamente en el navegador:
+
+| Fichero | Qué contiene |
+| --- | --- |
+| `valora-design-system.dc.html` | Sistema de diseño Valora: color, tipografía, espaciado y componentes |
+| `valora-prototipo.dc.html` | Prototipo navegable del tablero |
+| `evm-dashboard-mockups.dc.html` | Mockups de cada vista en escritorio y en móvil, la referencia que siguió la implementación |
+
 ## Documento de proceso
 
 [AI_PROCESS.md](AI_PROCESS.md) recoge las herramientas de IA usadas, todos los prompts en orden cronológico y

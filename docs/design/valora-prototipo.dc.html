@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics=""><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"><style>body{margin:0;background:#08080A;font-family:Manrope,system-ui,sans-serif}a{color:#A98BFF}a:hover{color:#C6AAFF}@keyframes vFadeIn{from{opacity:0}to{opacity:1}}@keyframes vRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes vPop{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}@keyframes vSheet{from{transform:translateY(100%)}to{transform:none}}@keyframes vShimmer{0%{background-position:-320px 0}100%{background-position:320px 0}}@keyframes vFadeOut{from{opacity:1}to{opacity:0}}@keyframes vPopOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.985)}}@keyframes vSheetOut{from{transform:none}to{transform:translateY(100%)}}@keyframes vToastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}</style></helmet>
+
+<div style="background:#08080A;color:#fff;padding:40px 44px 64px;display:flex;flex-direction:column;gap:26px">
+
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-wrap:wrap">
+<div>
+<div style="font:600 12px Manrope;color:rgba(255,255,255,.4);letter-spacing:.14em;text-transform:uppercase">Prototipo navegable</div>
+<h1 style="margin:12px 0 0;font:800 40px/1 Manrope;letter-spacing:-.035em">Valora <span style="color:rgba(255,255,255,.32)">escritorio y móvil</span></h1>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end">
+<div style="font:500 13px/1.6 Manrope;color:rgba(255,255,255,.45);max-width:420px;text-align:right">Las dos pantallas navegan por separado. Haz clic en las pestañas, en una fila de actividad para abrir el detalle, y en <b style="color:#fff">+ Nueva actividad</b> para el formulario.</div>
+<div style="display:flex;gap:8px">
+<span onClick="{{ probarSinRed }}" style="font:600 12px Manrope;color:rgba(255,255,255,.6);background:#161618;border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:9px 15px;cursor:pointer;transition:background .18s ease" style-hover="background:#1E1E21">Simular sin conexión · escritorio</span>
+<span onClick="{{ probarSinRedM }}" style="font:600 12px Manrope;color:rgba(255,255,255,.6);background:#161618;border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:9px 15px;cursor:pointer;transition:background .18s ease" style-hover="background:#1E1E21">móvil</span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="flex:none;display:flex;flex-direction:column;gap:10px">
+<div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase">Escritorio · 1360</div>
+<div style="width:1360px;background:#0B0B0C;border:1px solid rgba(255,255,255,.08);border-radius:22px;overflow:hidden;position:relative">
+<div style="padding:22px 28px 32px;min-height:800px">
+
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:34px">
+<div style="position:relative;display:flex;align-items:center;gap:4px;background:#161618;border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:6px;margin-right:auto">
+<div style="position:absolute;top:6px;left:{{ navLeft }};width:{{ navWidth }};height:42px;background:#fff;border-radius:999px;opacity:{{ navOpacity }};transition:left .32s cubic-bezier(.4,0,.2,1),width .32s cubic-bezier(.4,0,.2,1),opacity .26s ease"></div>
+<span onClick="{{ dPanel }}" style="display:inline-flex;align-items:center;justify-content:center;width:92px;height:42px;font:600 13.5px Manrope;color:{{ dPanelColor }};border-radius:999px;position:relative;z-index:1;cursor:pointer;transition:color .26s ease">Panel</span>
+<span onClick="{{ dProy }}" style="display:inline-flex;align-items:center;justify-content:center;width:118px;height:42px;font:600 13.5px Manrope;color:{{ dProyColor }};border-radius:999px;position:relative;z-index:1;cursor:pointer;transition:color .26s ease">Proyectos</span>
+<span onClick="{{ dAct }}" style="display:inline-flex;align-items:center;justify-content:center;width:132px;height:42px;font:600 13.5px Manrope;color:{{ dActColor }};border-radius:999px;position:relative;z-index:1;cursor:pointer;transition:color .26s ease">Actividades</span>
+<span onClick="{{ dAju }}" style="display:inline-flex;align-items:center;justify-content:center;width:96px;height:42px;font:600 13.5px Manrope;color:{{ dAjuColor }};border-radius:999px;position:relative;z-index:1;cursor:pointer;transition:color .26s ease">Ajustes</span>
+</div>
+<div onClick="{{ dPerfil }}" style="display:flex;align-items:center;gap:12px;background:{{ perfilBg }};border:1px solid {{ perfilBorde }};border-radius:999px;padding:8px 16px 8px 8px;cursor:pointer;box-shadow:{{ perfilGlow }};transition:background .26s ease,border-color .26s ease,box-shadow .26s ease" style-hover="background:#1E1E21">
+<div style="width:34px;height:34px;border-radius:999px;background:#2A2130;display:flex;align-items:center;justify-content:center;font:700 12px Manrope;color:#C9AEFF">AR</div>
+<div style="display:flex;flex-direction:column;gap:1px"><span style="font:500 11px Manrope;color:rgba(255,255,255,.45)">Administradora</span><span style="font:700 13px Manrope">Alicia Ramos</span></div>
+</div>
+<div onClick="{{ openModal }}" style="width:46px;height:46px;border-radius:999px;background:#161618;border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s ease" style-hover="background:#1E1E21"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.7)"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg></div>
+</div>
+
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-bottom:26px">
+<h1 style="margin:-.14em 0 -.16em;min-width:0;flex:1;font:800 {{ dTitleSize }}/1.3 Manrope;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ dTitle }} <span style="color:rgba(255,255,255,.32)">{{ dSub }}</span></h1>
+<div style="display:flex;gap:10px;flex:none">
+<sc-if value="{{ dShowProyecto }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative">
+<span onClick="{{ toggleDMenu }}" style="font:600 13px Manrope;color:rgba(255,255,255,.72);background:{{ dMenuBg }};border:1px solid {{ dMenuBorde }};border-radius:999px;padding:11px 18px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:background .18s ease,border-color .18s ease" style-hover="background:#1E1E21;border-color:rgba(255,255,255,.14)">{{ dsel.nombre }}<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:rgba(255,255,255,.5);flex:none;transform:rotate({{ dMenuRot }});transition:transform .26s cubic-bezier(.4,0,.2,1)"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg></span>
+<sc-if value="{{ dMenu }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:52px;left:0;width:340px;z-index:8;background:#151517;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px;box-shadow:0 20px 50px rgba(0,0,0,.55);animation:vPop .2s cubic-bezier(.2,.8,.3,1) both">
+<sc-for list="{{ dOpciones }}" as="o" hint-placeholder-count="4">
+<div onClick="{{ o.elegir }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;background:{{ o.bg }};cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.05)">
+<div style="display:flex;align-items:center;gap:12px"><span style="width:16px;height:16px;border-radius:99px;border:{{ o.radio }};flex:none"></span><div><div style="font:700 13.5px Manrope">{{ o.nombre }}</div><div style="font:500 11px Manrope;color:rgba(255,255,255,.38);margin-top:2px">{{ o.meta }}</div></div></div>
+<div style="display:flex;gap:5px"><span style="font:700 11.5px Manrope;color:{{ o.cpiColor }};background:{{ o.cpiBg }};border-radius:8px;padding:4px 8px">{{ o.cpi }}</span><span style="font:700 11.5px Manrope;color:{{ o.spiColor }};background:{{ o.spiBg }};border-radius:8px;padding:4px 8px">{{ o.spi }}</span></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-for list="{{ dChips }}" as="c" hint-placeholder-count="1">
+<span style="font:600 13px Manrope;color:rgba(255,255,255,.72);background:#161618;border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:11px 18px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:background .18s ease,border-color .18s ease" style-hover="background:#1E1E21;border-color:rgba(255,255,255,.14)">{{ c.label }}<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:rgba(255,255,255,.5);flex:none"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg></span>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ dLoading }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:1fr 1fr 1.72fr;gap:18px;animation:vFadeIn .16s ease both">
+<div style="display:grid;gap:18px"><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:46%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:70%;height:34px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:38%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:46%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:70%;height:34px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:38%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:46%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:70%;height:34px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:38%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div></div>
+<div style="display:grid;gap:18px"><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:52%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:40%;height:40px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:100%;height:6px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:80%;height:12px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:52%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:40%;height:40px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:100%;height:6px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:80%;height:12px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:60%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:45%;height:24px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div></div>
+<div style="display:grid;gap:18px"><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:26px 28px;display:flex;flex-direction:column;gap:16px"><div style="width:34%;height:13px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:46%;height:38px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:100%;height:200px;border-radius:14px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px"><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:50%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:74%;height:22px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:50%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:74%;height:22px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px"><div style="width:50%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:74%;height:22px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div></div></div>
+</div>
+</sc-if>
+<sc-if value="{{ dIsPanel }}" hint-placeholder-val="{{ true }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="display:grid;grid-template-columns:1fr 1fr 1.72fr;gap:18px">
+<div style="display:grid;gap:18px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease" style-hover="border-color:rgba(255,255,255,.16)">
+<div style="display:flex;justify-content:space-between"><span style="font:600 15px Manrope;color:rgba(255,255,255,.85)">{{ tPV }}</span><span style="font:600 11px Manrope;color:rgba(255,255,255,.35);letter-spacing:.08em;opacity:{{ badgeOp }}">PV</span></div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:22px;flex-wrap:wrap"><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 40px/1.25 Manrope;letter-spacing:-.04em;margin:-.12em 0;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_pv }}
+<span onClick="{{ copia_dsel_pv }}" title="Copiar valor" style="align-self:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span><span style="font:600 17px Manrope;color:rgba(255,255,255,.45)">USD</span></div>
+<div style="font:500 12.5px Manrope;color:rgba(255,255,255,.4);margin-top:8px">{{ dsel.pctBac }} del {{ gBAC }}</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease" style-hover="border-color:rgba(255,255,255,.16)">
+<div style="display:flex;justify-content:space-between"><span style="font:600 15px Manrope;color:rgba(255,255,255,.85)">{{ tEV }}</span><span style="font:600 11px Manrope;color:rgba(255,255,255,.35);letter-spacing:.08em;opacity:{{ badgeOp }}">EV</span></div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:22px;flex-wrap:wrap"><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 40px/1.25 Manrope;letter-spacing:-.04em;color:#C6AAFF;margin:-.12em 0;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_ev }}
+<span onClick="{{ copia_dsel_ev }}" title="Copiar valor" style="align-self:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span><span style="font:600 17px Manrope;color:rgba(255,255,255,.45)">USD</span></div>
+<div style="font:500 12.5px Manrope;color:rgba(255,255,255,.4);margin-top:8px">{{ dsel.pctFisico }} de avance físico</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease" style-hover="border-color:rgba(255,255,255,.16)">
+<div style="display:flex;justify-content:space-between"><span style="font:600 15px Manrope;color:rgba(255,255,255,.85)">{{ tAC }}</span><span style="font:600 11px Manrope;color:rgba(255,255,255,.35);letter-spacing:.08em;opacity:{{ badgeOp }}">AC</span></div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:22px;flex-wrap:wrap"><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 40px/1.25 Manrope;letter-spacing:-.04em;margin:-.12em 0;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_ac }}
+<span onClick="{{ copia_dsel_ac }}" title="Copiar valor" style="align-self:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span><span style="font:600 17px Manrope;color:rgba(255,255,255,.45)">USD</span></div>
+<div style="font:500 12.5px Manrope;color:{{ dsel.cvColor }};margin-top:8px">{{ dsel.cvTexto }} del {{ gEV }}</div>
+</div>
+</div>
+<div style="display:grid;gap:18px">
+<div style="background:linear-gradient(150deg,#1C1418,#151517 62%);border:1px solid rgba(255,138,107,.22);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:16px;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease" style-hover="border-color:rgba(255,138,107,.4)">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 15px Manrope;color:rgba(255,255,255,.85)">{{ tCPI }}</span><span style="font:600 11px Manrope;color:rgba(255,255,255,.35);letter-spacing:.08em;opacity:{{ badgeOp }}">CPI</span></div>
+<span style="font:700 48px/1 Manrope;letter-spacing:-.045em;color:{{ dsel.cpiColor }}">{{ dsel.cpi }}</span>
+<div style="height:6px;border-radius:999px;background:rgba(255,255,255,.08);position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ dsel.cpiW }};background:{{ dsel.cpiColor }};border-radius:999px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div><div style="position:absolute;left:66%;top:-4px;width:2px;height:14px;background:rgba(255,255,255,.5)"></div></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:99px;background:{{ dsel.cpiColor }}"></span><span style="font:600 13px Manrope;color:rgba(255,255,255,.72)">{{ dsel.cpiNota }}</span></div>
+</div>
+<div style="background:linear-gradient(150deg,#1A1A14,#151517 62%);border:1px solid rgba(231,224,138,.2);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:16px;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease" style-hover="border-color:rgba(231,224,138,.4)">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 15px Manrope;color:rgba(255,255,255,.85)">{{ tSPI }}</span><span style="font:600 11px Manrope;color:rgba(255,255,255,.35);letter-spacing:.08em;opacity:{{ badgeOp }}">SPI</span></div>
+<span style="font:700 48px/1 Manrope;letter-spacing:-.045em;color:{{ dsel.spiColor }}">{{ dsel.spi }}</span>
+<div style="height:6px;border-radius:999px;background:rgba(255,255,255,.08);position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ dsel.spiW }};background:{{ dsel.spiColor }};border-radius:999px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div><div style="position:absolute;left:66%;top:-4px;width:2px;height:14px;background:rgba(255,255,255,.5)"></div></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:99px;background:{{ dsel.spiColor }}"></span><span style="font:600 13px Manrope;color:rgba(255,255,255,.72)">{{ dsel.spiNota }}</span></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px">
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lCV }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 26px/1.25 Manrope;letter-spacing:-.03em;color:{{ dsel.cvColor }};margin-top:5px;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_cv }}
+<span onClick="{{ copia_dsel_cv }}" title="Copiar valor" style="align-self:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lSV }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 26px/1.25 Manrope;letter-spacing:-.03em;color:{{ dsel.svColor }};margin-top:5px;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_sv }}
+<span onClick="{{ copia_dsel_sv }}" title="Copiar valor" style="align-self:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+</div>
+</div>
+<div style="display:grid;gap:18px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:26px 28px 20px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap">
+<div style="min-width:0"><div style="font:600 15px Manrope;color:rgba(255,255,255,.85)">Curva S del proyecto</div><div style="display:flex;align-items:baseline;gap:10px;margin-top:14px;flex-wrap:wrap"><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 44px/1.25 Manrope;letter-spacing:-.04em;margin:-.12em 0;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_ev }}
+<span onClick="{{ copia_dsel_ev }}" title="Copiar valor" style="align-self:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span><span style="font:600 14px Manrope;color:rgba(255,255,255,.45);white-space:nowrap">{{ gEV }} acumulado</span></div></div>
+<div style="display:flex;gap:20px;padding-top:6px;flex-wrap:wrap;flex:none">
+<div style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:3px;border-radius:9px;background:#61616D"></span><span style="font:600 12px Manrope;color:rgba(255,255,255,.55)">{{ gPV }}</span></div>
+<div style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:3px;border-radius:9px;background:#8B6FE0"></span><span style="font:600 12px Manrope;color:rgba(255,255,255,.55)">{{ gEV }}</span></div>
+<div style="display:flex;align-items:center;gap:7px"><span style="width:16px;height:3px;border-radius:9px;background:#C4BC72"></span><span style="font:600 12px Manrope;color:rgba(255,255,255,.55)">{{ gAC }}</span></div>
+</div>
+</div>
+<sc-if value="{{ dsel.sinCurva }}" hint-placeholder-val="{{ false }}">
+<div style="background:#1B1B1E;border:1px dashed rgba(255,255,255,.12);border-radius:18px;padding:56px 30px;margin-top:18px;text-align:center">
+<div style="width:52px;height:52px;border-radius:16px;background:#151517;margin:0 auto 18px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:rgba(255,255,255,.26)"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"></path></svg></div>
+<div style="font:700 16px Manrope">Sin curva S todavía</div>
+<div style="font:500 13px/1.6 Manrope;color:rgba(255,255,255,.45);margin-top:9px;max-width:340px;margin-left:auto;margin-right:auto">Este proyecto no tiene actividades registradas, así que no hay avance planificado ni ganado que graficar.</div>
+</div>
+</sc-if>
+<sc-if value="{{ dsel.tieneCurva }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;margin-top:14px">
+<div style="position:absolute;left:60%;top:20%;z-index:2;background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 13px"><div style="font:600 10px Manrope;color:rgba(255,255,255,.6);letter-spacing:.07em">JUL · {{ gEV }} ACUMULADO</div><div style="font:700 16px Manrope;letter-spacing:-.02em;margin-top:4px;white-space:nowrap">{{ dsel.evCorto }}</div><div style="display:flex;gap:10px;margin-top:5px"><span style="font:600 11px Manrope;color:{{ dsel.cpiColor }}">{{ gCPI }} {{ dsel.cpi }}</span><span style="font:600 11px Manrope;color:{{ dsel.spiColor }}">{{ gSPI }} {{ dsel.spi }}</span></div></div>
+<svg viewBox="0 0 600 210" style="width:100%;height:236px;display:block" preserveAspectRatio="none">
+<defs><linearGradient id="pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B6FE0" stop-opacity=".30"></stop><stop offset="1" stop-color="#8B6FE0" stop-opacity=".02"></stop></linearGradient></defs>
+<g stroke="rgba(255,255,255,.06)" stroke-width="1"><line x1="0" y1="30" x2="600" y2="30"></line><line x1="0" y1="80" x2="600" y2="80"></line><line x1="0" y1="130" x2="600" y2="130"></line><line x1="0" y1="180" x2="600" y2="180"></line></g>
+<path d="{{ dsel.evFill }}" fill="url(#pf)"></path>
+<path d="M0 192.8 C60 188 90 172 150 164 C210 156 240 124 300 110 C360 96 390 70 450 56 C510 42 540 28 600 20" fill="none" stroke="#61616D" stroke-width="2.2" stroke-dasharray="5 5" stroke-linecap="round"></path>
+<path d="M0 194.6 C60 190 90 178 150 167.6 C210 157 240 130 300 115.4 C360 101 390 76 450 63.2 C510 50 540 34 600 25.4" fill="none" stroke="#C4BC72" stroke-width="2.4" stroke-linecap="round"></path>
+<path d="{{ dsel.evPath }}" fill="none" stroke="#8B6FE0" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="600" cy="{{ dsel.evY }}" r="5" fill="#8B6FE0" stroke="#0B0B0C" stroke-width="3"></circle>
+</svg>
+</div>
+<div style="display:flex;justify-content:space-between;font:600 12px Manrope;color:rgba(255,255,255,.4);padding:6px 0 4px"><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Sep</span></div>
+</sc-if>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 24px"><div style="font:600 12px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lEAC }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 27px/1.25 Manrope;letter-spacing:-.03em;margin-top:6px;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_eac }}
+<span onClick="{{ copia_dsel_eac }}" title="Copiar valor" style="align-self:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 24px"><div style="font:600 12px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lVAC }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 27px/1.25 Manrope;letter-spacing:-.03em;margin-top:6px;color:{{ dsel.vacColor }};white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_vac }}
+<span onClick="{{ copia_dsel_vac }}" title="Copiar valor" style="align-self:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 24px"><div style="font:600 12px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lBAC }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 27px/1.25 Manrope;letter-spacing:-.03em;margin-top:6px;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_bac }}
+<span onClick="{{ copia_dsel_bac }}" title="Copiar valor" style="align-self:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dIsProy }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:8px 14px 14px">
+<div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr .8fr .8fr 1.2fr;gap:14px;font:600 12px Manrope;color:rgba(255,255,255,.36);padding:18px 12px 14px;border-bottom:1px solid rgba(255,255,255,.06)"><span>Proyecto</span><span>{{ sBAC }}</span><span>{{ sEV }}</span><span>{{ sAC }}</span><span>{{ sCPI }}</span><span>{{ sSPI }}</span><span>Estado</span></div>
+<sc-for list="{{ proyectos }}" as="p" hint-placeholder-count="4">
+<div onClick="{{ p.abrir }}" style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr .8fr .8fr 1.2fr;gap:14px;align-items:center;padding:18px 12px;border-radius:16px;cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.045)">
+<div><div style="font:700 14.5px Manrope">{{ p.nombre }}</div><div style="font:500 11.5px Manrope;color:rgba(255,255,255,.36);margin-top:3px">{{ p.meta }}</div></div>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.78)">{{ p.bac }}</span>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.78)">{{ p.ev }}</span>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.78)">{{ p.ac }}</span>
+<span style="font:700 14px Manrope;color:{{ p.cpiColor }}">{{ p.cpi }}</span>
+<span style="font:700 14px Manrope;color:{{ p.spiColor }}">{{ p.spi }}</span>
+<span style="font:600 12px Manrope;color:{{ p.estadoColor }};background:{{ p.estadoBg }};border-radius:999px;padding:6px 12px;justify-self:start">{{ p.estado }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dIsAct }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:18px 20px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lPV }} CONSOLIDADO</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 24px/1.25 Manrope;letter-spacing:-.03em;margin-top:8px;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_pv }}
+<span onClick="{{ copia_dsel_pv }}" title="Copiar valor" style="align-self:center;width:20px;height:20px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:18px 20px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lEV }} CONSOLIDADO</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 24px/1.25 Manrope;letter-spacing:-.03em;margin-top:8px;color:#C6AAFF;white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_ev }}
+<span onClick="{{ copia_dsel_ev }}" title="Copiar valor" style="align-self:center;width:20px;height:20px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:18px 20px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lCV }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 24px/1.25 Manrope;letter-spacing:-.03em;margin-top:8px;color:{{ dsel.cvColor }};white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_cv }}
+<span onClick="{{ copia_dsel_cv }}" title="Copiar valor" style="align-self:center;width:20px;height:20px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:18px 20px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lSV }}</div><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 24px/1.25 Manrope;letter-spacing:-.03em;margin-top:8px;color:{{ dsel.svColor }};white-space:nowrap" style-hover="--tip:1">
+{{ roll_dsel_sv }}
+<span onClick="{{ copia_dsel_sv }}" title="Copiar valor" style="align-self:center;width:20px;height:20px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:8px 14px 14px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 12px 14px;border-bottom:1px solid rgba(255,255,255,.06)">
+<span style="font:600 15px Manrope;color:rgba(255,255,255,.85)">{{ dsel.meta }}</span>
+<span onClick="{{ openModal }}" style="font:700 13px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:11px 20px;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease" style-hover="background:rgba(255,255,255,.88)">+ Nueva actividad</span>
+</div>
+<div style="display:grid;grid-template-columns:2.3fr .85fr 1.6fr .95fr .78fr .78fr 1.25fr;gap:14px;font:600 11.5px Manrope;color:rgba(255,255,255,.36);padding:16px 12px 14px"><span>Actividad</span><span>{{ sBAC }}</span><span>Avance</span><span>{{ sAC }}</span><span>{{ sCPI }}</span><span>{{ sSPI }}</span><span>Estado</span></div>
+<sc-for list="{{ actividades }}" as="a" hint-placeholder-count="4">
+<div onClick="{{ a.abrir }}" style="display:grid;grid-template-columns:2.3fr .85fr 1.6fr .95fr .78fr .78fr 1.25fr;gap:14px;align-items:center;padding:15px 12px;border-radius:16px;cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.045)">
+<div style="display:flex;align-items:center;gap:13px"><span style="width:4px;height:36px;border-radius:9px;background:{{ a.rail }};flex:none"></span><div><div style="font:700 14.5px Manrope">{{ a.nombre }}</div><div style="font:500 11.5px Manrope;color:rgba(255,255,255,.36);margin-top:2px">{{ a.fechas }}</div></div></div>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums">{{ a.bac }}</span>
+<div><div style="display:flex;justify-content:space-between;font:600 11px Manrope;color:rgba(255,255,255,.4);margin-bottom:6px"><span>plan {{ a.plan }}%</span><span style="color:#C6AAFF">real {{ a.real }}%</span></div><div style="height:8px;border-radius:9px;background:rgba(255,255,255,.07);position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ a.planW }};background:#61616D;border-radius:9px"></div><div style="position:absolute;left:0;top:2px;bottom:2px;width:{{ a.realW }};background:#8B6FE0;border-radius:9px"></div></div></div>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums">{{ a.ac }}</span>
+<span style="font:700 14px Manrope;color:{{ a.cpiColor }};background:{{ a.cpiBg }};border-radius:10px;padding:7px 11px;justify-self:start">{{ a.cpi }}</span>
+<span style="font:700 14px Manrope;color:{{ a.spiColor }};background:{{ a.spiBg }};border-radius:10px;padding:7px 11px;justify-self:start">{{ a.spi }}</span>
+<span style="font:600 11.5px Manrope;color:{{ a.estadoColor }};background:{{ a.estadoBg }};border-radius:999px;padding:6px 11px;justify-self:start;white-space:nowrap">{{ a.estado }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dIsDet }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="display:flex;align-items:center;gap:14px;margin:-8px 0 20px">
+<span onClick="{{ dAct }}" style="width:38px;height:38px;border-radius:999px;background:#161618;border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:background .18s ease" style-hover="background:#1E1E21"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:rgba(255,255,255,.7)"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></span>
+<span style="font:600 13px Manrope;color:rgba(255,255,255,.42)">Proyectos · {{ dsel.nombre }} · Actividades</span>
+<div style="margin-left:auto;display:flex;gap:10px">
+<span style="font:600 13px Manrope;color:{{ det.estadoColor }};background:{{ det.estadoBg }};border-radius:999px;padding:11px 18px">{{ det.estado }}</span>
+<span onClick="{{ avisoAvance }}" style="font:600 13px Manrope;color:rgba(255,255,255,.72);background:#161618;border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:11px 18px;cursor:pointer;transition:background .18s ease" style-hover="background:#1E1E21">Registrar avance</span>
+<span onClick="{{ openModal }}" style="font:700 13px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:11px 20px;cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.88)">Editar actividad</span>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px 26px">
+<div style="font:600 14.5px Manrope;color:rgba(255,255,255,.85);margin-bottom:18px">Datos registrados</div>
+<div style="display:flex;flex-direction:column;gap:13px">
+<div style="display:flex;justify-content:space-between"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">{{ tBAC }}</span><span style="font:700 13.5px Manrope">{{ det.bac }}</span></div>
+<div style="display:flex;justify-content:space-between"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">% avance planificado</span><span style="font:700 13.5px Manrope">{{ det.plan }}%</span></div>
+<div style="display:flex;justify-content:space-between"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">% avance real</span><span style="font:700 13.5px Manrope">{{ det.real }}%</span></div>
+<div style="display:flex;justify-content:space-between"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">{{ tAC }}</span><span style="font:700 13.5px Manrope">{{ det.ac }}</span></div>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px 26px">
+<div style="font:600 14.5px Manrope;color:rgba(255,255,255,.85);margin-bottom:18px">Interpretación</div>
+<div style="font:500 13px/1.6 Manrope;color:rgba(255,255,255,.6)">{{ det.texto }}</div>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px 26px">
+<div style="font:600 14.5px Manrope;color:rgba(255,255,255,.85);margin-bottom:18px">Indicadores calculados</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px">
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lPV }}</div><div style="font:700 20px Manrope;letter-spacing:-.03em;margin-top:8px">{{ det.pv }}</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lEV }}</div><div style="font:700 20px Manrope;letter-spacing:-.03em;margin-top:8px;color:#C6AAFF">{{ det.ev }}</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lCV }}</div><div style="font:700 20px Manrope;letter-spacing:-.03em;margin-top:8px;color:{{ det.cvColor }}">{{ det.cv }}</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lSV }}</div><div style="font:700 20px Manrope;letter-spacing:-.03em;margin-top:8px;color:{{ det.svColor }}">{{ det.sv }}</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lEAC }}</div><div style="font:700 20px Manrope;letter-spacing:-.03em;margin-top:8px">{{ det.eac }}</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">{{ lVAC }}</div><div style="font:700 20px Manrope;letter-spacing:-.03em;margin-top:8px;color:{{ det.vacColor }}">{{ det.vac }}</div></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dIsPerfil }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="display:grid;grid-template-columns:1fr 1.3fr;gap:16px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:28px 30px">
+<div style="display:flex;align-items:center;gap:18px">
+<div style="width:76px;height:76px;border-radius:999px;background:#2A2130;display:flex;align-items:center;justify-content:center;font:700 26px Manrope;color:#C9AEFF;flex:none">AR</div>
+<div><div style="font:800 24px Manrope;letter-spacing:-.03em">Alicia Ramos</div><div style="font:600 13px Manrope;color:rgba(255,255,255,.45);margin-top:5px">Administradora del sistema</div></div>
+</div>
+<div style="margin-top:24px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Correo</span><span style="font:700 13.5px Manrope">a.ramos@valora.app</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Área</span><span style="font:700 13.5px Manrope">Dirección de Proyectos</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Teléfono</span><span style="font:700 13.5px Manrope">+57 601 555 0142</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Usuario</span><span style="font:700 13.5px Manrope">admin</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Alta</span><span style="font:700 13.5px Manrope">12 ene 2026</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px 26px">
+<div style="font:600 15px Manrope;color:rgba(255,255,255,.85);margin-bottom:14px">Acceso</div>
+<div style="display:flex;gap:12px;align-items:flex-start"><span style="width:7px;height:7px;border-radius:99px;background:#8B6FE0;margin-top:6px;flex:none"></span><div style="font:500 13px/1.6 Manrope;color:rgba(255,255,255,.6);max-width:520px">La aplicación funciona con un único perfil de administrador. No hay inicio de sesión, registro ni roles: estos datos son fijos y solo se editan en la configuración del despliegue.</div></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px 26px">
+<div style="font:600 15px Manrope;color:rgba(255,255,255,.85);margin-bottom:18px">Preferencias</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">MONEDA</div><div style="font:700 15px Manrope;margin-top:7px">USD — Dólar</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">ZONA HORARIA</div><div style="font:700 15px Manrope;margin-top:7px">GMT−5 · Bogotá</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">FORMATO DE FECHA</div><div style="font:700 15px Manrope;margin-top:7px">DD MMM AAAA</div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">IDIOMA</div><div style="font:700 15px Manrope;margin-top:7px">Español</div></div>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:24px 26px">
+<div style="font:600 15px Manrope;color:rgba(255,255,255,.85);margin-bottom:16px">Alcance</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">PROYECTOS</div><div style="font:700 24px Manrope;letter-spacing:-.03em;margin-top:7px">4</div></div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">ACTIVIDADES</div><div style="font:700 24px Manrope;letter-spacing:-.03em;margin-top:7px">49</div></div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.07em">ÚLTIMO CORTE</div><div style="font:700 24px Manrope;letter-spacing:-.03em;margin-top:7px">31 ago</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dIsAju }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="display:grid;grid-template-columns:210px 1fr;gap:28px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<span style="font:700 13.5px Manrope;color:#fff;background:#1B1B1E;border-radius:12px;padding:12px 16px">Cálculo EVM</span>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.5);padding:12px 16px">Proyecto</span>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.5);padding:12px 16px">Equipo y permisos</span>
+<span style="font:600 13.5px Manrope;color:rgba(255,255,255,.5);padding:12px 16px">Alertas</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:24px 26px">
+<div style="font:700 16px Manrope;margin-bottom:4px">Método de medición del avance</div>
+<div style="font:500 12.5px Manrope;color:rgba(255,255,255,.42);margin-bottom:18px">Define cómo se calcula el EV de cada actividad.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<sc-for list="{{ metodos }}" as="m" hint-placeholder-count="4">
+<span onClick="{{ m.pick }}" style="font:600 13px Manrope;color:{{ m.color }};background:{{ m.bg }};border-radius:999px;padding:11px 18px;cursor:pointer;transition:background .18s ease,color .18s ease">{{ m.label }}</span>
+</sc-for>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:24px 26px">
+<div style="font:700 16px Manrope;margin-bottom:4px">Nombres de los indicadores</div>
+<div style="font:500 12.5px Manrope;color:rgba(255,255,255,.42);margin-bottom:18px">Cómo se rotulan los indicadores en tablas, tarjetas y formularios.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<span onClick="{{ nomSiglas }}" style="font:600 13px Manrope;color:{{ nsColor }};background:{{ nsBg }};border-radius:999px;padding:11px 18px;cursor:pointer;transition:background .18s ease,color .18s ease">Siglas · CPI, SPI</span>
+<span onClick="{{ nomClaro }}" style="font:600 13px Manrope;color:{{ ncColor }};background:{{ ncBg }};border-radius:999px;padding:11px 18px;cursor:pointer;transition:background .18s ease,color .18s ease">Texto claro · Eficiencia en costo</span>
+</div>
+<div style="display:flex;gap:11px;align-items:flex-start;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)"><span style="width:7px;height:7px;border-radius:99px;background:#8B6FE0;margin-top:5px;flex:none"></span><div style="font:500 12.5px/1.55 Manrope;color:rgba(255,255,255,.55)">{{ nomNota }}</div></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:22px 26px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font:700 14.5px Manrope">Recalcular indicadores automáticamente</div><div style="font:500 12px Manrope;color:rgba(255,255,255,.4);margin-top:3px">Al registrar avance o costo</div></div><div onClick="{{ toggleAuto }}" style="width:46px;height:26px;border-radius:99px;background:{{ autoBg }};position:relative;flex:none;cursor:pointer;transition:background .2s ease"><span style="position:absolute;top:3px;left:{{ autoLeft }};width:20px;height:20px;border-radius:99px;background:{{ autoKnob }};transition:left .2s ease"></span></div></div>
+<div style="height:1px;background:rgba(255,255,255,.06)"></div>
+<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font:700 14.5px Manrope">Mostrar interpretación en texto</div><div style="font:500 12px Manrope;color:rgba(255,255,255,.4);margin-top:3px">Junto a cada CPI/SPI</div></div><div onClick="{{ toggleTexto }}" style="width:46px;height:26px;border-radius:99px;background:{{ textoBg }};position:relative;flex:none;cursor:pointer;transition:background .2s ease"><span style="position:absolute;top:3px;left:{{ textoLeft }};width:20px;height:20px;border-radius:99px;background:{{ textoKnob }};transition:left .2s ease"></span></div></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ hasToasts }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;right:26px;bottom:26px;z-index:9;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+<sc-for list="{{ toasts }}" as="t" hint-placeholder-count="1">
+<div style="min-width:300px;max-width:380px;background:#1B1B1E;border:1px solid {{ t.borde }};border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 14px 34px rgba(0,0,0,.5);animation:vToastIn .24s cubic-bezier(.2,.8,.3,1) both">
+<span style="width:8px;height:8px;border-radius:99px;background:{{ t.color }};margin-top:5px;flex:none"></span>
+<div style="flex:1"><div style="font:700 13px Manrope">{{ t.titulo }}</div><div style="font:500 12px/1.5 Manrope;color:rgba(255,255,255,.55);margin-top:3px">{{ t.texto }}</div></div>
+<span onClick="{{ t.cerrar }}" style="font:400 15px Manrope;color:rgba(255,255,255,.35);cursor:pointer;line-height:1">×</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ avance }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(4,4,5,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:7;animation:{{ avanceVeil }}">
+<div style="width:460px;background:#151517;border:1px solid rgba(255,255,255,.09);border-radius:24px;padding:26px 28px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:{{ avanceAnim }}">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font:800 20px Manrope;letter-spacing:-.02em">Registrar avance</span><span onClick="{{ cerrarAvance }}" style="font:400 20px Manrope;color:rgba(255,255,255,.45);cursor:pointer;line-height:1">×</span></div>
+<div style="font:500 12.5px Manrope;color:rgba(255,255,255,.42);margin-bottom:22px">{{ det.nombre }} · {{ dsel.nombre }}</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font:600 12px Manrope;color:rgba(255,255,255,.5)">% de avance real</span><span style="font:700 15px Manrope;color:#C6AAFF">{{ avPct }}%</span></div>
+<div style="display:flex;align-items:center;gap:14px">
+<span onClick="{{ avMenos }}" style="width:38px;height:38px;border-radius:12px;background:#1B1B1E;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font:600 18px Manrope;color:rgba(255,255,255,.7);cursor:pointer;flex:none;transition:background .16s ease" style-hover="background:#26262B">−</span>
+<div style="flex:1;height:10px;border-radius:9px;background:rgba(255,255,255,.07);position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ avPlanW }};background:#61616D;border-radius:9px"></div><div style="position:absolute;left:0;top:2px;bottom:2px;width:{{ avRealW }};background:#8B6FE0;border-radius:9px;transition:width .24s cubic-bezier(.4,0,.2,1)"></div></div>
+<span onClick="{{ avMas }}" style="width:38px;height:38px;border-radius:12px;background:#1B1B1E;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font:600 18px Manrope;color:rgba(255,255,255,.7);cursor:pointer;flex:none;transition:background .16s ease" style-hover="background:#26262B">+</span>
+</div>
+<div style="font:500 11.5px Manrope;color:rgba(255,255,255,.38);margin-top:9px">Planificado a la fecha de corte: {{ det.plan }}%</div>
+</div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">Costo real acumulado · {{ gAC }}</div><div style="background:#1B1B1E;border:1px solid #8B6FE0;border-radius:12px;padding:13px 15px;font:600 13.5px Manrope;display:flex;justify-content:space-between">{{ det.ac }}<span style="color:rgba(255,255,255,.35)">USD</span></div></div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">Fecha de corte</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 15px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">31 ago 2026<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.4);flex:none"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg></div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px">
+<div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.06em;margin-bottom:12px">INDICADORES RESULTANTES</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+<div><div style="font:600 11px Manrope;color:rgba(255,255,255,.38)">{{ gEV }}</div><div style="font:700 15px Manrope;margin-top:3px">{{ avEV }}</div></div>
+<div><div style="font:600 11px Manrope;color:rgba(255,255,255,.38)">{{ gCPI }}</div><div style="font:700 15px Manrope;margin-top:3px;color:{{ avCpiColor }}">{{ avCPI }}</div></div>
+<div><div style="font:600 11px Manrope;color:rgba(255,255,255,.38)">{{ gSPI }}</div><div style="font:700 15px Manrope;margin-top:3px;color:{{ avSpiColor }}">{{ avSPI }}</div></div>
+</div>
+<div style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.06)"><span style="width:7px;height:7px;border-radius:99px;background:{{ avCpiColor }};margin-top:4px;flex:none"></span><span style="font:500 12px/1.5 Manrope;color:rgba(255,255,255,.6)">{{ avNota }}</span></div>
+</div>
+<div style="display:flex;gap:10px;justify-content:flex-end"><span onClick="{{ cerrarAvance }}" style="font:600 13px Manrope;color:rgba(255,255,255,.6);background:#1E1E21;border-radius:999px;padding:12px 20px;cursor:pointer;transition:background .18s ease" style-hover="background:#26262B">Cancelar</span><span onClick="{{ guardarAvance }}" style="font:700 13px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:12px 22px;cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.88)">Guardar avance</span></div>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ modal }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(4,4,5,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;animation:{{ modalVeil }}">
+<div style="width:440px;background:#151517;border:1px solid rgba(255,255,255,.09);border-radius:24px;padding:26px 28px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:{{ modalAnim }}">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font:800 20px Manrope;letter-spacing:-.02em">Nueva actividad</span><span onClick="{{ cancelar }}" style="font:400 20px Manrope;color:rgba(255,255,255,.45);cursor:pointer;line-height:1">×</span></div>
+<div style="font:500 12.5px Manrope;color:rgba(255,255,255,.42);margin-bottom:22px">Los indicadores se calculan al guardar.</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">Proyecto</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 15px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:border-color .18s ease" style-hover="border-color:rgba(139,111,224,.55)">{{ dsel.nombre }}<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.4);flex:none"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg></div></div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">Nombre</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 15px;font:600 13.5px Manrope">Pruebas y puesta en marcha</div></div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">Presupuesto planificado · {{ gBAC }}</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 15px;font:600 13.5px Manrope;display:flex;justify-content:space-between">400 000<span style="color:rgba(255,255,255,.35)">USD</span></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">% avance planificado</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 15px;font:600 13.5px Manrope">45</div></div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">% avance real</div><div style="background:#1B1B1E;border:1px solid #8B6FE0;border-radius:12px;padding:13px 15px;font:600 13.5px Manrope">29</div></div>
+</div>
+<div><div style="font:600 12px Manrope;color:rgba(255,255,255,.5);margin-bottom:7px">Costo real incurrido · {{ gAC }}</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 15px;font:600 13.5px Manrope;display:flex;justify-content:space-between">194 000<span style="color:rgba(255,255,255,.35)">USD</span></div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:16px 18px">
+<div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.06em;margin-bottom:12px">VISTA PREVIA DEL CÁLCULO</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+<div><div style="font:600 11px Manrope;color:rgba(255,255,255,.38)">PV</div><div style="font:700 15px Manrope;margin-top:3px">180 000</div></div>
+<div><div style="font:600 11px Manrope;color:rgba(255,255,255,.38)">EV</div><div style="font:700 15px Manrope;margin-top:3px">116 000</div></div>
+<div><div style="font:600 11px Manrope;color:rgba(255,255,255,.38)">CPI</div><div style="font:700 15px Manrope;margin-top:3px;color:#FF8A6B">0,60</div></div>
+</div>
+</div>
+<div style="display:flex;gap:10px;justify-content:flex-end"><span onClick="{{ cancelar }}" style="font:600 13px Manrope;color:rgba(255,255,255,.6);background:#1E1E21;border-radius:999px;padding:12px 20px;cursor:pointer;transition:background .18s ease" style-hover="background:#26262B">Cancelar</span><span onClick="{{ guardar }}" style="font:700 13px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:12px 22px;cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.88)">Guardar actividad</span></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<div style="flex:none;display:flex;flex-direction:column;gap:10px">
+<div style="font:600 11.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase">Móvil · 390</div>
+<div style="width:390px;background:#0B0B0C;border:1px solid rgba(255,255,255,.08);border-radius:38px;overflow:hidden;position:relative">
+<div style="padding:14px 20px 20px;min-height:812px;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;font:700 13px Manrope;padding:6px 6px 18px"><span>9:41</span><span style="color:rgba(255,255,255,.6)">▮▮▮ ▲ ▰</span></div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+<div onClick="{{ openPicker }}" style="display:flex;flex-direction:column;cursor:{{ mPickCursor }}">
+<div style="font:600 12px Manrope;color:rgba(255,255,255,.42)">{{ mKicker }}</div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font:800 22px Manrope;letter-spacing:-.03em">{{ mTitle }}</span><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:rgba(255,255,255,.45);flex:none;opacity:{{ mPickOpacity }};transform:rotate({{ mPickRot }});transition:transform .26s cubic-bezier(.4,0,.2,1)"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg></div>
+</div>
+<div onClick="{{ mPerfil }}" style="width:38px;height:38px;border-radius:999px;background:#2A2130;display:flex;align-items:center;justify-content:center;font:700 12px Manrope;color:#C9AEFF;cursor:pointer;box-shadow:{{ mPerfilRing }};transition:box-shadow .18s ease">AR</div>
+</div>
+
+<sc-if value="{{ mLoading }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;animation:vFadeIn .16s ease both">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:12px"><div style="width:40%;height:12px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:62%;height:30px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:90%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:11px"><div style="width:40%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:66%;height:26px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:100%;height:5px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div><div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:11px"><div style="width:40%;height:11px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:66%;height:26px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:100%;height:5px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:12px"><div style="width:34%;height:12px;border-radius:8px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div><div style="width:100%;height:104px;border-radius:14px;background:linear-gradient(90deg,#17171A 0%,#212126 50%,#17171A 100%);background-size:320px 100%;animation:vShimmer 1.15s linear infinite"></div></div>
+</div>
+</sc-if>
+<sc-if value="{{ mIsPanel }}" hint-placeholder-val="{{ true }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="background:{{ sel.fondo }};border:1px solid {{ sel.borde }};border-radius:24px;padding:20px;margin-bottom:12px">
+<div style="font:600 12px Manrope;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase">Estado general</div>
+<div style="font:800 36px/1 Manrope;letter-spacing:-.045em;margin:12px 0;color:{{ sel.estadoColor }}">{{ sel.estado }}</div>
+<div style="font:600 13px/1.45 Manrope;color:rgba(255,255,255,.65)">{{ sel.lectura }}</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.42);letter-spacing:.07em">{{ sCPI }}</div><div style="font:800 32px/1 Manrope;letter-spacing:-.04em;color:{{ sel.cpiColor }};margin-top:10px">{{ sel.cpi }}</div><div style="height:5px;border-radius:9px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden"><div style="width:{{ sel.cpiW }};height:100%;background:{{ sel.cpiColor }};border-radius:9px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div></div></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:18px"><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.42);letter-spacing:.07em">{{ sSPI }}</div><div style="font:800 32px/1 Manrope;letter-spacing:-.04em;color:{{ sel.spiColor }};margin-top:10px">{{ sel.spi }}</div><div style="height:5px;border-radius:9px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden"><div style="width:{{ sel.spiW }};height:100%;background:{{ sel.spiColor }};border-radius:9px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div></div></div>
+</div>
+<sc-if value="{{ sel.sinDatos }}" hint-placeholder-val="{{ false }}">
+<div style="background:#151517;border:1px dashed rgba(255,255,255,.12);border-radius:22px;padding:34px 24px;text-align:center">
+<div style="width:46px;height:46px;border-radius:14px;background:#1B1B1E;margin:0 auto 16px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.28)"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"></path></svg></div>
+<div style="font:700 15px Manrope">Sin curva S todavía</div>
+<div style="font:500 12.5px/1.55 Manrope;color:rgba(255,255,255,.45);margin-top:8px;max-width:250px;margin-left:auto;margin-right:auto">Este proyecto no tiene actividades registradas, así que no hay avance planificado ni ganado que graficar.</div>
+<div style="display:inline-block;font:700 12.5px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:11px 18px;margin-top:18px">+ Agregar actividad</div>
+</div>
+</sc-if>
+<sc-if value="{{ sel.tieneDatos }}" hint-placeholder-val="{{ true }}">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font:600 14px Manrope;color:rgba(255,255,255,.85)">Curva S</span><span style="font:600 11px Manrope;color:rgba(255,255,255,.45);background:#1E1E21;border-radius:99px;padding:6px 11px">Corte: 31 ago</span></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:12px">
+<div style="min-width:0"><span style="position:relative;display:inline-flex;align-items:baseline;gap:8px;--tip:0;font:700 26px/1.25 Manrope;letter-spacing:-.03em;color:#C6AAFF;margin:-.12em 0;white-space:nowrap" style-hover="--tip:1">
+{{ roll_sel_ev }}
+<span onClick="{{ copia_sel_ev }}" title="Copiar valor" style="align-self:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;flex:none;opacity:var(--tip,0);transform:scale(calc(.9 + var(--tip,0) * .1));transition:opacity .14s cubic-bezier(.3,0,.2,1),transform .14s cubic-bezier(.3,0,.2,1),background .16s ease;cursor:pointer" style-hover="background:rgba(255,255,255,.14)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:rgba(255,255,255,.65)"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg></span>
+</span><div style="font:500 11px Manrope;color:rgba(255,255,255,.4);margin-top:4px">ganado a la fecha</div></div>
+<div style="text-align:right"><div style="font:700 14px Manrope;color:{{ sel.svColor }}">{{ sel.sv }}</div><div style="font:500 11px Manrope;color:rgba(255,255,255,.4);margin-top:3px">{{ sel.svTexto }}</div></div>
+</div>
+<div style="display:flex;gap:16px;margin-bottom:10px">
+<div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:0;border-top:2px dashed #7A7A88"></span><span style="font:600 11px Manrope;color:rgba(255,255,255,.55)">{{ gLPlan }}</span></div>
+<div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:3px;border-radius:9px;background:#8B6FE0"></span><span style="font:600 11px Manrope;color:rgba(255,255,255,.55)">{{ gLGan }}</span></div>
+</div>
+<div style="position:relative">
+
+<svg viewBox="0 0 300 116" style="width:100%;height:112px;display:block" preserveAspectRatio="none">
+<defs><linearGradient id="sfx1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B6FE0" stop-opacity=".28"></stop><stop offset="1" stop-color="#8B6FE0" stop-opacity=".02"></stop></linearGradient></defs>
+<path d="{{ sel.evFill }}" fill="url(#sfx1)"></path>
+<path d="M0 103 C30 100 45 92 75 87 C105 82 120 65 150 57 C180 49 195 36 225 29 C245 24.5 252 23 262 21.5" fill="none" stroke="#7A7A88" stroke-width="2" stroke-dasharray="4 4"></path>
+<path d="{{ sel.evPath }}" fill="none" stroke="#8B6FE0" stroke-width="2.6" stroke-linecap="round"></path>
+<line x1="262" y1="14" x2="262" y2="110" stroke="rgba(139,111,224,.3)" stroke-width="1" stroke-dasharray="2 3"></line>
+<line x1="262" y1="21.5" x2="262" y2="{{ sel.evY }}" stroke="{{ sel.svColor }}" stroke-width="2.4" stroke-linecap="round"></line>
+<circle cx="262" cy="21.5" r="4" fill="#7A7A88" stroke="#151517" stroke-width="2.5"></circle>
+<circle cx="262" cy="{{ sel.evY }}" r="4.5" fill="#8B6FE0" stroke="#151517" stroke-width="2.5"></circle>
+</svg>
+</div>
+<div style="display:flex;justify-content:space-between;font:600 11px Manrope;color:rgba(255,255,255,.35);margin-top:6px"><span>Ene</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span></div>
+<div style="display:flex;gap:9px;align-items:flex-start;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.06)"><span style="width:7px;height:7px;border-radius:99px;background:{{ sel.svColor }};margin-top:4px;flex:none"></span><span style="font:500 12px/1.5 Manrope;color:rgba(255,255,255,.6)">{{ sel.curvaNota }}</span></div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ mIsProy }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<sc-for list="{{ proyectos }}" as="p" hint-placeholder-count="4">
+<div onClick="{{ p.abrirM }}" style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:18px;margin-bottom:12px;cursor:pointer;transition:border-color .18s ease" style-hover="border-color:rgba(255,255,255,.14)">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><div style="font:700 15px Manrope">{{ p.nombre }}</div><div style="font:500 11.5px Manrope;color:rgba(255,255,255,.38);margin-top:3px">{{ p.meta }}</div></div><span style="font:700 11px Manrope;color:{{ p.estadoColor }};background:{{ p.estadoBg }};border-radius:99px;padding:6px 10px;white-space:nowrap">{{ p.estado }}</span></div>
+<div style="display:flex;gap:26px;margin-top:14px"><span style="font:600 12.5px Manrope;color:rgba(255,255,255,.45)">CPI <b style="color:{{ p.cpiColor }}">{{ p.cpi }}</b></span><span style="font:600 12.5px Manrope;color:rgba(255,255,255,.45)">SPI <b style="color:{{ p.spiColor }}">{{ p.spi }}</b></span></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ mIsAct }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<sc-for list="{{ actividades }}" as="a" hint-placeholder-count="4">
+<div onClick="{{ a.abrirM }}" style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:18px;margin-bottom:12px;cursor:pointer;transition:border-color .18s ease" style-hover="border-color:rgba(255,255,255,.14)">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><div style="font:700 14.5px Manrope">{{ a.nombre }}</div><div style="display:flex;gap:6px"><span style="font:700 13px Manrope;color:{{ a.cpiColor }};background:{{ a.cpiBg }};border-radius:9px;padding:5px 9px">{{ a.cpi }}</span><span style="font:700 13px Manrope;color:{{ a.spiColor }};background:{{ a.spiBg }};border-radius:9px;padding:5px 9px">{{ a.spi }}</span></div></div>
+<div style="display:flex;justify-content:space-between;font:600 10.5px Manrope;color:rgba(255,255,255,.4);margin-bottom:6px"><span>plan {{ a.plan }}%</span><span style="color:#C6AAFF">real {{ a.real }}%</span></div>
+<div style="height:8px;border-radius:9px;background:rgba(255,255,255,.07);position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ a.planW }};background:#61616D;border-radius:9px"></div><div style="position:absolute;left:0;top:2px;bottom:2px;width:{{ a.realW }};background:#8B6FE0;border-radius:9px"></div></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ mIsDet }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="display:flex;align-items:center;gap:12px;margin:-6px 0 16px">
+<span onClick="{{ mAct }}" style="width:36px;height:36px;border-radius:999px;background:#161618;border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:rgba(255,255,255,.7)"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></span>
+<span style="font:700 11px Manrope;color:{{ det.estadoColor }};background:{{ det.estadoBg }};border-radius:99px;padding:7px 12px">{{ det.estado }}</span>
+<span onClick="{{ abrirAvanceM }}" style="margin-left:auto;font:700 12px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:9px 15px;cursor:pointer;flex:none">Registrar avance</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 15px"><div style="font:600 10px Manrope;color:rgba(255,255,255,.38);letter-spacing:.06em">{{ sCPI }}</div><div style="font:700 18px Manrope;margin-top:6px;color:{{ det.cpiColor }}">{{ det.cpi }}</div></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 15px"><div style="font:600 10px Manrope;color:rgba(255,255,255,.38);letter-spacing:.06em">{{ sSPI }}</div><div style="font:700 18px Manrope;margin-top:6px;color:{{ det.spiColor }}">{{ det.spi }}</div></div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 15px"><div style="font:600 10px Manrope;color:rgba(255,255,255,.38);letter-spacing:.06em">{{ sEAC }}</div><div style="font:700 18px Manrope;margin-top:6px">{{ det.eac }}</div></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;margin-bottom:12px">
+<div style="display:flex;flex-direction:column;gap:13px">
+<div><div style="display:flex;justify-content:space-between;font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px"><span>{{ gPV }}</span><span style="color:#fff">{{ det.pv }}</span></div><div style="height:8px;border-radius:9px;background:rgba(255,255,255,.06)"><div style="width:{{ det.planW }};height:100%;background:#61616D;border-radius:9px"></div></div></div>
+<div><div style="display:flex;justify-content:space-between;font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px"><span>{{ gEV }}</span><span style="color:#fff">{{ det.ev }}</span></div><div style="height:8px;border-radius:9px;background:rgba(255,255,255,.06)"><div style="width:{{ det.realW }};height:100%;background:#8B6FE0;border-radius:9px"></div></div></div>
+<div><div style="display:flex;justify-content:space-between;font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px"><span>{{ gAC }}</span><span style="color:#fff">{{ det.ac }}</span></div><div style="height:8px;border-radius:9px;background:rgba(255,255,255,.06)"><div style="width:{{ det.acW }};height:100%;background:#C4BC72;border-radius:9px"></div></div></div>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px">
+<div style="font:600 13.5px Manrope;color:rgba(255,255,255,.85);margin-bottom:12px">Interpretación</div>
+<div style="font:500 12.5px/1.55 Manrope;color:rgba(255,255,255,.6)">{{ det.texto }}</div>
+
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ mIsPerfil }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px;margin-bottom:12px;display:flex;align-items:center;gap:16px">
+<div style="width:60px;height:60px;border-radius:999px;background:#2A2130;display:flex;align-items:center;justify-content:center;font:700 21px Manrope;color:#C9AEFF;flex:none">AR</div>
+<div><div style="font:800 19px Manrope;letter-spacing:-.03em">Alicia Ramos</div><div style="font:600 12px Manrope;color:rgba(255,255,255,.45);margin-top:4px">Administradora del sistema</div></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:6px 20px 8px;margin-bottom:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Correo</span><span style="font:700 13.5px Manrope">a.ramos@valora.app</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Área</span><span style="font:700 13.5px Manrope">Dir. de Proyectos</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Usuario</span><span style="font:700 13.5px Manrope">admin</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0"><span style="font:500 13px Manrope;color:rgba(255,255,255,.5)">Moneda</span><span style="font:700 13.5px Manrope">USD</span></div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;margin-bottom:12px">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+<div><div style="font:600 10px Manrope;color:rgba(255,255,255,.38);letter-spacing:.06em">PROYECTOS</div><div style="font:700 20px Manrope;margin-top:6px">4</div></div>
+<div><div style="font:600 10px Manrope;color:rgba(255,255,255,.38);letter-spacing:.06em">ACTIVIDADES</div><div style="font:700 20px Manrope;margin-top:6px">49</div></div>
+<div><div style="font:600 10px Manrope;color:rgba(255,255,255,.38);letter-spacing:.06em">CORTE</div><div style="font:700 20px Manrope;margin-top:6px">31 ago</div></div>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;display:flex;gap:11px;align-items:flex-start">
+<span style="width:7px;height:7px;border-radius:99px;background:#8B6FE0;margin-top:5px;flex:none"></span>
+<div style="font:500 12.5px/1.55 Manrope;color:rgba(255,255,255,.6)">Perfil único de administrador. La aplicación no tiene inicio de sesión ni roles.</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ mIsAju }}" hint-placeholder-val="{{ false }}">
+<div style="animation:vRise .26s cubic-bezier(.2,.8,.3,1) both">
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;margin-bottom:12px">
+<div style="font:700 14.5px Manrope;margin-bottom:14px">Método de medición</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ metodos }}" as="m" hint-placeholder-count="4">
+<span onClick="{{ m.pick }}" style="font:600 12px Manrope;color:{{ m.color }};background:{{ m.bg }};border-radius:99px;padding:9px 14px;cursor:pointer;transition:background .18s ease,color .18s ease">{{ m.label }}</span>
+</sc-for>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:20px;margin-bottom:12px">
+<div style="font:700 14.5px Manrope;margin-bottom:4px">Nombres de los indicadores</div>
+<div style="font:500 12px Manrope;color:rgba(255,255,255,.42);margin-bottom:14px">Siglas o texto claro en tablas y tarjetas.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<span onClick="{{ nomSiglas }}" style="font:600 12px Manrope;color:{{ nsColor }};background:{{ nsBg }};border-radius:99px;padding:9px 14px;cursor:pointer;transition:background .18s ease,color .18s ease">Siglas</span>
+<span onClick="{{ nomClaro }}" style="font:600 12px Manrope;color:{{ ncColor }};background:{{ ncBg }};border-radius:99px;padding:9px 14px;cursor:pointer;transition:background .18s ease,color .18s ease">Texto claro</span>
+</div>
+</div>
+<div style="background:#151517;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:14px"><span style="font:700 13.5px Manrope">Recalcular al registrar avance</span><div onClick="{{ toggleAuto }}" style="width:44px;height:25px;border-radius:99px;background:{{ autoBg }};position:relative;flex:none;cursor:pointer;transition:background .2s ease"><span style="position:absolute;top:3px;left:{{ autoLeftM }};width:19px;height:19px;border-radius:99px;background:{{ autoKnob }};transition:left .2s ease"></span></div></div>
+<div style="height:1px;background:rgba(255,255,255,.06)"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:14px"><span style="font:700 13.5px Manrope">Mostrar interpretación en texto</span><div onClick="{{ toggleTexto }}" style="width:44px;height:25px;border-radius:99px;background:{{ textoBg }};position:relative;flex:none;cursor:pointer;transition:background .2s ease"><span style="position:absolute;top:3px;left:{{ textoLeftM }};width:19px;height:19px;border-radius:99px;background:{{ textoKnob }};transition:left .2s ease"></span></div></div>
+</div>
+</div>
+</sc-if>
+
+<div style="margin-top:auto;padding-top:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;background:#101012;border:1px solid rgba(255,255,255,.07);border-radius:26px;padding:10px 10px">
+<div onClick="{{ mPanel }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:9px 9px;border-radius:16px;background:{{ mbPanel }};cursor:pointer;transition:background .18s ease"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:{{ miPanel }};transition:fill .18s ease"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"></path></svg><span style="font:600 10px Manrope;color:{{ mtPanel }}">Panel</span></div>
+<div onClick="{{ mProy }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:9px 9px;border-radius:16px;background:{{ mbProy }};cursor:pointer;transition:background .18s ease"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:{{ miProy }};transition:fill .18s ease"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path></svg><span style="font:600 10px Manrope;color:{{ mtProy }}">Proyectos</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;min-width:0;padding:0 4px;align-self:center"><div onClick="{{ openSheet }}" style="width:54px;height:54px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(0,0,0,.55);cursor:pointer;transition:transform .18s ease" style-hover="background:rgba(255,255,255,.88)"><svg viewBox="0 0 24 24" style="width:27px;height:27px;fill:#0B0B0C"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg></div></div>
+<div onClick="{{ mActTab }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:9px 9px;border-radius:16px;background:{{ mbAct }};cursor:pointer;transition:background .18s ease"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:{{ miAct }};transition:fill .18s ease"><path d="M22 5.18 10.59 16.6l-4.24-4.24 1.41-1.41 2.83 2.83 10-10L22 5.18zM19.79 10.22C19.92 10.79 20 11.38 20 12c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8c1.58 0 3.04.46 4.28 1.25l1.44-1.44C16.1 2.67 14.13 2 12 2 6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10c0-1.19-.22-2.33-.6-3.39l-1.61 1.61z"></path></svg><span style="font:600 10px Manrope;color:{{ mtAct }}">Actividades</span></div>
+<div onClick="{{ mAju }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:9px 9px;border-radius:16px;background:{{ mbAju }};cursor:pointer;transition:background .18s ease"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:{{ miAju }};transition:fill .18s ease"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"></path></svg><span style="font:600 10px Manrope;color:{{ mtAju }}">Ajustes</span></div>
+</div>
+<sc-if value="{{ hasMToasts }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:16px;right:16px;bottom:104px;z-index:9;display:flex;flex-direction:column;gap:9px">
+<sc-for list="{{ mToasts }}" as="t" hint-placeholder-count="1">
+<div style="background:#1B1B1E;border:1px solid {{ t.borde }};border-radius:16px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start;box-shadow:0 14px 34px rgba(0,0,0,.55);animation:vToastIn .24s cubic-bezier(.2,.8,.3,1) both">
+<span style="width:8px;height:8px;border-radius:99px;background:{{ t.color }};margin-top:5px;flex:none"></span>
+<div style="flex:1"><div style="font:700 12.5px Manrope">{{ t.titulo }}</div><div style="font:500 11.5px/1.5 Manrope;color:rgba(255,255,255,.55);margin-top:2px">{{ t.texto }}</div></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ avanceM }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(4,4,5,.62);display:flex;align-items:flex-end;z-index:7;animation:{{ avanceMVeil }}">
+<div style="width:100%;background:#151517;border-top:1px solid rgba(255,255,255,.09);border-radius:28px 28px 38px 38px;padding:10px 20px 22px;animation:{{ avanceMAnim }}">
+<div style="width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);margin:0 auto 14px"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font:800 19px Manrope;letter-spacing:-.025em">Registrar avance</span><span onClick="{{ cerrarAvanceM }}" style="width:32px;height:32px;border-radius:99px;background:#1E1E21;display:flex;align-items:center;justify-content:center;font:400 17px Manrope;color:rgba(255,255,255,.5);cursor:pointer;line-height:1">×</span></div>
+<div style="font:500 12px Manrope;color:rgba(255,255,255,.42);margin-bottom:18px">{{ det.nombre }}</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font:600 11.5px Manrope;color:rgba(255,255,255,.5)">% de avance real</span><span style="font:700 15px Manrope;color:#C6AAFF">{{ avPct }}%</span></div>
+<div style="display:flex;align-items:center;gap:12px">
+<span onClick="{{ avMenos }}" style="width:44px;height:44px;border-radius:14px;background:#1B1B1E;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font:600 20px Manrope;color:rgba(255,255,255,.7);cursor:pointer;flex:none">−</span>
+<div style="flex:1;height:10px;border-radius:9px;background:rgba(255,255,255,.07);position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ avPlanW }};background:#61616D;border-radius:9px"></div><div style="position:absolute;left:0;top:2px;bottom:2px;width:{{ avRealW }};background:#8B6FE0;border-radius:9px;transition:width .24s cubic-bezier(.4,0,.2,1)"></div></div>
+<span onClick="{{ avMas }}" style="width:44px;height:44px;border-radius:14px;background:#1B1B1E;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font:600 20px Manrope;color:rgba(255,255,255,.7);cursor:pointer;flex:none">+</span>
+</div>
+<div style="font:500 11px Manrope;color:rgba(255,255,255,.38);margin-top:9px">Planificado a la fecha: {{ det.plan }}%</div>
+</div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">Costo real acumulado</div><div style="background:#1B1B1E;border:1px solid #8B6FE0;border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between">{{ det.ac }}<span style="color:rgba(255,255,255,.35)">USD</span></div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:15px 16px">
+<div style="font:600 10.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.06em;margin-bottom:11px">INDICADORES RESULTANTES</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div><div style="font:600 10.5px Manrope;color:rgba(255,255,255,.38)">{{ sEV }}</div><div style="font:700 15px Manrope;margin-top:3px">{{ avEV }}</div></div>
+<div><div style="font:600 10.5px Manrope;color:rgba(255,255,255,.38)">{{ sCPI }}</div><div style="font:700 15px Manrope;margin-top:3px;color:{{ avCpiColor }}">{{ avCPI }}</div></div>
+<div><div style="font:600 10.5px Manrope;color:rgba(255,255,255,.38)">{{ sSPI }}</div><div style="font:700 15px Manrope;margin-top:3px;color:{{ avSpiColor }}">{{ avSPI }}</div></div>
+</div>
+</div>
+<div onClick="{{ guardarAvanceM }}" style="font:700 14px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:15px;text-align:center;cursor:pointer">Guardar avance</div>
+<div onClick="{{ cerrarAvanceM }}" style="font:600 13.5px Manrope;color:rgba(255,255,255,.55);text-align:center;padding:4px;cursor:pointer">Cancelar</div>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ picker }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closePicker }}" style="position:absolute;inset:0;background:rgba(4,4,5,.62);display:flex;align-items:flex-end;z-index:6;animation:{{ pickerVeil }}">
+<div style="width:100%;background:#151517;border-top:1px solid rgba(255,255,255,.09);border-radius:28px 28px 38px 38px;padding:10px 20px 22px;animation:{{ pickerAnim }}">
+<div style="width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);margin:0 auto 16px"></div>
+<div style="font:800 19px Manrope;letter-spacing:-.025em;margin-bottom:3px">Cambiar de proyecto</div>
+<div style="font:500 12px Manrope;color:rgba(255,255,255,.42);margin-bottom:16px">El panel y las actividades se recalculan al elegir.</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ opciones }}" as="o" hint-placeholder-count="4">
+<div onClick="{{ o.elegir }}" style="background:{{ o.bg }};border:1px solid {{ o.borde }};border-radius:18px;padding:16px 17px;cursor:pointer;transition:background .18s ease,border-color .18s ease">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:18px;height:18px;border-radius:99px;border:{{ o.radio }};flex:none"></span>
+<div><div style="font:700 14.5px Manrope">{{ o.nombre }}</div><div style="font:500 11.5px Manrope;color:rgba(255,255,255,.38);margin-top:2px">{{ o.meta }}</div></div>
+</div>
+<div style="display:flex;gap:6px"><span style="font:700 12px Manrope;color:{{ o.cpiColor }};background:{{ o.cpiBg }};border-radius:9px;padding:5px 9px">{{ o.cpi }}</span><span style="font:700 12px Manrope;color:{{ o.spiColor }};background:{{ o.spiBg }};border-radius:9px;padding:5px 9px">{{ o.spi }}</span></div>
+</div>
+</div>
+</sc-for>
+</div>
+<div onClick="{{ closePicker }}" style="font:600 13.5px Manrope;color:rgba(255,255,255,.55);text-align:center;padding:16px 4px 2px;cursor:pointer">Cancelar</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ sheet }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(4,4,5,.62);display:flex;align-items:flex-end;z-index:5;animation:{{ sheetVeil }}">
+<div style="width:100%;background:#151517;border-top:1px solid rgba(255,255,255,.09);border-radius:28px 28px 38px 38px;padding:10px 20px 22px;animation:{{ sheetAnim }}">
+<div style="width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);margin:0 auto 14px"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font:800 19px Manrope;letter-spacing:-.025em">Nueva actividad</span><span onClick="{{ cancelarM }}" style="width:32px;height:32px;border-radius:99px;background:#1E1E21;display:flex;align-items:center;justify-content:center;font:400 17px Manrope;color:rgba(255,255,255,.5);cursor:pointer;line-height:1">×</span></div>
+<div style="font:500 12px Manrope;color:rgba(255,255,255,.42);margin-bottom:18px">Los indicadores se calculan al guardar.</div>
+<div style="display:flex;flex-direction:column;gap:13px">
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">Proyecto</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">{{ mTituloProyecto }}<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.4);flex:none"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg></div></div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">Nombre</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">Pruebas y puesta en marcha</div></div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">Presupuesto planificado · {{ gBAC }}</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">400 000<span style="color:rgba(255,255,255,.35)">USD</span></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">% planificado</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">45</div></div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">% real</div><div style="background:#1B1B1E;border:1px solid #8B6FE0;border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">29</div></div>
+</div>
+<div><div style="font:600 11.5px Manrope;color:rgba(255,255,255,.5);margin-bottom:6px">Costo real · {{ gAC }}</div><div style="background:#1B1B1E;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 14px;font:600 13.5px Manrope;display:flex;justify-content:space-between;align-items:center">194 000<span style="color:rgba(255,255,255,.35)">USD</span></div></div>
+<div style="background:#1B1B1E;border-radius:14px;padding:15px 16px">
+<div style="font:600 10.5px Manrope;color:rgba(255,255,255,.4);letter-spacing:.06em;margin-bottom:11px">VISTA PREVIA DEL CÁLCULO</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div><div style="font:600 10.5px Manrope;color:rgba(255,255,255,.38)">{{ sPV }}</div><div style="font:700 15px Manrope;margin-top:3px">180 000</div></div>
+<div><div style="font:600 10.5px Manrope;color:rgba(255,255,255,.38)">{{ sEV }}</div><div style="font:700 15px Manrope;margin-top:3px">116 000</div></div>
+<div><div style="font:600 10.5px Manrope;color:rgba(255,255,255,.38)">{{ sCPI }}</div><div style="font:700 15px Manrope;margin-top:3px;color:#FF8A6B">0,60</div></div>
+</div>
+</div>
+<div onClick="{{ guardarM }}" style="font:700 14px Manrope;color:#0B0B0C;background:#fff;border-radius:999px;padding:15px;text-align:center;cursor:pointer;transition:background .16s ease" style-hover="background:rgba(255,255,255,.88)">Guardar actividad</div>
+<div onClick="{{ cancelarM }}" style="font:600 13.5px Manrope;color:rgba(255,255,255,.55);text-align:center;padding:4px;cursor:pointer">Cancelar</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1900,&quot;height&quot;:1000}}">
+const ON='#A98BFF',OFF='#2A2A2E',KON='#0B0B0C',KOFF='rgba(255,255,255,.5)';
+const CORAL='#FF8A6B',OLIVA='#E7E08A',VERDE='#7EE0A0',MUTE='rgba(255,255,255,.3)';
+const bgOf=c=>c===CORAL?'rgba(255,138,107,.12)':c===OLIVA?'rgba(231,224,138,.12)':c===VERDE?'rgba(126,224,160,.12)':'rgba(255,255,255,.06)';
+const tone=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?MUTE:n>=1?VERDE:n>=0.95?OLIVA:CORAL;};
+
+const PROYECTOS=[
+  {nombre:'Planta Solar Norte',meta:'24 actividades · Alicia Ramos',bac:'2 000 000',pv:'1 240 000',ev:'1 116 000',ac:'1 258 000',cpi:'0,89',spi:'0,90',estado:'Sobre presupuesto',
+   cv:'−142 000',sv:'−124 000',eac:'2 247 000',vac:'−247 000',pctBac:'62%',pctFisico:'55,8%',
+   curva:{path:'M0 194.6 C60 190 90 176 150 171.2 C210 166 240 138 300 124.4 C360 111 390 88 450 77.6 C510 67 540 52 600 45.2',y:45.2}},
+  {nombre:'Migración core bancario',meta:'16 actividades · Diego Muñoz',bac:'860 000',pv:'590 000',ev:'602 000',ac:'571 900',cpi:'1,05',spi:'1,02',estado:'Bajo presupuesto',
+   cv:'+30 100',sv:'+12 000',eac:'819 048',vac:'+40 952',pctBac:'69%',pctFisico:'70%',
+   curva:{path:'M0 192 C60 186 90 168 150 158 C210 148 240 116 300 98 C360 82 390 56 450 42 C510 30 540 18 600 10',y:10}},
+  {nombre:'Portal de autogestión',meta:'9 actividades · Laura Peña',bac:'340 000',pv:'180 000',ev:'153 000',ac:'160 000',cpi:'0,96',spi:'0,85',estado:'Atrasado',
+   cv:'−7 000',sv:'−27 000',eac:'354 167',vac:'−14 167',pctBac:'53%',pctFisico:'45%',
+   curva:{path:'M0 195 C60 191 90 180 150 174 C210 168 240 144 300 132 C360 120 390 100 450 90 C510 80 540 68 600 62',y:62}},
+  {nombre:'Data warehouse fase II',meta:'0 actividades · sin registrar',bac:'480 000',pv:'—',ev:'—',ac:'—',cpi:'—',spi:'—',estado:'Sin datos',
+   cv:'—',sv:'—',eac:'—',vac:'—',pctBac:'—',pctFisico:'—',curva:null}
+];
+const ACTIVIDADES=[
+  {nombre:'Obra civil — cimentación',fechas:'15 ene – 30 abr',bac:'500 000',plan:84,real:80,ac:'468 000',cpi:'0,85',spi:'0,95',estado:'Sobrecosto',pv:'420 000',ev:'400 000',cv:'−68 000',sv:'−20 000',eac:'588 235',vac:'−88 235'},
+  {nombre:'Montaje de estructuras',fechas:'01 mar – 15 jul',bac:'475 000',plan:80,real:76,ac:'352 000',cpi:'1,03',spi:'0,95',estado:'En presupuesto',pv:'380 000',ev:'361 000',cv:'+9 000',sv:'−19 000',eac:'461 165',vac:'+13 835'},
+  {nombre:'Instalación eléctrica',fechas:'10 may – 20 sep',bac:'325 000',plan:80,real:74,ac:'244 000',cpi:'0,98',spi:'0,92',estado:'Atrasada',pv:'260 000',ev:'239 000',cv:'−5 000',sv:'−21 000',eac:'331 633',vac:'−6 633'},
+  {nombre:'Pruebas y puesta en marcha',fechas:'01 ago – 30 nov',bac:'400 000',plan:45,real:29,ac:'194 000',cpi:'0,60',spi:'0,64',estado:'Crítica · revisar',pv:'180 000',ev:'116 000',cv:'−78 000',sv:'−64 000',eac:'666 667',vac:'−266 667'}
+];
+const METODOS=['% completado','0 / 100','50 / 50','Hitos ponderados'];
+const TCOLOR={ok:'#7EE0A0',info:'#8B6FE0',error:'#FF8A6B'};
+const TBORDE={ok:'rgba(126,224,160,.28)',info:'rgba(139,111,224,.3)',error:'rgba(255,138,107,.32)'};
+// controles de cabecera propios de cada vista; el detalle y el perfil traen su propia barra
+const CHIPS={
+  panel:[{label:'Corte: 31 ago'}],
+  proyectos:[{label:'Todos los estados'},{label:'Corte: 31 ago'}],
+  actividades:[{label:'Todos los estados'},{label:'Corte: 31 ago'}],
+  detalle:[],
+  ajustes:[],
+  perfil:[]
+};
+const NAVPOS=[{left:6,w:92},{left:102,w:118},{left:224,w:132},{left:360,w:96}];
+const NAVKEY={panel:0,proyectos:1,actividades:2,detalle:2,ajustes:3,perfil:3};
+const LARGO={
+  siglas:{lPV:'PV',lEV:'EV',lAC:'AC',lBAC:'BAC',lCV:'CV',lSV:'SV',lEAC:'EAC',lVAC:'VAC'},
+  claro:{lPV:'Valor planificado',lEV:'Valor ganado',lAC:'Costo real',lBAC:'Presupuesto base',lCV:'Desvío en costo',lSV:'Desvío en plazo',lEAC:'Costo al cierre',lVAC:'Desvío al cierre'}
+};
+const CORTO={
+  siglas:{sPV:'PV',sEV:'EV',sAC:'AC',sBAC:'BAC',sCPI:'CPI',sSPI:'SPI',sEAC:'EAC'},
+  claro:{sPV:'Planificado',sEV:'Ganado',sAC:'Costo real',sBAC:'Presupuesto',sCPI:'Efic. costo',sSPI:'Efic. plazo',sEAC:'Al cierre'}
+};
+// glosas: la sigla suelta que aparece dentro de frases, leyendas y etiquetas de formulario
+const GLOSA={
+  siglas:{gPV:'PV',gEV:'EV',gAC:'AC',gBAC:'BAC',gCPI:'CPI',gSPI:'SPI',gLPlan:'PV',gLGan:'EV'},
+  claro:{gPV:'planificado',gEV:'ganado',gAC:'costo real',gBAC:'presupuesto',gCPI:'Efic. costo',gSPI:'Efic. plazo',gLPlan:'Lo planificado',gLGan:'Lo ganado'}
+};
+// títulos de tarjeta: en modo siglas el rótulo grande también pasa a sigla
+const TITULO={
+  siglas:{tPV:'PV',tEV:'EV',tAC:'AC',tBAC:'BAC',tCPI:'CPI',tSPI:'SPI'},
+  claro:{tPV:'Valor planificado',tEV:'Valor ganado',tAC:'Costo real',tBAC:'Presupuesto base',tCPI:'Eficiencia en costo',tSPI:'Eficiencia en plazo'}
+};
+
+// Cifra que rueda de la forma abreviada al valor exacto, dígito por dígito, al pasar el cursor.
+const DIGITOS='0123456789';
+class Rodillo extends React.Component {
+  constructor(p){super(p);this.state={txt:p.corto,fijos:0,activo:false};}
+  componentWillUnmount(){clearInterval(this.t);}
+  arranca=()=>{
+    if(this.state.activo)return;
+    const meta=String(this.props.exacto);
+    this.setState({activo:true,fijos:0});
+    let paso=0;
+    clearInterval(this.t);
+    this.t=setInterval(()=>{
+      paso++;
+      const fijos=Math.floor(paso/2);
+      if(fijos>=meta.length){clearInterval(this.t);this.setState({txt:meta,fijos:meta.length});return;}
+      const txt=meta.split('').map((c,i)=>{
+        if(i<fijos||!/\d/.test(c))return c;
+        return DIGITOS[Math.floor(Math.random()*10)];
+      }).join('');
+      this.setState({txt,fijos});
+    },34);
+  };
+  para=()=>{clearInterval(this.t);this.setState({txt:this.props.corto,fijos:0,activo:false});};
+  render(){
+    const {activo,txt}=this.state;
+    // la caja se dimensiona por lo que se muestra: en reposo la abreviatura, al rodar el valor exacto
+    return React.createElement('span',{
+      onMouseEnter:this.arranca,onMouseLeave:this.para,
+      style:{whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums',userSelect:activo?'text':'none',cursor:activo?'text':'default'}
+    },txt);
+  }
+}
+class Component extends DCLogic {
+  state={d:'panel',m:'panel',det:0,modal:false,auto:true,texto:true,metodo:0,nombres:'siglas',sheet:false,dLoading:false,mLoading:false,modalOut:false,sheetOut:false,toasts:[],mToasts:[],picker:false,pickerOut:false,proyecto:0,dProyecto:0,dMenu:false,avance:false,avanceM:false,avanceOut:false,avanceMOut:false,avPct:29};
+  set=(k,v)=>()=>this.setState({[k]:v});
+  timers={};
+  nav=(k,v,extra)=>()=>{
+    const L=k==='d'?'dLoading':'mLoading';
+    this.setState({[k]:v,[L]:true,...(extra||{})});
+    clearTimeout(this.timers[k]);
+    this.timers[k]=setTimeout(()=>this.setState({[L]:false}),460);
+  };
+  componentWillUnmount(){Object.values(this.timers).forEach(clearTimeout);(this.toastTimers||[]).forEach(clearTimeout);}
+  toastTimers=[];
+  toast=(destino,kind,titulo,texto)=>{
+    const id=Date.now()+Math.random();
+    const key=destino==='m'?'mToasts':'toasts';
+    this.setState(s=>({[key]:[...s[key],{id,kind,titulo,texto}]}));
+    this.toastTimers.push(setTimeout(()=>this.quitar(key,id),3600));
+  };
+  quitar=(key,id)=>this.setState(s=>({[key]:s[key].filter(t=>t.id!==id)}));
+  cerrarModal=(after)=>{
+    this.setState({modalOut:true});
+    setTimeout(()=>{this.setState({modal:false,modalOut:false});if(after)after();},190);
+  };
+  copiar=(valor,destino)=>()=>{
+    const txt=String(valor);
+    const done=()=>this.toast(destino,'ok','Valor copiado',txt+' USD');
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,done);
+    else done();
+  };
+  num=(s)=>parseInt(String(s).replace(/[^\d]/g,''),10)||0;
+  // 1 116 000 → "1,12 M"; a partir de mil millones → B. Por debajo de un millón se deja el número completo.
+  corto=(s)=>{
+    const t=String(s);
+    if(!/\d/.test(t))return t;
+    const signo=t.trim().startsWith('−')?'−':t.trim().startsWith('+')?'+':'';
+    const n=this.num(t);
+    const dec=v=>(Math.round(v*100)/100).toLocaleString('es-CO',{minimumFractionDigits:v<10?2:1,maximumFractionDigits:v<10?2:1});
+    if(n>=1e12)return signo+dec(n/1e12)+' T';
+    if(n>=1e9)return signo+dec(n/1e9)+' B';
+    if(n>=1e6)return signo+dec(n/1e6)+' M';
+    return t;
+  };
+  abrev=(o,claves)=>{const r={};claves.forEach(k=>{r[k+'Corto']=this.corto(o[k]);});return r;};
+  fmt=(n)=>Math.round(n).toLocaleString('es-CO').replace(/\./g,' ');
+  calculoAvance(a,pct){
+    const bac=this.num(a.bac),ac=this.num(a.ac),pv=this.num(a.pv);
+    const ev=bac*pct/100;
+    const cpi=ac?ev/ac:null,spi=pv?ev/pv:null;
+    const d2=v=>v==null?'—':v.toFixed(2).replace('.',',');
+    const col=v=>v==null?'rgba(255,255,255,.35)':v>=1?VERDE:v>=0.95?OLIVA:CORAL;
+    const g=GLOSA[this.state.nombres];
+    const nota=cpi==null?'Sin costo real registrado: el índice de costo no está definido.':
+      cpi>=1&&spi>=1?`Con ${pct}% de avance la actividad quedaría dentro de presupuesto y al día.`:
+      cpi<1&&spi<1?`Con ${pct}% de avance la actividad seguiría con sobrecosto y atrasada.`:
+      cpi<1?`Con ${pct}% de avance habría sobrecosto, aunque el plazo se mantiene.`:
+      `Con ${pct}% de avance el costo se mantiene, pero la actividad iría atrasada.`;
+    return {avPct:pct,avEV:this.fmt(ev),avCPI:d2(cpi),avSPI:d2(spi),avCpiColor:col(cpi),avSpiColor:col(spi),
+      avPlanW:a.plan+'%',avRealW:pct+'%',avNota:nota,
+      avResumen:`${g.gCPI} ${d2(cpi)} · ${g.gSPI} ${d2(spi)}`,avCrit:cpi!=null&&cpi<0.8};
+  }
+  avisoResultado(destino){
+    const a=ACTIVIDADES[this.state.det],c=this.calculoAvance(a,this.state.avPct);
+    this.toast(destino,'ok','Avance registrado',`${a.nombre} al ${this.state.avPct}%. ${c.avResumen}.`);
+    if(c.avCrit)setTimeout(()=>this.toast(destino,'error',GLOSA[this.state.nombres].gCPI+' '+c.avCPI+' · crítica','El costo real supera el trabajo ganado. Revisa el presupuesto de la actividad.'),700);
+  }
+  cerrarPicker=(after)=>{
+    this.setState({pickerOut:true});
+    setTimeout(()=>{this.setState({picker:false,pickerOut:false});if(after)after();},240);
+  };
+  cerrarSheet=(after)=>{
+    this.setState({sheetOut:true});
+    setTimeout(()=>{this.setState({sheet:false,sheetOut:false});if(after)after();},240);
+  };
+  interpreta(a){
+    const g=GLOSA[this.state.nombres],l=LARGO[this.state.nombres];
+    const c=parseFloat(a.cpi.replace(',','.')),s=parseFloat(a.spi.replace(',','.'));
+    const costo=c>=1?`${g.gCPI} ${a.cpi}: por cada dólar gastado se gana más de un dólar de trabajo.`:`${g.gCPI} ${a.cpi}: por cada dólar gastado solo se ganan ${a.cpi} de trabajo, con ${l.lCV} ${a.cv}.`;
+    const plazo=s>=1?`${g.gSPI} ${a.spi}: el avance real va por delante del plan.`:`${g.gSPI} ${a.spi}: el avance real (${a.real}%) va por debajo del planificado (${a.plan}%).`;
+    return costo+' '+plazo;
+  }
+  renderVals(){
+    const {d,m,det,modal,auto,texto,metodo,dLoading:dL,mLoading:mL}=this.state;
+    const pill=(active)=>({color:active?'#0B0B0C':'rgba(255,255,255,.62)',bg:active?'#fff':'transparent'});
+    const p1=pill(d==='panel'),p2=pill(d==='proyectos'),p3=pill(d==='actividades'||d==='detalle'),p4=pill(d==='ajustes');
+    const dp=PROYECTOS[this.state.dProyecto];
+    const titles={panel:['Hola de nuevo','Alicia'],proyectos:['Proyectos','4 activos'],actividades:['Actividades',dp.nombre],detalle:[ACTIVIDADES[det].nombre,''],ajustes:['Ajustes','del cálculo'],perfil:['Perfil','del administrador']};
+    const pSel=PROYECTOS[this.state.proyecto];
+    const mTitles={panel:['Proyecto',pSel.nombre],proyectos:['4 activos · corte 31 ago','Proyectos'],actividades:[pSel.nombre,'Actividades'],detalle:['Planta Solar Norte',ACTIVIDADES[det].nombre],ajustes:['Cálculo EVM','Ajustes'],perfil:['Administrador','Perfil']};
+    const a=ACTIVIDADES[det];
+    const pickable=m==='panel'||m==='actividades';
+    const mtab=(k)=>({bg:m===k?'rgba(139,111,224,.14)':'transparent',icon:m===k?'#C6AAFF':'rgba(255,255,255,.42)',text:m===k?'#fff':'rgba(255,255,255,.42)'});
+    const t1=mtab('panel'),t2=mtab('proyectos'),t3=m==='actividades'||m==='detalle'?{bg:'rgba(139,111,224,.14)',icon:'#C6AAFF',text:'#fff'}:mtab('actividades'),t4=mtab('ajustes');
+    return {
+      dPanel:this.nav('d','panel'),dProy:this.nav('d','proyectos'),dAct:this.nav('d','actividades'),dAju:this.nav('d','ajustes'),
+      mPanel:this.nav('m','panel'),mProy:this.nav('m','proyectos'),mActTab:this.nav('m','actividades'),mAju:this.nav('m','ajustes'),mAct:this.nav('m','actividades'),
+      dLoading:this.state.dLoading,mLoading:this.state.mLoading,
+      openModal:this.set('modal',true),closeModal:this.set('modal',false),modal,
+      openSheet:this.set('sheet',true),closeSheet:()=>this.cerrarSheet(),sheet:this.state.sheet,
+      picker:this.state.picker,
+      openPicker:pickable?()=>this.setState({picker:true}):()=>{},
+      closePicker:()=>this.cerrarPicker(),
+      mPickOpacity:pickable?1:0,mPickCursor:pickable?'pointer':'default',mPickRot:this.state.picker?'180deg':'0deg',
+      pickerVeil:this.state.pickerOut?'vFadeOut .24s ease both':'vFadeIn .18s ease both',
+      pickerAnim:this.state.pickerOut?'vSheetOut .24s cubic-bezier(.4,0,1,1) both':'vSheet .3s cubic-bezier(.2,.85,.3,1) both',
+      opciones:PROYECTOS.map((p,i)=>{const cc=tone(p.cpi),sc=tone(p.spi);const on=i===this.state.proyecto;
+        return {nombre:p.nombre,meta:p.meta,cpi:p.cpi,spi:p.spi,cpiColor:cc,cpiBg:bgOf(cc),spiColor:sc,spiBg:bgOf(sc),
+          bg:on?'rgba(139,111,224,.10)':'#1B1B1E',borde:on?'rgba(139,111,224,.45)':'rgba(255,255,255,.06)',
+          radio:on?'5px solid #A98BFF':'2px solid rgba(255,255,255,.25)',
+          elegir:()=>this.cerrarPicker(()=>this.setState({proyecto:i}))};}),
+      sel:(()=>{const p=PROYECTOS[this.state.proyecto];const cc=tone(p.cpi),sc=tone(p.spi);
+        const cn=parseFloat(p.cpi.replace(',','.')),sn=parseFloat(p.spi.replace(',','.'));
+        const fondo=cc===CORAL?'linear-gradient(150deg,#1C1418,#151517 65%)':cc===OLIVA?'linear-gradient(150deg,#1A1A14,#151517 65%)':cc===VERDE?'linear-gradient(150deg,#141C17,#151517 65%)':'#151517';
+        const g=GLOSA[this.state.nombres];
+        const lectura=isNaN(cn)?'Sin actividades registradas: aún no hay indicadores que interpretar.':`${g.gCPI} ${p.cpi} y ${g.gSPI} ${p.spi}: el proyecto ${cn<1?'gasta más':'gasta menos'} y ${sn<1?'avanza menos':'avanza más'} de lo planificado.`;
+        const sinDatos=isNaN(cn);
+        const svTable={0:['−124 000',OLIVA,'por debajo del plan','La línea violeta va por debajo de la punteada: se ha ganado menos trabajo del planificado a hoy.'],
+          1:['+11 000',VERDE,'por encima del plan','La línea violeta va por encima de la punteada: se ha ganado más trabajo del planificado a hoy.'],
+          2:['−27 000',CORAL,'por debajo del plan','La línea violeta va por debajo de la punteada: se ha ganado menos trabajo del planificado a hoy.']};
+        const sv=svTable[this.state.proyecto]||['—',MUTE,'sin datos',''];
+        const CURVA={
+          0:{path:'M0 104 C30 101 45 94 75 91 C105 88 120 73 150 66 C180 59 195 47 225 41 C245 37 252 35 262 33.5',y:33.5},
+          1:{path:'M0 101 C30 97 45 88 75 82 C105 76 120 58 150 49 C180 40 195 27 225 20 C245 15.5 252 14 262 12.5',y:12.5},
+          2:{path:'M0 103 C30 100 45 92 75 88 C105 84 120 68 150 61 C180 54 195 41 225 34 C245 29.5 252 28 262 26.5',y:26.5}
+        };
+        const cv=CURVA[this.state.proyecto]||CURVA[0];
+        return {estado:p.estado,estadoColor:cc===MUTE?'rgba(255,255,255,.55)':cc,cpi:p.cpi,spi:p.spi,cpiColor:cc,spiColor:sc,ev:p.ev,lectura,fondo,
+          sinDatos,tieneDatos:!sinDatos,sv:sv[0],svColor:sv[1],svTexto:sv[2],curvaNota:sv[3],evCorto:this.corto(p.ev),
+          evPath:cv.path,evFill:cv.path+' L262 110 L0 110 Z',evY:cv.y,
+          borde:cc===CORAL?'rgba(255,138,107,.22)':cc===OLIVA?'rgba(231,224,138,.2)':cc===VERDE?'rgba(126,224,160,.2)':'rgba(255,255,255,.06)',
+          cpiW:isNaN(cn)?'0%':Math.min(100,Math.round(cn/1.35*100))+'%',spiW:isNaN(sn)?'0%':Math.min(100,Math.round(sn/1.35*100))+'%'};})(),
+      modalVeil:this.state.modalOut?'vFadeOut .19s ease both':'vFadeIn .18s ease both',
+      modalAnim:this.state.modalOut?'vPopOut .19s cubic-bezier(.4,0,1,1) both':'vPop .24s cubic-bezier(.2,.8,.3,1) both',
+      sheetVeil:this.state.sheetOut?'vFadeOut .24s ease both':'vFadeIn .18s ease both',
+      sheetAnim:this.state.sheetOut?'vSheetOut .24s cubic-bezier(.4,0,1,1) both':'vSheet .3s cubic-bezier(.2,.85,.3,1) both',
+      cancelar:()=>this.cerrarModal(),
+      guardar:()=>this.cerrarModal(()=>{this.toast('d','ok','Actividad creada','Pruebas y puesta en marcha. Indicadores recalculados.');setTimeout(()=>this.toast('d','error',GLOSA[this.state.nombres].gCPI+' 0,60 · crítica','El costo real supera el trabajo ganado. Revisa el presupuesto de la actividad.'),700);}),
+      probarSinRed:()=>this.toast('d','info','Sin conexión','Los cambios se guardaron en el dispositivo y se sincronizarán al recuperar la red.'),
+      cancelarM:()=>this.cerrarSheet(),
+      guardarM:()=>this.cerrarSheet(()=>{this.toast('m','ok','Actividad creada','Indicadores recalculados.');setTimeout(()=>this.toast('m','error',GLOSA[this.state.nombres].gCPI+' 0,60 · crítica','El costo supera el trabajo ganado.'),700);}),
+      probarSinRedM:()=>this.toast('m','info','Sin conexión','Los cambios se sincronizarán al recuperar la red.'),
+      avisoAvance:()=>this.setState({avance:true,avPct:ACTIVIDADES[det].real}),
+      abrirAvanceM:()=>this.setState({avanceM:true,avPct:ACTIVIDADES[det].real}),
+      avance:this.state.avance,avanceM:this.state.avanceM,
+      avanceVeil:this.state.avanceOut?'vFadeOut .19s ease both':'vFadeIn .18s ease both',
+      avanceAnim:this.state.avanceOut?'vPopOut .19s cubic-bezier(.4,0,1,1) both':'vPop .24s cubic-bezier(.2,.8,.3,1) both',
+      avanceMVeil:this.state.avanceMOut?'vFadeOut .24s ease both':'vFadeIn .18s ease both',
+      avanceMAnim:this.state.avanceMOut?'vSheetOut .24s cubic-bezier(.4,0,1,1) both':'vSheet .3s cubic-bezier(.2,.85,.3,1) both',
+      cerrarAvance:()=>{this.setState({avanceOut:true});setTimeout(()=>this.setState({avance:false,avanceOut:false}),190);},
+      cerrarAvanceM:()=>{this.setState({avanceMOut:true});setTimeout(()=>this.setState({avanceM:false,avanceMOut:false}),240);},
+      guardarAvance:()=>{this.setState({avanceOut:true});setTimeout(()=>{this.setState({avance:false,avanceOut:false});this.avisoResultado('d');},190);},
+      guardarAvanceM:()=>{this.setState({avanceMOut:true});setTimeout(()=>{this.setState({avanceM:false,avanceMOut:false});this.avisoResultado('m');},240);},
+      avMenos:()=>this.setState(s=>({avPct:Math.max(0,s.avPct-1)})),
+      avMas:()=>this.setState(s=>({avPct:Math.min(100,s.avPct+1)})),
+      ...this.calculoAvance(ACTIVIDADES[det],this.state.avPct),
+      ...(()=>{const p=PROYECTOS[this.state.dProyecto],r={};
+        // solo rueda cuando la abreviatura oculta algo; si ya se ve el valor exacto, texto plano
+        const cifra=(v,key)=>{const c=this.corto(v);
+          return c===String(v)?React.createElement('span',{style:{whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'}},String(v))
+            :React.createElement(Rodillo,{key,corto:c,exacto:v});};
+        ['pv','ev','ac','bac','cv','sv','eac','vac'].forEach(k=>{
+          r['copia_dsel_'+k]=this.copiar(p[k],'d');
+          r['roll_dsel_'+k]=cifra(p[k],'d'+k+this.state.dProyecto);
+        });
+        const mp=PROYECTOS[this.state.proyecto];
+        r['copia_sel_ev']=this.copiar(mp.ev,'m');
+        r['roll_sel_ev']=cifra(mp.ev,'m'+this.state.proyecto);
+        return r;})(),
+      toasts:this.state.toasts.map(t=>({...t,color:TCOLOR[t.kind],borde:TBORDE[t.kind],cerrar:()=>this.quitar('toasts',t.id)})),
+      mToasts:this.state.mToasts.map(t=>({...t,color:TCOLOR[t.kind],borde:TBORDE[t.kind]})),
+      hasToasts:this.state.toasts.length>0,hasMToasts:this.state.mToasts.length>0,
+      navLeft:NAVPOS[NAVKEY[d]==null?0:NAVKEY[d]].left+'px',navWidth:NAVPOS[NAVKEY[d]==null?0:NAVKEY[d]].w+'px',
+      dPanelColor:d==='panel'?'#0B0B0C':'rgba(255,255,255,.62)',
+      dProyColor:d==='proyectos'?'#0B0B0C':'rgba(255,255,255,.62)',
+      dActColor:(d==='actividades'||d==='detalle')?'#0B0B0C':'rgba(255,255,255,.62)',
+      dAjuColor:d==='ajustes'?'#0B0B0C':'rgba(255,255,255,.62)',
+      dcPanel:p1.color,dbPanel:p1.bg,dcProy:p2.color,dbProy:p2.bg,dcAct:p3.color,dbAct:p3.bg,dcAju:p4.color,dbAju:p4.bg,
+      dIsPanel:d==='panel'&&!dL,dIsProy:d==='proyectos'&&!dL,dIsAct:d==='actividades'&&!dL,dIsDet:d==='detalle'&&!dL,dIsAju:d==='ajustes'&&!dL,dIsPerfil:d==='perfil'&&!dL,
+      mIsPanel:m==='panel'&&!mL,mIsProy:m==='proyectos'&&!mL,mIsAct:m==='actividades'&&!mL,mIsDet:m==='detalle'&&!mL,mIsAju:m==='ajustes'&&!mL,mIsPerfil:m==='perfil'&&!mL,
+      dPerfil:this.nav('d','perfil'),mPerfil:this.nav('m','perfil'),
+      dShowProyecto:d==='panel'||d==='actividades',
+      dChips:CHIPS[d]||[],
+      mTituloProyecto:PROYECTOS[this.state.proyecto].nombre,
+      dMenu:this.state.dMenu&&(d==='panel'||d==='actividades'),toggleDMenu:()=>this.setState(s=>({dMenu:!s.dMenu})),
+      dMenuRot:this.state.dMenu?'180deg':'0deg',
+      dMenuBg:this.state.dMenu?'#1E1E21':'#161618',
+      dMenuBorde:this.state.dMenu?'rgba(139,111,224,.45)':'rgba(255,255,255,.07)',
+      dOpciones:PROYECTOS.map((p,i)=>{const cc=tone(p.cpi),sc=tone(p.spi);const on=i===this.state.dProyecto;
+        return {nombre:p.nombre,meta:p.meta,cpi:p.cpi,spi:p.spi,cpiColor:cc,cpiBg:bgOf(cc),spiColor:sc,spiBg:bgOf(sc),
+          bg:on?'rgba(139,111,224,.10)':'transparent',radio:on?'5px solid #A98BFF':'2px solid rgba(255,255,255,.25)',
+          elegir:()=>{this.setState({dProyecto:i,dMenu:false});}};}),
+      dsel:(()=>{const p=PROYECTOS[this.state.dProyecto];const cc=tone(p.cpi),sc=tone(p.spi);
+        const cn=parseFloat(p.cpi.replace(',','.')),sn=parseFloat(p.spi.replace(',','.'));
+        const sinDatos=isNaN(cn),g=GLOSA[this.state.nombres];
+        const neg=v=>String(v).startsWith('−');
+        return {...p,cpiColor:sinDatos?'rgba(255,255,255,.35)':cc,spiColor:sinDatos?'rgba(255,255,255,.35)':sc,
+          cvColor:sinDatos?'rgba(255,255,255,.35)':neg(p.cv)?CORAL:VERDE,
+          svColor:sinDatos?'rgba(255,255,255,.35)':neg(p.sv)?CORAL:OLIVA,
+          vacColor:sinDatos?'rgba(255,255,255,.35)':neg(p.vac)?CORAL:VERDE,
+          cvTexto:sinDatos?'sin costo registrado':`${p.cv.replace(/^[−+]/,'')} ${neg(p.cv)?'por encima':'por debajo'}`,
+          cpiW:sinDatos?'0%':Math.min(100,Math.round(cn/1.35*100))+'%',
+          spiW:sinDatos?'0%':Math.min(100,Math.round(sn/1.35*100))+'%',
+          cpiNota:sinDatos?'Sin costo real registrado: el índice aún no está definido.':cn<1?`Sobrecosto: se gasta más de 1 USD por cada 1 de trabajo ${g.gEV}.`:`Ahorro: se gana más de 1 USD de trabajo por cada 1 gastado.`,
+          spiNota:sinDatos?'Sin avance registrado.':sn<1?'Atrasado respecto al plan.':'Adelantado respecto al plan.',
+          ...this.abrev(p,['pv','ev','ac','bac','cv','sv','eac','vac']),
+          tieneCurva:!!p.curva,sinCurva:!p.curva,
+          evPath:p.curva?p.curva.path:'',evFill:p.curva?p.curva.path+' L600 200 L0 200 Z':'',evY:p.curva?p.curva.y:0};})(),
+      perfilBg:d==='perfil'?'#1E1E21':'#161618',
+      perfilBorde:d==='perfil'?'rgba(139,111,224,.45)':'rgba(255,255,255,.07)',
+      perfilGlow:d==='perfil'?'inset 0 0 0 1px rgba(139,111,224,.18)':'none',
+      navOpacity:d==='perfil'?0:1,
+      mPerfilRing:m==='perfil'?'0 0 0 2px #8B6FE0':'0 0 0 0 rgba(139,111,224,0)',
+      dTitle:titles[d][0],dSub:titles[d][1],
+      dTitleSize:((titles[d][0]+' '+titles[d][1]).trim().length>34?'38px':(titles[d][0]+' '+titles[d][1]).trim().length>26?'44px':'54px'),mKicker:mTitles[m][0],mTitle:mTitles[m][1],
+      mbPanel:t1.bg,miPanel:t1.icon,mtPanel:t1.text,mbProy:t2.bg,miProy:t2.icon,mtProy:t2.text,
+      mbAct:t3.bg,miAct:t3.icon,mtAct:t3.text,mbAju:t4.bg,miAju:t4.icon,mtAju:t4.text,
+      proyectos:PROYECTOS.map((p,i)=>{const cc=tone(p.cpi),sc=tone(p.spi);const ec=p.estado==='Bajo presupuesto'?VERDE:p.estado==='Atrasado'?OLIVA:p.estado==='Sin datos'?'rgba(255,255,255,.45)':CORAL;
+        return {...p,cpiColor:cc,spiColor:sc,estadoColor:ec,estadoBg:bgOf(ec),
+          abrir:this.nav('d','actividades',{dProyecto:i}),abrirM:this.nav('m','actividades',{proyecto:i})};}),
+      actividades:ACTIVIDADES.map((x,i)=>{const cc=tone(x.cpi),sc=tone(x.spi);const ec=x.estado==='En presupuesto'?VERDE:x.estado==='Atrasada'?OLIVA:CORAL;
+        return {...x,planW:x.plan+'%',realW:x.real+'%',cpiColor:cc,cpiBg:bgOf(cc),spiColor:sc,spiBg:bgOf(sc),estadoColor:ec,estadoBg:bgOf(ec),rail:ec,
+          abrir:this.nav('d','detalle',{det:i}),abrirM:this.nav('m','detalle',{det:i})};}),
+      det:{...a,texto:this.interpreta(a),cpiColor:tone(a.cpi),spiColor:tone(a.spi),
+        estadoColor:a.estado==='En presupuesto'?VERDE:a.estado==='Atrasada'?OLIVA:CORAL,
+        estadoBg:bgOf(a.estado==='En presupuesto'?VERDE:a.estado==='Atrasada'?OLIVA:CORAL),
+        cvColor:a.cv.startsWith('−')?CORAL:VERDE,svColor:a.sv.startsWith('−')?CORAL:VERDE,vacColor:a.vac.startsWith('−')?CORAL:VERDE,
+        planW:a.plan+'%',realW:a.real+'%',acW:Math.min(100,Math.round(parseInt(a.ac.replace(/\s/g,''),10)/parseInt(a.bac.replace(/\s/g,''),10)*100))+'%'},
+      metodos:METODOS.map((label,i)=>({label,color:metodo===i?'#0B0B0C':'rgba(255,255,255,.6)',bg:metodo===i?'#fff':'#1E1E21',
+        pick:()=>this.setState({metodo:i})})),
+      ...LARGO[this.state.nombres],...CORTO[this.state.nombres],...GLOSA[this.state.nombres],...TITULO[this.state.nombres],
+      badgeOp:this.state.nombres==='siglas'?0:1,
+      nomSiglas:this.set('nombres','siglas'),nomClaro:this.set('nombres','claro'),
+      nsColor:this.state.nombres==='siglas'?'#0B0B0C':'rgba(255,255,255,.6)',nsBg:this.state.nombres==='siglas'?'#fff':'#1E1E21',
+      ncColor:this.state.nombres==='claro'?'#0B0B0C':'rgba(255,255,255,.6)',ncBg:this.state.nombres==='claro'?'#fff':'#1E1E21',
+      nomNota:this.state.nombres==='siglas'?'Siglas del estándar PMI. Compactas, pero exigen conocer EVM.':'Texto en español. Ocupa más, y quien no conoce EVM entiende el tablero sin glosario.',
+      toggleAuto:()=>this.setState(s=>({auto:!s.auto})),toggleTexto:()=>this.setState(s=>({texto:!s.texto})),
+      autoBg:auto?ON:OFF,autoKnob:auto?KON:KOFF,autoLeft:auto?'23px':'3px',autoLeftM:auto?'22px':'3px',
+      textoBg:texto?ON:OFF,textoKnob:texto?KON:KOFF,textoLeft:texto?'23px':'3px',textoLeftM:texto?'22px':'3px'
+    };
+  }
+}
+</script>
+</body>
+</html>
