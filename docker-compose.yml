@@ -1,3 +1,12 @@
+# Entorno de desarrollo completo: base de datos, backend y frontend en contenedores.
+#
+# `docker compose up` levanta los tres. Los scripts que solo necesitan la base (run-dev.sh,
+# run-prod-local.sh) piden únicamente el servicio postgres, así que siguen funcionando igual.
+#
+# El código de backend y frontend se monta desde el repositorio: un cambio en el fuente se ve
+# dentro del contenedor sin reconstruir la imagen. Las dependencias (repositorio de Maven,
+# node_modules) viven en volúmenes con nombre para no descargarse en cada arranque ni mezclarse con
+# las del anfitrión.
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,5 +28,46 @@ services:
       interval: 5s
       retries: 10
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: ${EVM_BACKEND_CONTAINER:-evm-backend}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Dentro de la red de compose la base se llama por su servicio, no por localhost.
+      DB_URL: jdbc:postgresql://postgres:5432/evm
+      DB_USER: evm
+      DB_PASSWORD: evm
+    volumes:
+      - ./backend:/app
+      - evm-maven-repository:/root/.m2
+    healthcheck:
+      # La imagen del JDK no trae curl; bash abre el puerto directamente.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      retries: 30
+      # La primera vez el wrapper descarga Maven y todas las dependencias.
+      start_period: 300s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ${EVM_FRONTEND_CONTAINER:-evm-frontend}
+    depends_on:
+      - backend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - evm-frontend-node-modules:/app/node_modules
+
 volumes:
   evm-postgres-data:
+  evm-maven-repository:
+  evm-frontend-node-modules:

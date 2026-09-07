@@ -1,9 +1,11 @@
 # Perfil dev: apunta al PostgreSQL local levantado con docker-compose en la raíz del repo.
+# Los valores por defecto sirven cuando el backend corre en la máquina; cuando corre dentro de
+# docker-compose, la base se llama por su servicio y las mismas variables que usa prod lo indican.
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/evm
-    username: evm
-    password: evm
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/evm}
+    username: ${DB_USER:evm}
+    password: ${DB_PASSWORD:evm}
   flyway:
     locations: classpath:db/migration,classpath:db/seed/dev
     # Solo en dev: alguien puede haber creado la base a mano con db/init.sql, que deja el esquema
