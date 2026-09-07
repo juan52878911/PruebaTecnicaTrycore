@@ -402,19 +402,18 @@ export class SCurve {
    * por el eje, porque con un corte al mes no caben todas en 335 px.
    */
   protected readonly axisLabels = computed(() => {
+    const months = this.points().map((point) => formatMonth(point.cutoffDate));
+    // En móvil caben cinco etiquetas repartidas por el eje; en escritorio va una por corte.
+    const sampled =
+      this.compact() && months.length > COMPACT_AXIS_LABELS
+        ? Array.from({ length: COMPACT_AXIS_LABELS }, (_, index) => {
+            const step = (months.length - 1) / (COMPACT_AXIS_LABELS - 1);
+            return months[Math.round(index * step)] ?? '';
+          })
+        : months;
     // Varios cortes en el mismo mes no repiten la etiqueta: se rotula el primero y el resto queda
     // en blanco, conservando su sitio en el eje.
-    const labels = this.points()
-      .map((point) => formatMonth(point.cutoffDate))
-      .map((label, index, all) => (index > 0 && all[index - 1] === label ? '' : label));
-    if (!this.compact() || labels.length <= COMPACT_AXIS_LABELS) {
-      return labels;
-    }
-    const step = (labels.length - 1) / (COMPACT_AXIS_LABELS - 1);
-    return Array.from(
-      { length: COMPACT_AXIS_LABELS },
-      (_, index) => labels[Math.round(index * step)] ?? '',
-    );
+    return sampled.map((label, index, all) => (index > 0 && all[index - 1] === label ? '' : label));
   });
 
   protected readonly hoverZones = computed(() => {
