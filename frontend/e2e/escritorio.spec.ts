@@ -118,3 +118,22 @@ test.describe('escritorio', () => {
     await expect(page.getByRole('button', { name: /^Corte: / })).toHaveCount(0);
   });
 });
+
+test.describe('escritorio · moneda', () => {
+  test.skip(({ isMobile }) => isMobile, 'solo en el proyecto de escritorio');
+
+  test('la moneda elegida en Ajustes rotula las cifras y los formularios', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/ajustes');
+    await page.getByRole('radio', { name: /COP/ }).click();
+
+    await page.goto('/panel');
+    await expect(page.locator('app-kpi-card .unit').first()).toHaveText('COP');
+
+    await page.goto('/proyectos/1/actividades');
+    await page.getByRole('button', { name: '+ Nueva actividad' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Nueva actividad' });
+    await expect(dialog.locator('.suffix').first()).toHaveText('COP');
+    await expect(dialog.locator('.suffix', { hasText: 'USD' })).toHaveCount(0);
+  });
+});

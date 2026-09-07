@@ -108,6 +108,10 @@ lo levantan y lo apagan al terminar. La primera vez descargan Chromium:
 ./scripts/run-frontend-e2e.sh
 ```
 
+Si el puerto 4200 ya lo ocupa otro proceso (por ejemplo el contenedor `evm-frontend`), `E2E_PORT=4300` levanta el
+servidor de desarrollo en otro puerto para las pruebas; sin esa variable, Playwright reutilizaría lo que haya en
+el 4200 y probaría ese código y no el del árbol de trabajo.
+
 Y para servir el build de producción desde su propio origen, en el puerto 4300, que es lo que ejercita
 CORS de verdad:
 

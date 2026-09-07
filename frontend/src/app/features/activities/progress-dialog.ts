@@ -26,6 +26,7 @@ import {
 import { isStarted, previewProgress } from '../../core/evm/progress-preview';
 import { formatIndex, formatMoneyRounded, formatPercent } from '../../core/format/evm-format';
 import { IndicatorLabels } from '../../core/labels/indicator-labels';
+import { PreferencesStore } from '../../core/preferences/preferences-store';
 import { Dialog } from '../../shared/ui/dialog';
 import { DualProgress } from '../../shared/ui/dual-progress';
 import { FormField } from '../../shared/ui/form-field';
@@ -92,7 +93,7 @@ const STEP = 1;
       <app-form-field
         [label]="'Costo real acumulado · ' + labels.inline('AC')"
         fieldId="progress-cost"
-        suffix="USD"
+        [suffix]="currency()"
         [error]="serverError()?.fieldError('actualCost') ?? null"
       >
         <input
@@ -230,6 +231,8 @@ const STEP = 1;
 })
 export class ProgressDialog {
   protected readonly labels = inject(IndicatorLabels);
+  /** Rótulo de moneda de las preferencias: el servidor guarda importes sin divisa. */
+  protected readonly currency = inject(PreferencesStore).currencyCode;
 
   readonly activity = input.required<Activity>();
   readonly serverError = input<ApiError | null>(null);

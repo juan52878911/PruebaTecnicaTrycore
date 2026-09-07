@@ -7,13 +7,17 @@ import { defineConfig, devices } from '@playwright/test';
  * backend: lo que se prueba es la interfaz, en escritorio a 1360 px y en un móvil de 375 px, que
  * son los dos artboards del diseño.
  */
+/** Puerto del servidor de desarrollo; con E2E_PORT se evita chocar con otro proceso en el 4200. */
+const PORT = process.env['E2E_PORT'] ?? '4200';
+const BASE_URL = `http://localhost:${PORT}`;
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   fullyParallel: true,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: BASE_URL,
     trace: 'retain-on-failure',
   },
   projects: [
@@ -33,8 +37,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm start',
-    url: 'http://localhost:4200',
+    command: `npm start -- --port ${PORT}`,
+    url: BASE_URL,
     reuseExistingServer: true,
     timeout: 180_000,
   },
