@@ -138,7 +138,7 @@ test.describe('móvil', () => {
   test('la cabecera sigue el artboard: rótulo, título y avatar, sin chips', async ({ page }) => {
     const expected: Record<string, [string, string]> = {
       '/panel': ['Proyecto', 'Planta Solar Norte'],
-      '/proyectos': ['2 activos', 'Proyectos'],
+      '/proyectos': ['3 activos', 'Proyectos'],
       '/proyectos/1/actividades': ['Planta Solar Norte', 'Actividades'],
       '/proyectos/1/actividades/1': ['Planta Solar Norte', 'Obra civil — cimentación'],
       '/ajustes': ['Cálculo EVM', 'Ajustes'],

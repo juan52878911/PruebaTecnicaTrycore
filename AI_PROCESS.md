@@ -2427,3 +2427,9 @@ Ademas aparece USD cuando tengo configurado COP en configuracion, si es mas bara
 ```text
 mergea los dos PRs a develop
 ```
+
+### 2026-09-06 21:26 -05 - Claude Code
+
+```text
+Porque si no hay actividades, o las elimino sigue apareciendo la grafica de planificado, costo y costo real?
+```

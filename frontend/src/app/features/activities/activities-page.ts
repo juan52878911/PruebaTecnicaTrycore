@@ -301,7 +301,11 @@ function parseId(raw: string | null): number | undefined {
       </section>
     }
 
-    @if (isDesktop() && evm.hasTimeline()) {
+    <!--
+      Los cortes son fotos congeladas y sobreviven a borrar las actividades; sin actividades no hay
+      nada que comparar, así que la gráfica exige las dos cosas, igual que la curva del panel.
+    -->
+    @if (isDesktop() && evm.hasActivities() && evm.hasTimeline()) {
       <section class="card comparison">
         <h2>
           {{ labels.short('PV') }} · {{ labels.short('EV') }} · {{ labels.short('AC') }} por corte

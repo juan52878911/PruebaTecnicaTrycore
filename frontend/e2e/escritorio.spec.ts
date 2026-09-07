@@ -137,3 +137,22 @@ test.describe('escritorio · moneda', () => {
     await expect(dialog.locator('.suffix', { hasText: 'USD' })).toHaveCount(0);
   });
 });
+
+test.describe('escritorio · proyecto sin actividades', () => {
+  test.skip(({ isMobile }) => isMobile, 'solo en el proyecto de escritorio');
+
+  test('sin actividades no se pinta la comparativa por corte aunque haya cortes', async ({
+    page,
+  }) => {
+    await mockApi(page);
+    await page.goto('/proyectos/3/actividades');
+    await expect(page.getByText('Aún no hay actividades')).toBeVisible();
+    await expect(page.locator('app-grouped-bars')).toHaveCount(0);
+
+    // El panel (que hereda el proyecto elegido) tampoco dibuja la curva: muestra su estado vacío.
+    await page.goto('/panel');
+    await expect(page.getByRole('button', { name: 'Data warehouse fase II' })).toBeVisible();
+    await expect(page.getByText('Aún no hay actividades')).toBeVisible();
+    await expect(page.locator('app-s-curve')).toHaveCount(0);
+  });
+});
