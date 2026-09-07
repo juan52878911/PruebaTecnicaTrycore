@@ -2393,3 +2393,9 @@ Revisa si este ejercicio se completo de forma exitosa o falta algo por implement
 ```text
 Implementa la gráfica por actividad, corrige el README y prepara la release
 ```
+
+### 2026-09-06 21:12 -05 - Claude Code
+
+```text
+No quiero que se muestre el indicador hasta que el mouse este dentro de la grafica
+```
