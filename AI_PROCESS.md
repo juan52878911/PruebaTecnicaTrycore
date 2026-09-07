@@ -2309,6 +2309,12 @@ Necesito que analices el diseño contra lo construido. la alineacion de contened
 mergea el PR a develop
 ```
 
+### 2026-09-05 16:44 -05 - Claude Code
+
+```text
+La tabla de actividades no tiene la alineacion correcta, ademas los botones aparecen y ocultan en un espacio regulado, que queda vacio y ocupa espacio asi tengamos las herramientas ocultas de editar y eliminar
+```
+
 ### 2026-09-06 20:17 -05 - Claude Code
 
 ```text

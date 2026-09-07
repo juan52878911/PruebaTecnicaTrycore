@@ -37,9 +37,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     </button>
   `,
   styles: `
+    /* Píldora opaca: flota sobre la última columna y tiene que leerse encima del distintivo. */
     :host {
       display: inline-flex;
-      gap: 6px;
+      gap: 4px;
+      padding: 4px;
+      border-radius: var(--radius-pill);
+      background: var(--card-nested);
+      box-shadow: var(--shadow-float);
       opacity: 0;
       transition: opacity var(--motion-veil);
     }
