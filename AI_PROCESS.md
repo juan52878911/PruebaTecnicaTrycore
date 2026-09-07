@@ -956,6 +956,24 @@ del ejercicio. Y el artículo propone umbrales fijos, del tipo CPI por debajo de
 sistema el umbral es configurable y lo aplica el servidor, porque un umbral es política de la organización y no
 aritmética del método. Las tres decisiones están explicadas en la sección 2 y verificadas en la 4.
 
+### Referencias visuales del diseño
+
+El sistema de diseño Valora no salió de la nada. Antes de abrir Claude Design reuní tres referencias de estilo,
+que son de forma y no de función: ninguna es un tablero de gestión de proyectos y ninguna se copió.
+
+| Referencia | Qué tomé |
+| --- | --- |
+| Outcrowd, estudio de diseño y marca para productos SaaS <https://www.outcrowd.io/> | La disposición en bloques con mucho aire entre ellos, la jerarquía tipográfica con titulares grandes sobre texto ligero y el movimiento breve como refuerzo de la lectura, nunca como adorno |
+| Holdwork, Website design for the video interaction platform, en Dribbble <https://dribbble.com/shots/23462040-Holdwork-Website-design-for-the-video-interaction-platform> | La composición de tarjetas sobre fondo oscuro y el tratamiento de un acento único que ordena la jerarquía en lugar de repartir color por toda la pantalla |
+| Fundex <https://fundex.gg/> | La presentación de cifras como protagonista: el número grande y legible primero, y el detalle exacto en segundo plano |
+
+De ahí salen tres rasgos del tablero que sí se pueden comprobar en el código: la superficie oscura con un único
+acento violeta, reservando el resto del color para lo que significa algo (las series planificado, ganado y costo
+real y los estados de severidad); la cifra grande que rueda de su forma compacta a la exacta cuando se pasa el
+ratón, con la unidad al lado; y el movimiento acotado a la entrada de cada vista y a las transiciones de las
+barras. Lo que no viene de las referencias es la estructura: qué se muestra y en qué orden lo decide el método,
+no el estilo.
+
 ### Investigación con Gemini
 
 Usé Gemini para tres cosas distintas, y conviene separar cuánto pesa cada una.
@@ -2664,4 +2682,12 @@ Usa este prompt exactamente como guía para regenerar tu código HTML y CSS, ase
 6. Refinamiento General: Asegura que los textos sean legibles, el espaciado entre tarjetas sea constante y el resultado general sea una copia exacta de `image_0.png` pero con la funcionalidad de los datos dinámicos.
 
 He generado una imagen (`image_2.png`) que representa cómo debería verse la interfaz final si sigues este prompt. Ahora, todos los datos, textos, colores y el diseño general coinciden perfectamente con tu diseño de Coaude Design. ¡Usa este prompt para regenerar tu código!
+```
+
+### 2026-09-06 22:38 -05 - Claude Code
+
+```text
+Añade la inspiracion para el diseño que construi con Claude https://www.outcrowd.io/
+https://dribbble.com/shots/23462040-Holdwork-Website-design-for-the-video-interaction-platform
+https://fundex.gg/
 ```
