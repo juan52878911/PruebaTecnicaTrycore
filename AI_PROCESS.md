@@ -2314,3 +2314,44 @@ mergea el PR a develop
 ```text
 La tabla de actividades no tiene la alineacion correcta, ademas los botones aparecen y ocultan en un espacio regulado, que queda vacio y ocupa espacio asi tengamos las herramientas ocultas de editar y eliminar
 ```
+
+### 2026-09-06 20:17 -05 - Claude Code
+
+```text
+Evalua si el proyecto cumple con las caracteristicas de EVM Este video explica la Técnica de Gestión del Valor Ganado (EVM, por las siglas en inglés de Earned Value Management), un método fundamental en la gestión de proyectos para medir el desempeño y el progreso de un trabajo.
+
+Aquí tienes el resumen de los conceptos clave:
+
+¿Qué es la técnica EVM?
+El EVM es una herramienta que compara el trabajo que se había planificado con el trabajo que realmente se ha ejecutado en un momento dado. Su objetivo es decirte si el proyecto va por buen camino en cuanto a tiempos y presupuesto, o si se necesita hacer algún ajuste.
+
+Esta técnica se utiliza en la etapa de seguimiento y control del proyecto y unifica tres líneas base (alcance, costo y tiempo) en un marco matemático común. Para poder comparar estas distintas variables, el método convierte todo a una misma unidad: el dinero.
+
+Las 4 variables principales
+Para evaluar el estado del proyecto, el EVM utiliza cuatro métricas básicas de las cuales nacen todos los cálculos:
+
+1. BAC (Presupuesto a la Conclusión): Es el presupuesto total planificado para el proyecto. Es la suma de todos los valores presupuestados para el trabajo que se va a realizar.
+
+2. PV (Valor Planeado): Indica el valor del trabajo que se esperaba tener terminado en un momento específico del calendario.
+
+3. EV (Valor Ganado): Representa el trabajo que realmente se ha logrado ejecutar hasta ese momento, traducido a dinero (calculando el porcentaje completado sobre el presupuesto de esa tarea).
+
+4. AC (Costo Real): Es el gasto real y efectivo que la empresa ya ha desembolsado para realizar el trabajo hecho hasta la fecha (pago de horas, materiales, licencias, etc.).
+
+El video concluye mostrando cómo, al combinar y graficar estas variables (PV, EV y AC) a lo largo de los meses, un director de proyecto puede ver visualmente y de forma rápida si el proyecto está gastando más de lo previsto o si se está atrasando en el cronograma.
+
+(Puedes encontrar el video original aquí: https://www.youtube.com/watch?v=ZL9zWT7m84E)
+```
+
+### 2026-09-06 20:21 -05 - Claude Code
+
+```text
+@"/Users/juanbedoya/Downloads/Ingeniero de Desarrollo — Trycore Colombia (1) (1) (1).md"
+Revisa si este ejercicio se completo de forma exitosa o falta algo por implementar segun lo que nos piden en el documento
+```
+
+### 2026-09-06 20:26 -05 - Claude Code
+
+```text
+Implementa la gráfica por actividad, corrige el README y prepara la release
+```
