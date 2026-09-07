@@ -1,22 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { MeasurementPoint } from '../../core/api/models/measurement';
-import { formatMoneyRounded, formatShortDate } from '../../core/format/evm-format';
+import { Activity } from '../../core/api/models/activity';
+import { formatMoneyRounded } from '../../core/format/evm-format';
 import { barHeight, sharedScale } from './bar-scale';
 
-const MAX_GROUPS = 8;
-
 /**
- * Comparativa de PV, EV y AC corte a corte, en barras agrupadas.
+ * Comparativa de PV, EV y AC actividad por actividad, en barras agrupadas.
  *
- * La curva S muestra la tendencia acumulada; esta vista deja ver la distancia entre las tres
- * series en cada corte, que es lo que cuesta leer en un gráfico de líneas superpuestas.
+ * Es la gráfica que pide el enunciado: una columna por actividad con sus tres cifras en dinero,
+ * para ver de un vistazo cuál gasta más de lo que gana y cuál va por detrás de lo previsto.
  *
- * Comparten una escala única. Escalar cada serie a su propio máximo haría que todas las barras
- * llegaran arriba y la comparación dejaría de significar nada.
+ * Las tres series comparten una escala única, la del valor más alto de todo el proyecto. Se
+ * dibujan todas las actividades: ocultar alguna sería mentir sobre el proyecto, así que con muchas
+ * la gráfica se desplaza en horizontal en lugar de recortarse.
  */
 @Component({
-  selector: 'app-grouped-bars',
+  selector: 'app-activity-bars',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="legend">
@@ -26,7 +25,7 @@ const MAX_GROUPS = 8;
     </div>
 
     <div class="plot" role="img" [attr.aria-label]="accessibleSummary()">
-      @for (group of groups(); track group.cutoffDate) {
+      @for (group of groups(); track group.id) {
         <div class="group">
           <div class="bars">
             <span
@@ -45,7 +44,7 @@ const MAX_GROUPS = 8;
               [attr.title]="group.costText"
             ></span>
           </div>
-          <span class="tick">{{ group.label }}</span>
+          <span class="tick" [attr.title]="group.name">{{ group.name }}</span>
         </div>
       }
     </div>
@@ -87,9 +86,12 @@ const MAX_GROUPS = 8;
       align-items: flex-end;
       gap: 10px;
       height: 230px;
+      overflow-x: auto;
+      overflow-y: hidden;
     }
     .group {
       flex: 1;
+      min-width: 88px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -127,55 +129,56 @@ const MAX_GROUPS = 8;
       }
     }
     .tick {
+      max-width: 100%;
       font-size: 11.5px;
       font-weight: 600;
       color: var(--text-dim);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   `,
 })
-export class GroupedBars {
-  readonly points = input.required<readonly MeasurementPoint[]>();
+export class ActivityBars {
+  readonly activities = input.required<readonly Activity[]>();
   readonly plannedLabel = input('PV');
   readonly earnedLabel = input('EV');
   readonly actualCostLabel = input('AC');
 
-  /** Con muchos cortes las barras se vuelven ilegibles; se muestran los más recientes. */
-  private readonly visible = computed(() => this.points().slice(-MAX_GROUPS));
-
   private readonly scale = computed(() =>
     sharedScale(
-      this.visible().flatMap((point) => [
-        point.totals.plannedValue,
-        point.totals.earnedValue,
-        point.totals.actualCost,
+      this.activities().flatMap((activity) => [
+        activity.indicators.plannedValue,
+        activity.indicators.earnedValue,
+        activity.indicators.actualCost,
       ]),
     ),
   );
 
   protected readonly groups = computed(() => {
     const scale = this.scale();
-    return this.visible().map((point) => ({
-      cutoffDate: point.cutoffDate,
-      label: formatShortDate(point.cutoffDate),
-      plannedHeight: barHeight(point.totals.plannedValue, scale),
-      earnedHeight: barHeight(point.totals.earnedValue, scale),
-      costHeight: barHeight(point.totals.actualCost, scale),
-      plannedText: `${this.plannedLabel()} ${formatMoneyRounded(point.totals.plannedValue)}`,
-      earnedText: `${this.earnedLabel()} ${formatMoneyRounded(point.totals.earnedValue)}`,
-      costText: `${this.actualCostLabel()} ${formatMoneyRounded(point.totals.actualCost)}`,
-    }));
+    return this.activities().map((activity) => {
+      const { plannedValue, earnedValue, actualCost } = activity.indicators;
+      return {
+        id: activity.id,
+        name: activity.name,
+        plannedHeight: barHeight(plannedValue, scale),
+        earnedHeight: barHeight(earnedValue, scale),
+        costHeight: barHeight(actualCost, scale),
+        plannedText: `${this.plannedLabel()} ${formatMoneyRounded(plannedValue)}`,
+        earnedText: `${this.earnedLabel()} ${formatMoneyRounded(earnedValue)}`,
+        costText: `${this.actualCostLabel()} ${formatMoneyRounded(actualCost)}`,
+      };
+    });
   });
 
   protected readonly accessibleSummary = computed(() => {
     const groups = this.groups();
     if (groups.length === 0) {
-      return 'Sin cortes que comparar';
+      return 'Sin actividades que comparar';
     }
-    return `Comparativa por corte, ${groups.length} cortes. ${groups
-      .map(
-        (group) => `${group.label}: ${group.plannedText}, ${group.earnedText}, ${group.costText}`,
-      )
+    return `Comparativa por actividad, ${groups.length} actividades. ${groups
+      .map((group) => `${group.name}: ${group.plannedText}, ${group.earnedText}, ${group.costText}`)
       .join('. ')}.`;
   });
 }
