@@ -96,6 +96,6 @@ describe('GroupedBars', () => {
     const label = element.querySelector('.plot')?.getAttribute('aria-label') ?? '';
 
     expect(label).toContain('31 ago');
-    expect(label).toContain('1 240 000');
+    expect(label).toContain('1 240 000');
   });
 });

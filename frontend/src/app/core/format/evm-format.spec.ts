@@ -34,7 +34,7 @@ describe('formato de indicadores', () => {
     // A partir de 10 pierde un decimal, como en el diseño: cabe en la tarjeta sin partirse.
     expect(formatIndex(9.99)).toBe('9,99');
     expect(formatIndex(25)).toBe('25,0');
-    expect(formatIndex(1234.56)).toBe('1 234,6');
+    expect(formatIndex(1234.56)).toBe('1 234,6');
     expect(formatIndex(1.0533)).toBe('1,05');
   });
 
@@ -46,18 +46,18 @@ describe('formato de indicadores', () => {
 
 describe('formato de dinero', () => {
   it('separa los millares con espacio', () => {
-    expect(formatMoneyRounded(1240000)).toBe('1 240 000');
-    expect(formatMoneyRounded(1117500)).toBe('1 117 500');
+    expect(formatMoneyRounded(1240000)).toBe('1 240 000');
+    expect(formatMoneyRounded(1117500)).toBe('1 117 500');
   });
 
   it('usa el signo menos tipográfico, no el guion', () => {
-    expect(formatMoneyRounded(-142000)).toBe('−142 000');
+    expect(formatMoneyRounded(-142000)).toBe('−142 000');
     expect(formatMoneyRounded(-142000).startsWith('-')).toBe(false);
   });
 
   it('mantiene dos decimales cuando se piden', () => {
-    expect(formatMoney(1240000)).toBe('1 240 000,00');
-    expect(formatMoney(571900.5)).toBe('571 900,50');
+    expect(formatMoney(1240000)).toBe('1 240 000,00');
+    expect(formatMoney(571900.5)).toBe('571 900,50');
   });
 
   it('deja intactas las cifras de menos de mil', () => {
@@ -72,7 +72,7 @@ describe('abreviatura de cifras grandes', () => {
   });
 
   it('no abrevia por debajo del millón', () => {
-    expect(formatCompact(602400)).toBe('602 400');
+    expect(formatCompact(602400)).toBe('602 400');
   });
 
   it('conserva el signo al abreviar', () => {

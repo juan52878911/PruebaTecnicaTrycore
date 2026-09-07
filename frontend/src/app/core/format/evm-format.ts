@@ -11,7 +11,11 @@ const LARGE_INDEX_THRESHOLD = 10;
 const LARGE_INDEX_DECIMALS = 1;
 const MONEY_DECIMALS = 2;
 const GROUP_SIZE = 3;
-const THOUSAND_SEPARATOR = ' ';
+/*
+ * Espacio fino sin salto (U+202F): el separador de millares del formato es-CO, y además impide que
+ * una cifra se parta en dos líneas y estire su tarjeta cuando el sitio escasea.
+ */
+const THOUSAND_SEPARATOR = '\u202f';
 const DECIMAL_SEPARATOR = ',';
 const MINUS_SIGN = '−';
 
