@@ -2404,3 +2404,9 @@ Revisa si este ejercicio se completo de forma exitosa o falta algo por implement
 ```text
 Implementa la gráfica por actividad, corrige el README y prepara la release
 ```
+
+### 2026-09-06 20:40 -05 - Claude Code
+
+```text
+Resuelve los conflictos y mergea todo, quiero el proyecto corriendo al final con docker compose para el video. Tanto front como backend para desarrollo que vivan en docker con docker compose
+```
